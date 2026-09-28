@@ -22,6 +22,9 @@ tar -czf - index.html assets | "${SSH[@]}" "$TARGET" "set -e
   docker rm -f ciss-solutions >/dev/null 2>&1 || true
   docker run -d --name ciss-solutions --restart unless-stopped \
     -p $PORT:80 -v /var/www/ciss-solutions:/usr/share/nginx/html:ro nginx:alpine >/dev/null
+  # rejoin Caddy's shared network (see caddy-add.sh) so the domain keeps working after a redeploy
+  NET=\$(docker network ls --format '{{.Name}}' | grep -E '(^|_)web\$' | head -1 || true)
+  [ -n \"\$NET\" ] && docker network connect \"\$NET\" ciss-solutions && echo \"Joined network \$NET\"
   docker ps --filter name=ciss-solutions --format '{{.Names}}  {{.Status}}  {{.Ports}}'"
 
 echo "Done. Visit http://${TARGET#*@}:$PORT"
