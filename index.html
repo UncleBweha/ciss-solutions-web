@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CISS Solutions | Coming Soon</title>
   <meta name="description" content="CISS Solutions online store is coming soon. Printers, continuous ink supply systems, ink, toner and tech accessories, all in one place." />
+  <script>document.documentElement.classList.add("js");</script>
   <link rel="icon" href="assets/logo.webp" type="image/webp" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -194,7 +195,7 @@
     .form-note.success { color: #0a7d3b; font-weight: 500; }
     .form-note.error { color: #c0261d; font-weight: 500; }
 
-    /* Printer illustration */
+    /* Printer illustration (animated from JS, see printer loop below) */
     .visual {
       position: relative;
       aspect-ratio: 1 / 1;
@@ -202,22 +203,46 @@
       width: 100%;
       justify-self: end;
     }
-    .visual svg { width: 100%; height: 100%; display: block; }
+    .visual svg { width: 100%; height: 100%; display: block; overflow: visible; }
 
-    .paper { animation: feed 3.6s cubic-bezier(0.45, 0, 0.2, 1) infinite; }
-    @keyframes feed {
-      0% { transform: translateY(-40px); opacity: 0; }
-      15% { opacity: 1; }
-      70% { transform: translateY(58px); opacity: 1; }
-      100% { transform: translateY(58px); opacity: 0; }
+    .tube-flow { stroke-dasharray: 3 7; opacity: 0; }
+    .visual svg.flowing .tube-flow { opacity: 1; animation: flow 0.6s linear infinite; }
+    @keyframes flow { to { stroke-dashoffset: -20; } }
+
+    /* Top ink bar prints across on load */
+    .ink-bar span {
+      transform-origin: left;
+      animation: bar-print 0.6s cubic-bezier(0.6, 0, 0.3, 1) both;
     }
-    .print-line { transform-origin: left; animation: printline 3.6s ease-out infinite; }
-    .print-line:nth-of-type(2) { animation-delay: 0.15s; }
-    .print-line:nth-of-type(3) { animation-delay: 0.3s; }
-    .print-line:nth-of-type(4) { animation-delay: 0.45s; }
-    @keyframes printline {
-      0%, 20% { transform: scaleX(0); }
-      60%, 100% { transform: scaleX(1); }
+    .ink-bar span:nth-child(2) { animation-delay: 0.15s; }
+    .ink-bar span:nth-child(3) { animation-delay: 0.3s; }
+    .ink-bar span:nth-child(4) { animation-delay: 0.45s; }
+    @keyframes bar-print { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    /* Category cards print in, top to bottom, when scrolled into view */
+    .js .cat { clip-path: inset(0 0 100% 0); }
+    .js .cat.printed {
+      animation: print-in 1s cubic-bezier(0.5, 0, 0.3, 1) both;
+      animation-delay: calc(var(--i, 0) * 140ms);
+    }
+    .js .cat.printed::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--yellow), var(--ink));
+      animation: print-head 1s cubic-bezier(0.5, 0, 0.3, 1) both;
+      animation-delay: calc(var(--i, 0) * 140ms);
+      pointer-events: none;
+    }
+    @keyframes print-in {
+      from { clip-path: inset(0 0 100% 0); }
+      to { clip-path: inset(0 0 0 0); }
+    }
+    @keyframes print-head {
+      0% { top: 0; opacity: 1; }
+      90% { top: calc(100% - 3px); opacity: 1; }
+      100% { top: calc(100% - 3px); opacity: 0; }
     }
 
     /* Categories */
@@ -320,8 +345,9 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .paper, .print-line, .status::before { animation: none; }
-      .print-line { transform: scaleX(1); }
+      .status::before, .ink-bar span { animation: none; }
+      .js .cat, .js .cat.printed { clip-path: none; animation: none; }
+      .js .cat.printed::after { display: none; }
     }
   </style>
 </head>
@@ -357,54 +383,87 @@
         </div>
 
         <div class="visual" aria-hidden="true">
-          <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <svg id="printer" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="g-blue" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0" stop-color="#0a8fe0" />
                 <stop offset="1" stop-color="#0057b8" />
               </linearGradient>
-              <clipPath id="out-slot"><rect x="96" y="232" width="208" height="150" /></clipPath>
+              <!-- only paper above the output slot is visible -->
+              <clipPath id="above-slot"><rect x="0" y="0" width="400" height="236" /></clipPath>
+              <!-- one rect per printed band, widths driven from JS -->
+              <clipPath id="reveal"></clipPath>
             </defs>
 
-            <!-- soft backdrop -->
+            <!-- backdrop -->
             <circle cx="200" cy="200" r="180" fill="#eef4fc" />
-            <circle cx="330" cy="92" r="14" fill="#00aeef" opacity="0.9" />
-            <circle cx="72" cy="120" r="10" fill="#e5007e" opacity="0.9" />
-            <circle cx="92" cy="316" r="8" fill="#ffd400" />
+            <circle cx="340" cy="96" r="14" fill="#00aeef" opacity="0.9" />
+            <circle cx="52" cy="140" r="10" fill="#e5007e" opacity="0.9" />
+            <circle cx="70" cy="372" r="8" fill="#ffd400" />
 
-            <!-- paper tray -->
-            <path d="M130 96 h140 l14 28 h-168 z" fill="#ffffff" stroke="#161a22" stroke-width="6" stroke-linejoin="round" />
-
-            <!-- printer body -->
-            <rect x="72" y="120" width="256" height="116" rx="18" fill="#161a22" />
-            <rect x="72" y="120" width="256" height="18" rx="9" fill="url(#g-blue)" />
-            <rect x="96" y="218" width="208" height="14" rx="7" fill="#2a303c" />
-
-            <!-- status lights -->
-            <circle cx="282" cy="170" r="6" fill="#00aeef" />
-            <circle cx="302" cy="170" r="6" fill="#ffd400" />
-
-            <!-- CISS ink tanks -->
-            <g>
-              <rect x="100" y="156" width="18" height="44" rx="4" fill="#ffffff" opacity="0.12" />
-              <rect x="100" y="170" width="18" height="30" rx="4" fill="#00aeef" />
-              <rect x="126" y="156" width="18" height="44" rx="4" fill="#ffffff" opacity="0.12" />
-              <rect x="126" y="176" width="18" height="24" rx="4" fill="#e5007e" />
-              <rect x="152" y="156" width="18" height="44" rx="4" fill="#ffffff" opacity="0.12" />
-              <rect x="152" y="166" width="18" height="34" rx="4" fill="#ffd400" />
-              <rect x="178" y="156" width="18" height="44" rx="4" fill="#ffffff" opacity="0.12" />
-              <rect x="178" y="172" width="18" height="28" rx="4" fill="#6b7280" />
+            <!-- page coming out of the top slot -->
+            <g clip-path="url(#above-slot)">
+              <g id="page" transform="translate(85 236)">
+                <rect x="4" y="4" width="170" height="168" rx="3" fill="#161a22" opacity="0.07" />
+                <rect x="0" y="0" width="170" height="168" rx="3" fill="#ffffff" stroke="#dfe3ea" stroke-width="1.5" />
+                <g clip-path="url(#reveal)">
+                  <rect x="12" y="12" width="22" height="22" rx="5" fill="#0057b8" />
+                  <rect x="40" y="14" width="66" height="7" rx="3.5" fill="#161a22" />
+                  <rect x="40" y="26" width="42" height="5" rx="2.5" fill="#9aa3b2" />
+                  <rect x="12" y="44" width="47" height="48" rx="4" fill="#00aeef" />
+                  <rect x="61.5" y="44" width="47" height="48" rx="4" fill="#e5007e" />
+                  <rect x="111" y="44" width="47" height="48" rx="4" fill="#ffd400" />
+                  <text x="12" y="118" font-family="Sora, sans-serif" font-weight="800" font-size="17" fill="#161a22">COMING SOON</text>
+                  <rect x="12" y="127" width="124" height="5" rx="2.5" fill="#b8bfcc" />
+                  <rect x="12" y="137" width="96" height="5" rx="2.5" fill="#b8bfcc" />
+                  <rect x="12" y="149" width="54" height="12" rx="6" fill="#0057b8" />
+                </g>
+              </g>
             </g>
 
-            <!-- printed page -->
-            <g clip-path="url(#out-slot)">
-              <g class="paper">
-                <rect x="124" y="224" width="152" height="110" rx="4" fill="#ffffff" stroke="#dfe3ea" stroke-width="2" />
-                <rect class="print-line" x="140" y="244" width="90" height="10" rx="5" fill="#0057b8" />
-                <rect class="print-line" x="140" y="264" width="120" height="7" rx="3.5" fill="#00aeef" />
-                <rect class="print-line" x="140" y="280" width="104" height="7" rx="3.5" fill="#e5007e" />
-                <rect class="print-line" x="140" y="296" width="80" height="7" rx="3.5" fill="#ffd400" />
-              </g>
+            <!-- CISS ink tubes (continuous ink supply) -->
+            <g fill="none" stroke-width="2.5" stroke-linecap="round">
+              <path d="M325 272 V256 H300" stroke="#00aeef" opacity="0.45" />
+              <path d="M339 272 V250 H300" stroke="#e5007e" opacity="0.45" />
+              <path d="M353 272 V244 H300" stroke="#e0b800" opacity="0.45" />
+              <path d="M367 272 V238 H300" stroke="#161a22" opacity="0.35" />
+              <path class="tube-flow" d="M325 272 V256 H300" stroke="#00aeef" />
+              <path class="tube-flow" d="M339 272 V250 H300" stroke="#e5007e" />
+              <path class="tube-flow" d="M353 272 V244 H300" stroke="#e0b800" />
+              <path class="tube-flow" d="M367 272 V238 H300" stroke="#161a22" />
+            </g>
+
+            <!-- printer body -->
+            <rect x="40" y="232" width="260" height="116" rx="18" fill="#161a22" />
+            <rect x="40" y="232" width="260" height="18" rx="9" fill="url(#g-blue)" />
+            <rect x="72" y="231" width="196" height="9" rx="4.5" fill="#0b0e14" />
+            <rect x="60" y="264" width="98" height="28" rx="5" fill="#0b1a2e" />
+            <text id="screen" x="70" y="282.5" font-family="Sora, sans-serif" font-weight="700" font-size="10.5" letter-spacing="1" fill="#00aeef">READY</text>
+            <circle id="led" cx="178" cy="278" r="5" fill="#22c55e" />
+            <circle cx="198" cy="278" r="5" fill="#2a303c" />
+            <circle cx="214" cy="278" r="5" fill="#2a303c" />
+            <rect x="60" y="314" width="220" height="12" rx="6" fill="#2a303c" />
+
+            <!-- print head carriage -->
+            <g id="carriage" transform="translate(170 0)">
+              <rect x="-16" y="222" width="32" height="18" rx="5" fill="#e9eef6" stroke="#161a22" stroke-width="2" />
+              <circle cx="-9" cy="231" r="2.2" fill="#00aeef" />
+              <circle cx="-3" cy="231" r="2.2" fill="#e5007e" />
+              <circle cx="3" cy="231" r="2.2" fill="#ffd400" />
+              <circle cx="9" cy="231" r="2.2" fill="#161a22" />
+            </g>
+
+            <!-- external ink tanks -->
+            <rect x="312" y="262" width="68" height="86" rx="10" fill="#ffffff" stroke="#161a22" stroke-width="3" />
+            <g id="tanks">
+              <rect x="320" y="272" width="10" height="66" rx="3" fill="#eef1f6" />
+              <rect x="334" y="272" width="10" height="66" rx="3" fill="#eef1f6" />
+              <rect x="348" y="272" width="10" height="66" rx="3" fill="#eef1f6" />
+              <rect x="362" y="272" width="10" height="66" rx="3" fill="#eef1f6" />
+              <rect class="ink" x="320" y="278" width="10" height="60" rx="3" fill="#00aeef" />
+              <rect class="ink" x="334" y="278" width="10" height="60" rx="3" fill="#e5007e" />
+              <rect class="ink" x="348" y="278" width="10" height="60" rx="3" fill="#ffd400" />
+              <rect class="ink" x="362" y="278" width="10" height="60" rx="3" fill="#161a22" />
             </g>
           </svg>
         </div>
@@ -482,6 +541,111 @@
       note.className = "form-note success";
       form.reset();
     });
+
+    // ---- Printer animation: head sweeps, page prints band by band, CISS tanks drain and refill ----
+    (() => {
+      const svg = document.getElementById("printer");
+      if (!svg) return;
+      const NS = "http://www.w3.org/2000/svg";
+      const page = document.getElementById("page");
+      const carriage = document.getElementById("carriage");
+      const screen = document.getElementById("screen");
+      const led = document.getElementById("led");
+      const inks = [...svg.querySelectorAll(".ink")];
+      const reveal = document.getElementById("reveal");
+
+      const SLOT = 236, PAGE_X = 85, W = 170, BH = 14, BANDS = 12;
+      const T_FEED = 170, T_SWEEP = 400, T_BAND = T_FEED + T_SWEEP;
+      const PRINT = BANDS * T_BAND, HOLD = 1800, EJECT = 700, REFILL = 900;
+      const CYCLE = PRINT + HOLD + EJECT + REFILL;
+      const TANK_TOP = 272, TANK_H = 66, FULL = 0.92;
+      const DRAIN = [0.3, 0.25, 0.35, 0.42]; // how much each colour uses per page
+
+      const bands = Array.from({ length: BANDS }, (_, j) => {
+        const r = document.createElementNS(NS, "rect");
+        r.setAttribute("y", j * BH);
+        r.setAttribute("height", BH + 0.5);
+        reveal.appendChild(r);
+        return r;
+      });
+
+      const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+      const setBand = (r, x, w) => { r.setAttribute("x", x); r.setAttribute("width", w); };
+
+      function render(t) {
+        let fed = BANDS * BH, lift = 0, opacity = 1, headX = 0, ink = 1, label = "READY", printing = false;
+
+        if (t < PRINT) {
+          printing = true;
+          const i = Math.floor(t / T_BAND), l = t - i * T_BAND;
+          const ltr = i % 2 === 0;
+          const p = l < T_FEED ? 0 : Math.min((l - T_FEED) / T_SWEEP, 1);
+          fed = (i + ease(Math.min(l / T_FEED, 1))) * BH;
+          bands.forEach((r, j) => {
+            if (j < i) setBand(r, 0, W);
+            else if (j === i) setBand(r, ltr ? 0 : W * (1 - p), W * p);
+            else setBand(r, 0, 0);
+          });
+          headX = ltr ? W * p : W * (1 - p);
+          ink = t / PRINT;
+          label = "PRINTING" + ".".repeat(Math.floor(t / 350) % 4);
+        } else {
+          bands.forEach((r) => setBand(r, 0, W));
+          const after = t - PRINT;
+          if (after < HOLD) {
+            label = "DONE";
+          } else {
+            const e = Math.min((after - HOLD) / EJECT, 1);
+            lift = ease(e) * 44;
+            opacity = 1 - e;
+            ink = 1 - Math.min((after - HOLD) / (EJECT + REFILL), 1);
+            label = "REFILLING";
+          }
+          // head glides back to centre after the last pass
+          headX = (W / 2) * ease(Math.min(after / 600, 1));
+        }
+
+        page.setAttribute("transform", `translate(${PAGE_X} ${SLOT - fed - lift})`);
+        page.style.opacity = opacity;
+        carriage.setAttribute("transform", `translate(${PAGE_X + headX} 0)`);
+        inks.forEach((r, k) => {
+          const h = TANK_H * (FULL - DRAIN[k] * ink);
+          r.setAttribute("y", TANK_TOP + TANK_H - h);
+          r.setAttribute("height", h);
+        });
+        if (screen.textContent !== label) screen.textContent = label;
+        led.setAttribute("fill", printing && Math.floor(t / 300) % 2 ? "#14532d" : "#22c55e");
+        svg.classList.toggle("flowing", printing || label === "REFILLING");
+      }
+
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        render(PRINT + 1); // show the finished page, no motion
+        return;
+      }
+
+      let visible = true, clock = 0, last = null;
+      new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(svg);
+      (function frame(ts) {
+        if (visible && last !== null) clock += Math.min(ts - last, 100);
+        last = ts;
+        if (visible) render(clock % CYCLE);
+        requestAnimationFrame(frame);
+      })(performance.now());
+    })();
+
+    // ---- Category cards print in when scrolled into view ----
+    (() => {
+      const cards = document.querySelectorAll(".cat");
+      cards.forEach((c, i) => c.style.setProperty("--i", i));
+      const printAll = () => cards.forEach((c) => c.classList.add("printed"));
+      if (!("IntersectionObserver" in window)) return printAll();
+      // observe the grid, not the cards: a fully clipped card never reports as intersecting
+      const grid = document.querySelector(".cats");
+      const io = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) { printAll(); io.disconnect(); }
+      }, { threshold: 0.2 });
+      io.observe(grid);
+    })();
   </script>
 </body>
 </html>
