@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CISS Solutions | Coming Soon</title>
+  <meta name="description" content="CISS Solutions online store is coming soon. Printers, continuous ink supply systems, ink, toner and tech accessories, all in one place." />
+  <link rel="icon" href="assets/logo.webp" type="image/webp" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --ink: #161a22;
+      --muted: #5b6272;
+      --line: #e4e7ee;
+      --blue: #0057b8;
+      --blue-bright: #0a8fe0;
+      --cyan: #00aeef;
+      --magenta: #e5007e;
+      --yellow: #ffd400;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* CMYK ink stripe: the brand's signature */
+    .ink-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      height: 6px;
+    }
+    .ink-bar span:nth-child(1) { background: var(--cyan); }
+    .ink-bar span:nth-child(2) { background: var(--magenta); }
+    .ink-bar span:nth-child(3) { background: var(--yellow); }
+    .ink-bar span:nth-child(4) { background: var(--ink); }
+
+    .wrap {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    header .wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 20px;
+      padding-bottom: 20px;
+    }
+
+    /* source logo is a 1254px square with padding; crop to the mark (~1115x570 at x70,y335) */
+    .brand {
+      display: block;
+      width: 170px;
+      aspect-ratio: 1115 / 570;
+      overflow: hidden;
+    }
+    .brand img {
+      display: block;
+      width: 112.47%;
+      height: auto;
+      margin-left: -6.28%;
+      margin-top: -30.04%;
+      /* logo has an off-white background; multiply blends it into the page */
+      mix-blend-mode: multiply;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.25);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.25); }
+      50% { box-shadow: 0 0 0 6px rgba(255, 212, 0, 0.08); }
+    }
+
+    main { flex: 1; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 56px;
+      align-items: center;
+      padding: 56px 0 72px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-family: "Sora", sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.4rem, 5.2vw, 4rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 22px;
+    }
+    h1 .accent {
+      background: linear-gradient(90deg, var(--blue) 0%, var(--blue-bright) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .lead {
+      font-size: 1.125rem;
+      color: var(--muted);
+      max-width: 34em;
+      margin-bottom: 32px;
+    }
+
+    .notify {
+      display: flex;
+      gap: 10px;
+      max-width: 480px;
+    }
+    .notify input {
+      flex: 1;
+      min-width: 0;
+      font: inherit;
+      font-size: 1rem;
+      padding: 14px 16px;
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--ink);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .notify input:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(0, 87, 184, 0.12);
+    }
+    .notify button {
+      font: inherit;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 14px 22px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--blue);
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    .notify button:hover { background: #004a9c; }
+    .notify button:active { transform: scale(0.97); }
+
+    .form-note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 12px;
+      min-height: 1.4em;
+    }
+    .form-note.success { color: #0a7d3b; font-weight: 500; }
+    .form-note.error { color: #c0261d; font-weight: 500; }
+
+    /* Printer illustration */
+    .visual {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      max-width: 440px;
+      width: 100%;
+      justify-self: end;
+    }
+    .visual svg { width: 100%; height: 100%; display: block; }
+
+    .paper { animation: feed 3.6s cubic-bezier(0.45, 0, 0.2, 1) infinite; }
+    @keyframes feed {
+      0% { transform: translateY(-40px); opacity: 0; }
+      15% { opacity: 1; }
+      70% { transform: translateY(58px); opacity: 1; }
+      100% { transform: translateY(58px); opacity: 0; }
+    }
+    .print-line { transform-origin: left; animation: printline 3.6s ease-out infinite; }
+    .print-line:nth-of-type(2) { animation-delay: 0.15s; }
+    .print-line:nth-of-type(3) { animation-delay: 0.3s; }
+    .print-line:nth-of-type(4) { animation-delay: 0.45s; }
+    @keyframes printline {
+      0%, 20% { transform: scaleX(0); }
+      60%, 100% { transform: scaleX(1); }
+    }
+
+    /* Categories */
+    .section-title {
+      font-family: "Sora", sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .section-sub {
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .cats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding-bottom: 80px;
+    }
+    .cat {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cat::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--c);
+    }
+    .cat .icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: color-mix(in srgb, var(--c) 14%, transparent);
+      color: var(--c-ink, var(--c));
+      margin-bottom: 16px;
+    }
+    .cat h3 {
+      font-family: "Sora", sans-serif;
+      font-size: 1.02rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .cat p {
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+    }
+    footer .wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-top: 22px;
+      padding-bottom: 22px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+    footer strong { color: var(--ink); font-weight: 600; }
+
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .cats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 820px) {
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        padding: 32px 0 56px;
+        text-align: center;
+      }
+      .lead { margin-left: auto; margin-right: auto; }
+      .notify { margin: 0 auto; }
+      .visual { justify-self: center; max-width: 300px; order: -1; }
+    }
+    @media (max-width: 520px) {
+      .wrap { padding: 0 16px; }
+      .brand { width: 130px; }
+      .notify { flex-direction: column; }
+      .cats { grid-template-columns: 1fr; }
+      footer .wrap { justify-content: center; text-align: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .paper, .print-line, .status::before { animation: none; }
+      .print-line { transform: scaleX(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="ink-bar" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+  <header>
+    <div class="wrap">
+      <a class="brand" href="/" aria-label="CISS Solutions home">
+        <img src="assets/logo.webp" alt="CISS Solutions" width="1254" height="1254" />
+      </a>
+      <span class="status">Store under construction</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Online store · Coming soon</span>
+          <h1>Printing made simple, <span class="accent">shopping made easier.</span></h1>
+          <p class="lead">
+            We're building the CISS Solutions online store: printers, continuous ink supply systems,
+            ink, toner and tech accessories, all in one place. Leave your email and we'll let you know the day we open.
+          </p>
+
+          <form class="notify" id="notify-form" novalidate>
+            <label for="email" class="sr-only">Email address</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+            <button type="submit">Notify me</button>
+          </form>
+          <p class="form-note" id="form-note" aria-live="polite">No spam, just one email when we launch.</p>
+        </div>
+
+        <div class="visual" aria-hidden="true">
+          <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g-blue" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#0a8fe0" />
+                <stop offset="1" stop-color="#0057b8" />
+              </linearGradient>
+              <clipPath id="out-slot"><rect x="96" y="232" width="208" height="150" /></clipPath>
+            </defs>
+
+            <!-- soft backdrop -->
+            <circle cx="200" cy="200" r="180" fill="#eef4fc" />
+            <circle cx="330" cy="92" r="14" fill="#00aeef" opacity="0.9" />
+            <circle cx="72" cy="120" r="10" fill="#e5007e" opacity="0.9" />
+            <circle cx="92" cy="316" r="8" fill="#ffd400" />
+
+            <!-- paper tray -->
+            <path d="M130 96 h140 l14 28 h-168 z" fill="#ffffff" stroke="#161a22" stroke-width="6" stroke-linejoin="round" />
+
+            <!-- printer body -->
+            <rect x="72" y="120" width="256" height="116" rx="18" fill="#161a22" />
+            <rect x="72" y="120" width="256" height="18" rx="9" fill="url(#g-blue)" />
+            <rect x="96" y="218" width="208" height="14" rx="7" fill="#2a303c" />
+
+            <!-- status lights -->
+            <circle cx="282" cy="170" r="6" fill="#00aeef" />
+            <circle cx="302" cy="170" r="6" fill="#ffd400" />
+
+            <!-- CISS ink tanks -->
+            <g>
+              <rect x="100" y="156" width="18" height="44" rx="4" fill="#ffffff" opacity="0.12" />
+              <rect x="100" y="170" width="18" height="30" rx="4" fill="#00aeef" />
+              <rect x="126" y="156" width="18" height="44" rx="4" fill="#ffffff" opacity="0.12" />
+              <rect x="126" y="176" width="18" height="24" rx="4" fill="#e5007e" />
+              <rect x="152" y="156" width="18" height="44" rx="4" fill="#ffffff" opacity="0.12" />
+              <rect x="152" y="166" width="18" height="34" rx="4" fill="#ffd400" />
+              <rect x="178" y="156" width="18" height="44" rx="4" fill="#ffffff" opacity="0.12" />
+              <rect x="178" y="172" width="18" height="28" rx="4" fill="#6b7280" />
+            </g>
+
+            <!-- printed page -->
+            <g clip-path="url(#out-slot)">
+              <g class="paper">
+                <rect x="124" y="224" width="152" height="110" rx="4" fill="#ffffff" stroke="#dfe3ea" stroke-width="2" />
+                <rect class="print-line" x="140" y="244" width="90" height="10" rx="5" fill="#0057b8" />
+                <rect class="print-line" x="140" y="264" width="120" height="7" rx="3.5" fill="#00aeef" />
+                <rect class="print-line" x="140" y="280" width="104" height="7" rx="3.5" fill="#e5007e" />
+                <rect class="print-line" x="140" y="296" width="80" height="7" rx="3.5" fill="#ffd400" />
+              </g>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <section aria-labelledby="cats-title">
+        <h2 class="section-title" id="cats-title">What you'll find in the store</h2>
+        <p class="section-sub">Everything your home or office printer needs, at fair prices.</p>
+
+        <div class="cats">
+          <article class="cat" style="--c: var(--blue);">
+            <div class="icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            </div>
+            <h3>Printers</h3>
+            <p>Ink tank and CISS-ready printers for home, school and business.</p>
+          </article>
+
+          <article class="cat" style="--c: var(--cyan); --c-ink: #0079a8;">
+            <div class="icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7s6 6.3 6 11.3a6 6 0 0 1-12 0c0-5 6-11.3 6-11.3z"/></svg>
+            </div>
+            <h3>Ink &amp; CISS kits</h3>
+            <p>Refill inks and continuous ink supply systems that cut printing costs.</p>
+          </article>
+
+          <article class="cat" style="--c: var(--magenta);">
+            <div class="icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7V5h10v2"/><path d="M7 12h4"/></svg>
+            </div>
+            <h3>Toner &amp; cartridges</h3>
+            <p>Genuine and compatible cartridges for all major printer brands.</p>
+          </article>
+
+          <article class="cat" style="--c: var(--yellow); --c-ink: #8a6d00;">
+            <div class="icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>
+            </div>
+            <h3>Parts &amp; repairs</h3>
+            <p>Printheads, spare parts and expert servicing to keep you printing.</p>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>&copy; <span id="year">2026</span> <strong>CISS Solutions</strong>. All rights reserved.</span>
+      <span>Our online store is on its way.</span>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const form = document.getElementById("notify-form");
+    const input = document.getElementById("email");
+    const note = document.getElementById("form-note");
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = input.value.trim();
+      const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+      if (!valid) {
+        note.textContent = "Please enter a valid email address.";
+        note.className = "form-note error";
+        input.focus();
+        return;
+      }
+
+      // TODO: connect to an email service (e.g. Mailchimp, Formspree) to actually store sign-ups.
+      note.textContent = "Thanks! We'll email you as soon as the store opens.";
+      note.className = "form-note success";
+      form.reset();
+    });
+  </script>
+</body>
+</html>
