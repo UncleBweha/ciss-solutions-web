@@ -12,7 +12,8 @@ PORT="${2:-8080}"
 SSH=(ssh)
 if [ -n "${3:-}" ]; then SSH+=(-i "$3"); fi
 
-cd "$(dirname "$0")/.."
+HERE="$(cd "$(dirname "$0")" && pwd)"
+cd "$HERE/.."
 
 echo "Deploying to $TARGET on port $PORT ..."
 tar -czf - index.html assets | "${SSH[@]}" "$TARGET" "set -e
@@ -27,4 +28,8 @@ tar -czf - index.html assets | "${SSH[@]}" "$TARGET" "set -e
   [ -n \"\$NET\" ] && docker network connect \"\$NET\" ciss-solutions && echo \"Joined network \$NET\"
   docker ps --filter name=ciss-solutions --format '{{.Names}}  {{.Status}}  {{.Ports}}'"
 
-echo "Done. Visit http://${TARGET#*@}:$PORT"
+# Re-add the Caddy route every deploy: a toolsman redeploy rewrites its Caddyfile
+# and drops our block. caddy-add.sh is idempotent.
+bash "$HERE/caddy-add.sh" "$TARGET" ${3:+"$3"}
+
+echo "Done. Live at https://cisssolutions.co.ke"
