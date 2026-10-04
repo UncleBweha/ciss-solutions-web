@@ -1054,3 +1054,11 @@ grant execute on function public.confirm_payment(uuid, text, numeric, jsonb, uui
 grant execute on function public.update_order_status(uuid, public.order_status, text) to authenticated, service_role;
 grant execute on function public.adjust_stock(uuid, uuid, int, public.inventory_reason, text, text) to authenticated, service_role;
 grant execute on function public.admin_dashboard_stats(int) to authenticated, service_role;
+
+-- Active product counts per category (subtree totals are summed in the app).
+create view public.category_product_counts with (security_invoker = on) as
+  select category_id, count(*)::int as product_count
+    from public.products
+   where status = 'active' and category_id is not null
+   group by category_id;
+grant select on public.category_product_counts to anon, authenticated;
