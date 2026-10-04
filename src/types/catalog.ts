@@ -90,7 +90,7 @@ export type ProductDetail = Omit<
   images: ProductImage[]
   variants: ProductVariant[]
   compatibility: CompatibleModel[]
-  printerModel: Pick<PrinterModel, 'id' | 'name' | 'model_number'> | null
+  printerModel: Pick<PrinterModel, 'id' | 'name' | 'model_number' | 'slug'> | null
   reviews: Review[]
 }
 

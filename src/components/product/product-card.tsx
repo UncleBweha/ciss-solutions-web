@@ -56,9 +56,24 @@ export function ProductCard({ product, priority, className }: { product: Product
   )
 }
 
-export function ProductGrid({ products, priorityCount = 0, className }: { products: ProductCardData[]; priorityCount?: number; className?: string }) {
+const gridColumns = {
+  wide: 'md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+  sidebar: 'md:grid-cols-3 xl:grid-cols-4',
+}
+
+export function ProductGrid({
+  products,
+  priorityCount = 0,
+  layout = 'wide',
+  className,
+}: {
+  products: ProductCardData[]
+  priorityCount?: number
+  layout?: keyof typeof gridColumns
+  className?: string
+}) {
   return (
-    <div className={cn('grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5', className)}>
+    <div className={cn('grid grid-cols-2 gap-3 sm:gap-4', gridColumns[layout], className)}>
       {products.map((p, i) => (
         <ProductCard key={p.id} product={p} priority={i < priorityCount} />
       ))}

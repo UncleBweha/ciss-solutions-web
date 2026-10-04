@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
  */
 export function Logo({ className, priority }: { className?: string; priority?: boolean }) {
   return (
-    <Link href="/" aria-label="CISS Solutions home" className={cn('block shrink-0 rounded-xl bg-[#fbfbfb] px-2 py-1 shadow-sm', className)}>
+    <Link href="/" aria-label="CISS Solutions home" className={cn('block w-fit shrink-0 rounded-xl bg-[#fbfbfb] px-2 py-1 shadow-sm', className)}>
       <span className="relative block aspect-[1115/570] w-[92px] overflow-hidden sm:w-[108px]">
         <Image
           src="/logo.webp"

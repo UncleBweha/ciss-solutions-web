@@ -75,3 +75,20 @@ describe('Kenyan phone numbers', () => {
     expect(maskPhone('254712345678')).toBe('0712 *** 678')
   })
 })
+
+import { parseCatalogParams, withParams } from '@/lib/catalog-params'
+
+describe('catalogue URL params', () => {
+  it('parses filters from the URL', () => {
+    expect(
+      parseCatalogParams({ category: 'printers', brand: 'epson,hp', sort: 'price-asc', min: '1000', max: 'abc', stock: '1', type: 'printer,bogus', page: '2' }),
+    ).toMatchObject({ category: 'printers', brands: ['epson', 'hp'], sort: 'price-asc', minPrice: 1000, maxPrice: undefined, inStock: true, types: ['printer'], page: 2 })
+  })
+  it('defaults to relevance when searching and ignores unknown sorts', () => {
+    expect(parseCatalogParams({ q: 'L3250', sort: 'drop table' }).sort).toBe('relevance')
+    expect(parseCatalogParams({}).sort).toBe('featured')
+  })
+  it('builds URLs that keep other params and reset as asked', () => {
+    expect(withParams('/shop', { brand: 'epson', page: '3' }, { sort: 'newest', page: undefined })).toBe('/shop?brand=epson&sort=newest')
+  })
+})
