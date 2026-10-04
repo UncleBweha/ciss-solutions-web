@@ -5,13 +5,19 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "postbuild": "node scripts/copy-standalone.mjs",
+    "start": "node .next/standalone/server.js",
+    "start:next": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:db": "supabase db reset && psql \"postgresql://postgres:postgres@127.0.0.1:54322/postgres\" -v ON_ERROR_STOP=1 -q -f tests/db/order_lifecycle.sql -f tests/db/rls.sql",
     "test:e2e": "playwright test",
-    "db:types": "supabase gen types typescript --local > src/types/database.ts"
+    "db:types": "supabase gen types typescript --local > src/types/database.ts",
+    "db:seed:generate": "node scripts/seed/images.mjs && node scripts/seed/generate.mjs",
+    "check": "npm run lint && npm run typecheck && npm run test:unit && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -38,5 +44,8 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=20.9"
   }
 }
