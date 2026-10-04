@@ -47,3 +47,16 @@ insert into public.settings (key, value, is_public) values
   'body', E'Warranty terms depend on the product and manufacturer. Where a product has a warranty, the period is shown in its specifications.\n\nIf you have a problem with a product, please [contact us](/contact) with your order number.'
 ), true)
 on conflict (key) do nothing;
+
+-- Product counts for admin lists (all statuses; RLS limits rows to what the viewer may see).
+create view public.product_counts_by_category with (security_invoker = on) as
+  select category_id, count(*)::int as product_count from public.products where category_id is not null group by category_id;
+create view public.product_counts_by_brand with (security_invoker = on) as
+  select brand_id, count(*)::int as product_count from public.products where brand_id is not null group by brand_id;
+create view public.compatibility_counts with (security_invoker = on) as
+  select printer_model_id, count(*)::int as product_count from public.product_compatibility group by printer_model_id;
+grant select on public.product_counts_by_category, public.product_counts_by_brand, public.compatibility_counts to authenticated;
+create view public.inventory_totals with (security_invoker = on) as
+  select coalesce(sum(stock_quantity), 0)::int as stock, coalesce(sum(reserved_quantity), 0)::int as reserved, count(*)::int as skus
+    from public.inventory;
+grant select on public.inventory_totals to authenticated;

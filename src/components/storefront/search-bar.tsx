@@ -31,10 +31,7 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
 
   useEffect(() => {
     const q = query.trim()
-    if (q.length < 2) {
-      setData(null)
-      return
-    }
+    if (q.length < 2) return
     const controller = new AbortController()
     const timer = setTimeout(async () => {
       setLoading(true)
@@ -64,7 +61,8 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
     return () => document.removeEventListener('mousedown', close)
   }, [])
 
-  const items = data?.items ?? []
+  const visible = query.trim().length >= 2 ? data : null
+  const items = visible?.items ?? []
   const go = (href: string) => {
     setOpen(false)
     onNavigate?.()
@@ -124,7 +122,7 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
         </div>
       </form>
 
-      {open && query.trim().length >= 2 && data ? (
+      {open && visible ? (
         <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-background-secondary/98 shadow-[var(--shadow-lift)] backdrop-blur-xl">
           {items.length === 0 ? (
             <p className="px-4 py-5 text-sm text-fg-secondary">
@@ -155,9 +153,9 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
                   </li>
                 ))}
               </ul>
-              {data.categories.length ? (
+              {visible.categories.length ? (
                 <div className="flex flex-wrap gap-2 border-t border-border px-4 py-3">
-                  {data.categories.map((c) => (
+                  {visible.categories.map((c) => (
                     <Link key={c.href} href={c.href} onClick={() => setOpen(false)} className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-fg-secondary hover:text-fg">
                       {c.name}
                     </Link>
@@ -165,7 +163,7 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
                 </div>
               ) : null}
               <button type="button" onClick={submit} className="block w-full border-t border-border px-4 py-3 text-left text-sm font-semibold text-primary-light hover:bg-surface">
-                View all {data.total} results →
+                View all {visible.total} results →
               </button>
             </>
           )}

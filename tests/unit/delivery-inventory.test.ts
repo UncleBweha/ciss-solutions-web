@@ -92,3 +92,40 @@ describe('catalogue URL params', () => {
     expect(withParams('/shop', { brand: 'epson', page: '3' }, { sort: 'newest', page: undefined })).toBe('/shop?brand=epson&sort=newest')
   })
 })
+
+import { csvRowSchema, parseCsv, productSchema } from '@/lib/validation/product'
+
+describe('product CSV import', () => {
+  it('parses quoted fields, escaped quotes and embedded newlines', () => {
+    const rows = parseCsv('name,sku,price\n"Epson L3250, Wi-Fi",EPS-1,32999\n"Toner ""59A""","HP-59A","14500"\r\n"Line\nbreak",X,1\n')
+    expect(rows).toEqual([
+      ['name', 'sku', 'price'],
+      ['Epson L3250, Wi-Fi', 'EPS-1', '32999'],
+      ['Toner "59A"', 'HP-59A', '14500'],
+      ['Line\nbreak', 'X', '1'],
+    ])
+  })
+  it('validates rows', () => {
+    expect(csvRowSchema.safeParse({ name: 'Roller', sku: 'R-1', price: '2500', stock: '10' }).success).toBe(true)
+    const bad = csvRowSchema.safeParse({ name: 'X', sku: '', price: 'abc', product_type: 'robot' })
+    expect(bad.success).toBe(false)
+  })
+})
+
+describe('product validation', () => {
+  const base = {
+    name: 'Test printer', slug: 'test-printer', sku: 'T-1', brandId: '', categoryId: '', printerModelId: '', productType: 'printer', status: 'active',
+    price: '1000', compareAtPrice: '', costPrice: '', lowStockThreshold: '3', isFeatured: false, isBestseller: false, isNew: false, isOnSale: false,
+    specifications: [], features: [], whatsIncluded: [], compatibility: [], variants: [],
+  } as const
+  it('accepts a valid product', () => {
+    expect(productSchema.safeParse(base).success).toBe(true)
+  })
+  it('rejects compare-at price at or below the price and duplicate variant SKUs', () => {
+    expect(productSchema.safeParse({ ...base, compareAtPrice: '900' }).success).toBe(false)
+    expect(productSchema.safeParse({ ...base, variants: [{ name: 'A', sku: 't-1', price: '1' }] }).success).toBe(false)
+  })
+  it('rejects bad slugs', () => {
+    expect(productSchema.safeParse({ ...base, slug: 'Bad Slug!' }).success).toBe(false)
+  })
+})

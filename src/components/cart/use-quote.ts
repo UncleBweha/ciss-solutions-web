@@ -13,14 +13,10 @@ export function useQuote(options: { county?: string | null; couponCode?: string 
   const key = JSON.stringify([items.map((i) => [i.productId, i.variantId, i.quantity]), options.county, options.couponCode])
 
   useEffect(() => {
-    if (!ready) return
-    if (!items.length) {
-      setQuote(null)
-      return
-    }
+    if (!ready || !items.length) return
     const id = ++seq.current
-    setLoading(true)
     const t = setTimeout(async () => {
+      setLoading(true)
       try {
         const q = await quoteCartAction(
           items.map(({ productId, variantId, quantity }) => ({ productId, variantId, quantity })),
@@ -48,5 +44,6 @@ export function useQuote(options: { county?: string | null; couponCode?: string 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, ready])
 
-  return { quote, loading }
+  // An empty cart has no quote (derived, not stored).
+  return { quote: items.length ? quote : null, loading: items.length ? loading : false }
 }

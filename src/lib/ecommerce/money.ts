@@ -17,7 +17,8 @@ const formatterCents = new Intl.NumberFormat('en-KE', { minimumFractionDigits: 2
 export function formatKES(amount: number | string | null | undefined): string {
   const value = Number(amount ?? 0)
   const whole = Number.isInteger(Math.round(value * 100) / 100) && Math.round(value * 100) % 100 === 0
-  return `KSh ${(whole ? formatter : formatterCents).format(value)}`
+  // Non-breaking space keeps "KSh" and the amount on one line.
+  return `KSh\u00a0${(whole ? formatter : formatterCents).format(value)}`
 }
 
 export function discountPercent(price: number, compareAt: number | null | undefined): number {

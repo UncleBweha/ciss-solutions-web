@@ -60,6 +60,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const localCart = load<CartLine[]>(CART_KEY, [])
     const localWishlist = load<string[]>(WISHLIST_KEY, [])
+    // Hydrate from localStorage after mount: reading it during render would make
+    // the server and client HTML differ.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(localCart)
     setWishlist(new Set(localWishlist))
     setReady(true)

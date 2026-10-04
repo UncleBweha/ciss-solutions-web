@@ -695,6 +695,19 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"compatibility_counts": {
+                  Row: {
+                    "printer_model_id": string | null,"product_count": number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_compatibility_printer_model_id_fkey"
+      columns: ["printer_model_id"]
+isOneToOne: false
+      referencedRelation: "printer_models"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"customers": {
                   Row: {
                     "created_at": string | null,"email": string | null,"full_name": string | null,"id": string | null,"last_order_at": string | null,"orders_count": number | null,"phone": string | null,"total_spent": number | null
@@ -705,6 +718,13 @@ isOneToOne: false
                 },"inventory": {
                   Row: {
                     "available_quantity": number | null,"is_low_stock": boolean | null,"low_stock_threshold": number | null,"name": string | null,"product_id": string | null,"reserved_quantity": number | null,"sku": string | null,"status": Database["public"]['Enums']["product_status"] | null,"stock_quantity": number | null,"variant_id": string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"inventory_totals": {
+                  Row: {
+                    "reserved": number | null,"skus": number | null,"stock": number | null
                   }
                   Relationships: [
                     
@@ -721,6 +741,32 @@ isOneToOne: false
       referencedRelation: "brands"
       referencedColumns: ["id"]
     },{
+      foreignKeyName: "products_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "categories"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_counts_by_brand": {
+                  Row: {
+                    "brand_id": string | null,"product_count": number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "products_brand_id_fkey"
+      columns: ["brand_id"]
+isOneToOne: false
+      referencedRelation: "brands"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_counts_by_category": {
+                  Row: {
+                    "category_id": string | null,"product_count": number | null
+                  }
+                  Relationships: [
+                    {
       foreignKeyName: "products_category_id_fkey"
       columns: ["category_id"]
 isOneToOne: false

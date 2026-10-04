@@ -1,13 +1,21 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { RefreshCw, ServerCrash, WifiOff } from 'lucide-react'
 import { Button, buttonClass } from '@/components/ui/button'
 
+function subscribeOnline(callback: () => void) {
+  window.addEventListener('online', callback)
+  window.addEventListener('offline', callback)
+  return () => {
+    window.removeEventListener('online', callback)
+    window.removeEventListener('offline', callback)
+  }
+}
+
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  const [offline, setOffline] = useState(false)
+  const offline = useSyncExternalStore(subscribeOnline, () => !navigator.onLine, () => false)
   useEffect(() => {
-    setOffline(typeof navigator !== 'undefined' && !navigator.onLine)
     console.error(error)
   }, [error])
   const Icon = offline ? WifiOff : ServerCrash
