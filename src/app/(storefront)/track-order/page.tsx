@@ -16,10 +16,10 @@ export default async function TrackOrderPage({ searchParams }: PageProps<'/track
     <div className="container-page max-w-xl py-10">
       <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Track order', href: '/track-order' }]} />
       <div className="glass mt-6 rounded-[var(--radius-card)] p-6 sm:p-8">
-        <span className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-primary-light">
+        <span className="mb-4 grid h-14 w-14 place-items-center rounded-[var(--radius-card)] bg-primary/15 text-primary-light">
           <PackageSearch className="h-7 w-7" aria-hidden="true" />
         </span>
-        <h1 className="text-2xl font-extrabold sm:text-3xl">Track your order</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">Track your order</h1>
         <p className="mt-2 text-fg-secondary">Enter your order number (e.g. CISS-20261004-0012) and the phone number you used at checkout.</p>
         <TrackOrderForm defaultOrder={param(sp.order) ?? ''} />
       </div>

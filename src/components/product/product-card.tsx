@@ -7,11 +7,11 @@ import { AddToCartButton, WishlistButton } from './product-card-actions'
 import { ProductImage } from './product-image'
 
 function badgeFor(p: ProductCardData): { label: string; tone: string } | null {
-  if (p.available_quantity > 0 && p.available_quantity <= p.low_stock_threshold) return { label: 'Limited stock', tone: 'bg-warning text-background' }
-  if (p.is_bestseller) return { label: 'Best Seller', tone: 'bg-primary-strong text-white' }
+  if (p.available_quantity > 0 && p.available_quantity <= p.low_stock_threshold) return { label: 'Limited stock', tone: 'bg-amber-300 text-background' }
+  if (p.is_bestseller) return { label: 'Best seller', tone: 'bg-background text-white' }
   if (p.is_new) return { label: 'New', tone: 'bg-accent-strong text-white' }
-  if (p.discount_percent > 0 || p.is_on_sale) return { label: 'On Sale', tone: 'bg-danger-strong text-white' }
-  if (p.is_featured) return { label: 'Popular', tone: 'bg-white text-background' }
+  if (p.discount_percent > 0 || p.is_on_sale) return { label: 'On sale', tone: 'bg-background text-white' }
+  if (p.is_featured) return { label: 'Popular', tone: 'bg-background text-white' }
   return null
 }
 
@@ -19,7 +19,7 @@ export function ProductCard({ product, priority, className }: { product: Product
   const badge = badgeFor(product)
   const href = `/p/${product.slug}`
   return (
-    <article className={cn('glass-flat group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-border-strong hover:shadow-[var(--shadow-lift)]', className)}>
+    <article className={cn('glass-flat group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] transition-colors duration-200 hover:border-border-strong', className)}>
       <div className="product-stage relative aspect-square">
         <Link href={href} tabIndex={-1} aria-hidden="true" className="absolute inset-0">
           <ProductImage
@@ -28,18 +28,18 @@ export function ProductCard({ product, priority, className }: { product: Product
             fill
             priority={priority}
             sizes="(min-width: 1280px) 20vw, (min-width: 768px) 30vw, 50vw"
-            className="object-contain p-5 transition-transform duration-500 group-hover:scale-105 sm:p-7"
+            className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03] sm:p-7"
           />
         </Link>
         <div className="pointer-events-none absolute left-3 top-3 flex flex-col items-start gap-1.5">
-          {badge ? <span className={cn('rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide', badge.tone)}>{badge.label}</span> : null}
+          {badge ? <span className={cn('label-mono rounded-sm px-1.5 py-0.5 text-[10px] font-semibold', badge.tone)}>{badge.label}</span> : null}
           <DiscountBadge price={product.price} compareAt={product.compare_at_price} />
         </div>
         <WishlistButton productId={product.id} name={product.name} className="absolute right-3 top-3" />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3.5 sm:p-4">
-        {product.brand_name ? <p className="text-xs font-semibold uppercase tracking-wider text-primary-light">{product.brand_name}</p> : null}
-        <h3 className="line-clamp-2 text-sm font-bold leading-snug sm:text-[15px]">
+        {product.brand_name ? <p className="label-mono text-[11px] text-fg-muted">{product.brand_name}</p> : null}
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug sm:text-[15px]">
           <Link href={href} className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none">
             {product.name}
           </Link>
@@ -91,7 +91,7 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
             <div className="skeleton h-3 w-1/3 rounded" />
             <div className="skeleton h-4 w-full rounded" />
             <div className="skeleton h-4 w-2/3 rounded" />
-            <div className="skeleton mt-4 h-10 w-full rounded-xl" />
+            <div className="skeleton mt-4 h-10 w-full rounded-md" />
           </div>
         </div>
       ))}

@@ -217,7 +217,7 @@ export function CheckoutForm({
                           setValue('instructions', a.instructions ?? '')
                           setValue('saveAddress', false)
                         }}
-                        className="rounded-xl border border-border p-3 text-left text-sm hover:border-primary/60"
+                        className="rounded-md border border-border p-3 text-left text-sm hover:border-primary/60"
                       >
                         <span className="font-semibold">{a.town}, {a.county}</span>
                         <span className="block text-fg-muted">{a.address_line}</span>
@@ -248,7 +248,7 @@ export function CheckoutForm({
                 </Field>
               </div>
               {zoneForCounty ? (
-                <p className="rounded-xl bg-primary/10 px-4 py-3 text-sm text-sky-100">
+                <p className="rounded-md bg-primary/10 px-4 py-3 text-sm text-sky-100">
                   <strong>{zoneForCounty.name}</strong> delivery: {zoneForCounty.estimate} · {zoneForCounty.fee ? formatKES(zoneForCounty.fee) : 'Free'}
                   {zoneForCounty.freeOver ? ` (free over ${formatKES(zoneForCounty.freeOver)})` : ''}
                 </p>
@@ -302,7 +302,7 @@ export function CheckoutForm({
                 </Field>
               ) : null}
               {method === 'bank_transfer' ? (
-                <div className="rounded-xl border border-border p-4 text-sm text-fg-secondary">
+                <div className="rounded-md border border-border p-4 text-sm text-fg-secondary">
                   <p className="font-semibold text-fg">Bank details are shown after you place the order.</p>
                   <p className="mt-1">{bank.instructions}</p>
                 </div>
@@ -417,7 +417,7 @@ function PaymentOption({
   return (
     <label
       className={cn(
-        'flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-colors',
+        'flex cursor-pointer items-center gap-4 rounded-md border p-4 transition-colors',
         checked ? 'border-primary bg-primary/10' : 'border-border hover:border-border-strong',
         disabled && 'cursor-not-allowed opacity-50',
       )}

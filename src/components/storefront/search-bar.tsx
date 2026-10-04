@@ -123,7 +123,7 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
       </form>
 
       {open && visible ? (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-background-secondary/98 shadow-[var(--shadow-lift)] backdrop-blur-xl">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[var(--radius-card)] border border-border bg-background-secondary/98 shadow-[var(--shadow-lift)] backdrop-blur-xl">
           {items.length === 0 ? (
             <p className="px-4 py-5 text-sm text-fg-secondary">
               No products match “{query.trim()}”. Try a model number like <span className="font-semibold">L3250</span> or a part number.
@@ -156,7 +156,7 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
               {visible.categories.length ? (
                 <div className="flex flex-wrap gap-2 border-t border-border px-4 py-3">
                   {visible.categories.map((c) => (
-                    <Link key={c.href} href={c.href} onClick={() => setOpen(false)} className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-fg-secondary hover:text-fg">
+                    <Link key={c.href} href={c.href} onClick={() => setOpen(false)} className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-fg-secondary hover:text-fg">
                       {c.name}
                     </Link>
                   ))}

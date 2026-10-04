@@ -24,7 +24,7 @@ export default async function SearchPage({ searchParams }: PageProps<'/search'>)
   return (
     <div className="container-page py-8">
       <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Search', href: '/search' }]} />
-      <h1 className="mb-6 mt-3 text-3xl font-extrabold sm:text-4xl">{q ? <>Results for “{q}”</> : 'Search products'}</h1>
+      <h1 className="mb-6 mt-3 text-3xl font-bold sm:text-4xl">{q ? <>Results for “{q}”</> : 'Search products'}</h1>
       <SearchBar className="mb-8 max-w-2xl md:hidden" />
       {result ? (
         <>

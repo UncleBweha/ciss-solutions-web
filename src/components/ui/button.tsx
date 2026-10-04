@@ -7,19 +7,19 @@ type Size = 'sm' | 'md' | 'lg' | 'icon'
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-primary-strong text-white shadow-[0_8px_24px_-8px_rgba(22,140,255,0.7)] hover:bg-primary-strong-hover disabled:bg-primary-strong/50',
+    'bg-primary-strong text-white hover:bg-primary-strong-hover disabled:bg-primary-strong/50',
   secondary: 'bg-white text-background hover:bg-white/90 disabled:bg-white/50',
-  glass: 'glass-flat text-fg hover:bg-surface-hover hover:border-border-strong',
+  glass: 'border border-border-strong bg-transparent text-fg hover:bg-surface',
   ghost: 'text-fg-secondary hover:text-fg hover:bg-surface',
   danger: 'bg-danger-strong text-white hover:bg-red-700',
   success: 'bg-green-700 text-white hover:bg-green-800',
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-9 px-3 text-sm gap-1.5 rounded-lg',
-  md: 'h-11 px-5 text-sm gap-2 rounded-xl',
-  lg: 'h-13 px-7 text-base gap-2.5 rounded-xl',
-  icon: 'h-10 w-10 rounded-xl',
+  sm: 'h-9 px-3 text-sm gap-1.5 rounded-md',
+  md: 'h-11 px-5 text-sm gap-2 rounded-md',
+  lg: 'h-12 px-6 text-base gap-2.5 rounded-md',
+  icon: 'h-10 w-10 rounded-md',
 }
 
 export function buttonClass(variant: Variant = 'primary', size: Size = 'md', className?: string) {

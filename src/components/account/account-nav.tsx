@@ -27,7 +27,7 @@ export function AccountNav({ name, staff }: { name: string; staff: boolean }) {
             href={href}
             aria-current={pathname === href ? 'page' : undefined}
             className={cn(
-              'flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold',
+              'flex shrink-0 items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold',
               pathname === href ? 'bg-primary/15 text-fg' : 'text-fg-secondary hover:bg-surface hover:text-fg',
             )}
           >
@@ -36,13 +36,13 @@ export function AccountNav({ name, staff }: { name: string; staff: boolean }) {
           </Link>
         ))}
         {staff ? (
-          <Link href="/admin" className="flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-primary-light hover:bg-surface">
+          <Link href="/admin" className="flex shrink-0 items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-primary-light hover:bg-surface">
             <Shield className="h-4 w-4" aria-hidden="true" /> Admin dashboard
           </Link>
         ) : null}
       </nav>
       <form action={signOutAction} className="mt-1 border-t border-border pt-1 lg:mt-2 lg:pt-2">
-        <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-fg-secondary hover:bg-surface hover:text-fg">
+        <button type="submit" className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-fg-secondary hover:bg-surface hover:text-fg">
           <LogOut className="h-4 w-4" aria-hidden="true" /> Sign out
         </button>
       </form>

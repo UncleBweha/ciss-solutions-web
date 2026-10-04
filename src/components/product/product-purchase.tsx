@@ -99,7 +99,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
                   aria-pressed={v.id === variantId}
                   onClick={() => setVariantId(v.id)}
                   className={cn(
-                    'rounded-xl border px-4 py-2 text-sm font-semibold transition-colors',
+                    'rounded-md border px-4 py-2 text-sm font-semibold transition-colors',
                     v.id === variantId ? 'border-primary bg-primary/15 text-fg' : 'border-border text-fg-secondary hover:border-border-strong hover:text-fg',
                     out && 'line-through opacity-60',
                   )}
@@ -170,7 +170,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
       <div className="glass fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 rounded-none border-x-0 border-b-0 bg-background/85 px-4 py-3 lg:hidden">
         <div>
           <p className="text-xs text-fg-muted">{variant ? variant.name : 'Price'}</p>
-          <p className="text-lg font-extrabold">{formatKES(price)}</p>
+          <p className="text-lg font-bold">{formatKES(price)}</p>
         </div>
         <Button
           disabled={!canBuy}

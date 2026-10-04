@@ -18,7 +18,7 @@ export default async function WishlistPage() {
   const ordered = ids.map((id) => cards.find((c) => c.id === id)).filter((c): c is NonNullable<typeof c> => Boolean(c))
   return (
     <div>
-      <h1 className="mb-6 text-3xl font-extrabold">My wishlist</h1>
+      <h1 className="mb-6 text-3xl font-bold">My wishlist</h1>
       {ordered.length ? (
         <ProductGrid products={ordered} layout="sidebar" />
       ) : (

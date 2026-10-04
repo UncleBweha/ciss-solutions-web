@@ -70,7 +70,7 @@ function Reviews({ product }: { product: ProductDetail }) {
       <div>
         {product.rating_count ? (
           <div className="mb-6 flex items-center gap-4">
-            <span className="text-4xl font-extrabold">{product.rating_avg.toFixed(1)}</span>
+            <span className="text-4xl font-bold">{product.rating_avg.toFixed(1)}</span>
             <RatingStars rating={product.rating_avg} count={product.rating_count} size="md" />
           </div>
         ) : (

@@ -15,7 +15,7 @@ export function Pagination({
   if (pageCount <= 1) return null
   const pages = new Set([1, pageCount, page - 1, page, page + 1].filter((p) => p >= 1 && p <= pageCount))
   const sorted = [...pages].sort((a, b) => a - b)
-  const item = 'grid h-10 min-w-10 place-items-center rounded-xl px-3 text-sm font-semibold transition-colors'
+  const item = 'grid h-10 min-w-10 place-items-center rounded-md px-3 text-sm font-semibold transition-colors'
   return (
     <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-1.5">
       {page > 1 ? (

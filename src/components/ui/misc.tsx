@@ -4,7 +4,7 @@ import { ChevronRight, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('skeleton rounded-xl', className)} aria-hidden="true" />
+  return <div className={cn('skeleton rounded-md', className)} aria-hidden="true" />
 }
 
 export function EmptyState({
@@ -22,7 +22,7 @@ export function EmptyState({
 }) {
   return (
     <div className={cn('glass-flat mx-auto flex max-w-xl flex-col items-center rounded-[var(--radius-card)] px-6 py-14 text-center', className)}>
-      {icon ? <div className="mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-primary/15 text-primary-light">{icon}</div> : null}
+      {icon ? <div className="mb-5 grid h-16 w-16 place-items-center rounded-[var(--radius-card)] bg-primary/15 text-primary-light">{icon}</div> : null}
       <h2 className="text-xl font-bold">{title}</h2>
       {description ? <p className="mt-2 max-w-md text-fg-secondary">{description}</p> : null}
       {action ? <div className="mt-6 flex flex-wrap justify-center gap-3">{action}</div> : null}
@@ -81,12 +81,12 @@ export function RatingStars({ rating, count, size = 'sm', showValue }: { rating:
 
 export function SectionHeading({ title, subtitle, action, id }: { title: string; subtitle?: string | null; action?: ReactNode; id?: string }) {
   return (
-    <div className="mb-6 flex items-end justify-between gap-4">
+    <div className="mb-5 flex items-end justify-between gap-4 border-b border-border pb-3">
       <div>
-        <h2 id={id} className="text-2xl font-extrabold sm:text-3xl">
+        <h2 id={id} className="text-xl font-semibold sm:text-2xl">
           {title}
         </h2>
-        {subtitle ? <p className="mt-1 text-fg-secondary">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-0.5 text-sm text-fg-muted">{subtitle}</p> : null}
       </div>
       {action}
     </div>

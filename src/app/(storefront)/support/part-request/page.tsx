@@ -16,10 +16,10 @@ export default async function PartRequestPage({ searchParams }: PageProps<'/supp
     <div className="container-page max-w-3xl py-8">
       <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Part request', href: '/support/part-request' }]} />
       <div className="glass mt-6 rounded-[var(--radius-card)] p-6 sm:p-8">
-        <span className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-primary-light">
+        <span className="mb-4 grid h-14 w-14 place-items-center rounded-[var(--radius-card)] bg-primary/15 text-primary-light">
           <Wrench className="h-7 w-7" aria-hidden="true" />
         </span>
-        <h1 className="text-2xl font-extrabold sm:text-3xl">Need help finding a part?</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">Need help finding a part?</h1>
         <p className="mb-6 mt-2 text-fg-secondary">Send us your printer model and what is wrong. A technician will confirm the right part and its price.</p>
         <PartRequestForm brand={param(sp.brand)} model={param(sp.model)} />
       </div>

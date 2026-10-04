@@ -58,7 +58,7 @@ export function MpesaPaymentStatus({
 
   if (view.state === 'paid') {
     return (
-      <div role="status" className="flex items-center gap-3 rounded-2xl border border-success/40 bg-success/10 p-4 text-green-200">
+      <div role="status" className="flex items-center gap-3 rounded-[var(--radius-card)] border border-success/40 bg-success/10 p-4 text-green-200">
         <CheckCircle2 className="h-6 w-6 shrink-0" aria-hidden="true" />
         <p className="font-semibold">Payment received. Thank you!</p>
       </div>
@@ -66,14 +66,14 @@ export function MpesaPaymentStatus({
   }
   if (view.state === 'expired') {
     return (
-      <div role="alert" className="rounded-2xl border border-danger/40 bg-danger/10 p-4 text-red-200">
+      <div role="alert" className="rounded-[var(--radius-card)] border border-danger/40 bg-danger/10 p-4 text-red-200">
         {view.message}
       </div>
     )
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-primary/40 bg-primary/10 p-5" aria-live="polite">
+    <div className="space-y-4 rounded-[var(--radius-card)] border border-primary/40 bg-primary/10 p-5" aria-live="polite">
       {view.state === 'pending' ? (
         <div className="flex items-start gap-3">
           <Loader2 className="mt-0.5 h-6 w-6 shrink-0 animate-spin text-primary-light" aria-hidden="true" />

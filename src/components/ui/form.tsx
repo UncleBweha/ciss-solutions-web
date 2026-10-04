@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 const control =
-  'w-full rounded-xl border border-border bg-white/[0.06] px-3.5 text-sm text-fg placeholder:text-fg-muted transition-colors hover:border-border-strong focus:border-primary-light focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60 aria-[invalid=true]:border-danger'
+  'w-full rounded-md border border-border bg-white/[0.06] px-3.5 text-sm text-fg placeholder:text-fg-muted transition-colors hover:border-border-strong focus:border-primary-light focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60 aria-[invalid=true]:border-danger'
 
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cn(control, 'h-11', className)} {...props} />
@@ -64,7 +64,7 @@ export function FormMessage({ tone = 'error', children }: { tone?: 'error' | 'su
     info: 'border-primary/40 bg-primary/10 text-sky-200',
   }
   return (
-    <div role={tone === 'error' ? 'alert' : 'status'} className={cn('rounded-xl border px-4 py-3 text-sm', styles[tone])}>
+    <div role={tone === 'error' ? 'alert' : 'status'} className={cn('rounded-md border px-4 py-3 text-sm', styles[tone])}>
       {children}
     </div>
   )
