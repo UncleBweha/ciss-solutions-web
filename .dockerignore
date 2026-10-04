@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.github
+.env
+.env*.local
+.env.production
+test-results
+playwright-report
+coverage
+supabase/.temp
+supabase/.branches
+tests
+*.log
+# legacy static landing page (deployed separately by deploy/deploy.sh)
+index.html
+assets

@@ -1,0 +1,41 @@
+# Deploys the Next.js store to the VPS (container ciss-store). Manual only:
+# Actions tab -> "Deploy store to VPS" -> Run workflow.
+# Uses the same repository secrets as deploy.yml: VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_KNOWN_HOSTS.
+# Production env values live on the server in /opt/ciss-store/.env, not in GitHub.
+name: Deploy store to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      switch_traffic:
+        description: Point cisssolutions.co.ke at the store after a healthy deploy
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-store
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: bash deploy/app-deploy.sh "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "$HOME/.ssh/deploy_key"
+
+      - name: Switch traffic to the store
+        if: ${{ inputs.switch_traffic }}
+        run: bash deploy/app-switch.sh "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" app "$HOME/.ssh/deploy_key"
