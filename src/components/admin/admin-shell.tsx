@@ -49,7 +49,7 @@ export function AdminShell({ nav, user, unread, children }: { nav: AdminNavItem[
           >
             <Icon className="h-4 w-4" aria-hidden="true" />
             <span className="flex-1">{item.label}</span>
-            {item.badge ? <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-white">{item.badge}</span> : null}
+            {item.badge ? <span className="rounded-full bg-primary-strong px-1.5 text-[11px] font-bold text-white">{item.badge}</span> : null}
           </Link>
         )
       })}

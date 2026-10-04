@@ -144,7 +144,7 @@ export function CheckoutForm({
         <span
           className={cn(
             'grid h-8 w-8 place-items-center rounded-full text-sm',
-            step > index ? 'bg-success text-white' : step === index ? 'bg-primary text-white' : 'bg-surface text-fg-muted',
+            step > index ? 'bg-success text-white' : step === index ? 'bg-primary-strong text-white' : 'bg-surface text-fg-muted',
           )}
         >
           {step > index ? <Check className="h-4 w-4" aria-hidden="true" /> : index + 1}

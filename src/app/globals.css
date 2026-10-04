@@ -17,6 +17,11 @@
   --primary: #168cff;
   --primary-hover: #3a9dff;
   --primary-light: #38bdf8;
+  /* Filled surfaces with white text use the strong variants (WCAG AA >= 4.5:1). */
+  --primary-strong: #0b6fd8;
+  --primary-strong-hover: #095bb3;
+  --accent-strong: #7c3aed;
+  --danger-strong: #dc2626;
   --accent: #8b5cf6;
   --text-primary: #ffffff;
   --text-secondary: #b9c7df;
@@ -53,6 +58,10 @@
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-light: var(--primary-light);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-strong-hover: var(--primary-strong-hover);
+  --color-accent-strong: var(--accent-strong);
+  --color-danger-strong: var(--danger-strong);
   --color-accent: var(--accent);
   --color-fg: var(--text-primary);
   --color-fg-secondary: var(--text-secondary);

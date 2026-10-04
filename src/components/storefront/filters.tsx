@@ -176,7 +176,7 @@ export function SortSelect({ current, includeRelevance }: { current: SearchParam
   const value = param(current.sort) ?? (includeRelevance ? 'relevance' : 'featured')
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor="sort" className="hidden whitespace-nowrap text-sm text-fg-muted sm:block">
+      <label htmlFor="sort" className="sr-only whitespace-nowrap text-sm text-fg-muted sm:not-sr-only">
         Sort by
       </label>
       <Select id="sort" value={value} onChange={(e) => go({ sort: e.target.value })} className="h-9 w-48">

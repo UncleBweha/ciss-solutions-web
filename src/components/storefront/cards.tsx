@@ -34,7 +34,7 @@ export function CategoryCard({
             {count} {count === 1 ? 'product' : 'products'}
           </p>
         </div>
-        <span className="grid h-9 w-9 place-items-center rounded-full bg-surface text-fg-secondary transition-colors group-hover:bg-primary group-hover:text-white">
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-surface text-fg-secondary transition-colors group-hover:bg-primary-strong group-hover:text-white">
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </span>
       </div>

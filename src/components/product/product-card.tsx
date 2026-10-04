@@ -8,9 +8,9 @@ import { ProductImage } from './product-image'
 
 function badgeFor(p: ProductCardData): { label: string; tone: string } | null {
   if (p.available_quantity > 0 && p.available_quantity <= p.low_stock_threshold) return { label: 'Limited stock', tone: 'bg-warning text-background' }
-  if (p.is_bestseller) return { label: 'Best Seller', tone: 'bg-primary text-white' }
-  if (p.is_new) return { label: 'New', tone: 'bg-accent text-white' }
-  if (p.discount_percent > 0 || p.is_on_sale) return { label: 'On Sale', tone: 'bg-danger text-white' }
+  if (p.is_bestseller) return { label: 'Best Seller', tone: 'bg-primary-strong text-white' }
+  if (p.is_new) return { label: 'New', tone: 'bg-accent-strong text-white' }
+  if (p.discount_percent > 0 || p.is_on_sale) return { label: 'On Sale', tone: 'bg-danger-strong text-white' }
   if (p.is_featured) return { label: 'Popular', tone: 'bg-white text-background' }
   return null
 }
