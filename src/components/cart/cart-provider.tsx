@@ -1,7 +1,7 @@
 'use client'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { saveCartAction, syncCartAction } from '@/actions/cart'
-import { syncWishlistAction, toggleWishlistAction } from '@/actions/wishlist'
+import { setWishlistAction, syncWishlistAction } from '@/actions/wishlist'
 import { track } from '@/lib/analytics'
 import { createClient } from '@/lib/supabase/client'
 import { isSupabaseConfigured } from '@/lib/env'
@@ -161,7 +161,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
     if (!wasSaved) track('wishlist_add', { items: [{ item_id: productId, item_name: name }] })
     if (!signedInRef.current) return 'local' as const
-    const result = await toggleWishlistAction(productId)
+    const result = await setWishlistAction(productId, !wasSaved)
     if ('error' in result) return 'local' as const
     return result.saved ? ('saved' as const) : ('removed' as const)
   }, [wishlist])

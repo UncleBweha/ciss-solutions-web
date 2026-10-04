@@ -29,16 +29,16 @@ export async function syncWishlistAction(localIds: string[]): Promise<string[] |
   return (data ?? []).map((r) => r.product_id)
 }
 
-export async function toggleWishlistAction(productId: string): Promise<{ saved: boolean } | { error: 'auth' }> {
+/** Idempotent: sets whether the product is in the wishlist (safe with stale client state). */
+export async function setWishlistAction(productId: string, saved: boolean): Promise<{ saved: boolean } | { error: 'auth' }> {
   const user = await getSessionUser()
   if (!user) return { error: 'auth' }
   const pid = z.string().uuid().parse(productId)
   const { supabase, id } = await wishlistId(user.id)
-  const { data: existing } = await supabase.from('wishlist_items').select('id').eq('wishlist_id', id).eq('product_id', pid).maybeSingle()
-  if (existing) {
-    await supabase.from('wishlist_items').delete().eq('id', existing.id)
-    return { saved: false }
+  if (saved) {
+    await supabase.from('wishlist_items').upsert({ wishlist_id: id, product_id: pid }, { onConflict: 'wishlist_id,product_id', ignoreDuplicates: true })
+  } else {
+    await supabase.from('wishlist_items').delete().eq('wishlist_id', id).eq('product_id', pid)
   }
-  await supabase.from('wishlist_items').insert({ wishlist_id: id, product_id: pid })
-  return { saved: true }
+  return { saved }
 }
