@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Manrope } from 'next/font/google'
+import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
 import { Analytics } from '@/components/analytics'
 import { CartProvider } from '@/components/cart/cart-provider'
 import { ToastProvider } from '@/components/ui/toast'
@@ -7,8 +7,10 @@ import { getSettings } from '@/lib/catalog'
 import { siteUrl } from '@/lib/env'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' })
-const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', weight: ['600', '700', '800'], display: 'swap' })
+// IBM Plex: a technical, engineered face that suits a printer and parts catalogue;
+// the mono cut sets SKUs, part numbers and order numbers.
+const plexSans = IBM_Plex_Sans({ subsets: ['latin'], variable: '--font-plex-sans', weight: ['400', '500', '600', '700'], display: 'swap' })
+const plexMono = IBM_Plex_Mono({ subsets: ['latin'], variable: '--font-plex-mono', weight: ['400', '500', '600'], display: 'swap' })
 
 export async function generateMetadata(): Promise<Metadata> {
   const { seo, business } = await getSettings()
@@ -37,7 +39,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-KE" className={`${inter.variable} ${manrope.variable}`}>
+    <html lang="en-KE" className={`${plexSans.variable} ${plexMono.variable}`}>
       <body>
         <div className="ambient" aria-hidden="true" />
         <ToastProvider>

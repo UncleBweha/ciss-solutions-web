@@ -51,11 +51,11 @@ export default async function ProductPage({ params }: PageProps<'/p/[slug]'>) {
 
         <div>
           {product.brand ? (
-            <Link href={`/b/${product.brand.slug}`} className="text-sm font-bold uppercase tracking-wider text-primary-light hover:underline">
+            <Link href={`/b/${product.brand.slug}`} className="label-mono text-primary-light hover:underline">
               {product.brand.name}
             </Link>
           ) : null}
-          <h1 className="mt-2 text-2xl font-extrabold leading-tight sm:text-3xl">{product.name}</h1>
+          <h1 className="mt-2 text-2xl font-bold leading-tight sm:text-3xl">{product.name}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-fg-muted">
             {product.rating_count ? (
               <a href="#product-info" className="hover:text-fg">
@@ -87,7 +87,7 @@ export default async function ProductPage({ params }: PageProps<'/p/[slug]'>) {
           </div>
 
           {product.compatibility.length ? (
-            <div className="glass-flat mt-6 rounded-2xl p-4 text-sm">
+            <div className="glass-flat mt-6 rounded-[var(--radius-card)] p-4 text-sm">
               <p className="font-semibold">Fits {product.compatibility.length} printer model{product.compatibility.length > 1 ? 's' : ''}:</p>
               <p className="mt-1 text-fg-secondary">
                 {product.compatibility.slice(0, 6).map((m) => m.model_number).join(', ')}

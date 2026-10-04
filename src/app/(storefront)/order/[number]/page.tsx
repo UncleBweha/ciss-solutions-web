@@ -48,7 +48,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
             <CheckCircle2 className="h-9 w-9" aria-hidden="true" />
           </span>
         )}
-        <h1 className="text-3xl font-extrabold sm:text-4xl">
+        <h1 className="text-3xl font-bold sm:text-4xl">
           {failed ? `Order ${orderStatusLabels[order.order_status].toLowerCase()}` : paid || !isMpesa ? 'Order Confirmed' : 'Almost there'}
         </h1>
         <p className="mt-2 text-fg-secondary">
@@ -150,7 +150,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
           </OrderSummary>
           <div className="grid gap-2">
             {paid ? (
-              <Link href={`/api/orders/${encodeURIComponent(order.order_number)}/invoice${tokenQs}`} className="flex items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-sm font-semibold hover:bg-surface">
+              <Link href={`/api/orders/${encodeURIComponent(order.order_number)}/invoice${tokenQs}`} className="flex items-center justify-center gap-2 rounded-md border border-border py-2.5 text-sm font-semibold hover:bg-surface">
                 <FileText className="h-4 w-4" aria-hidden="true" /> Download invoice
               </Link>
             ) : null}

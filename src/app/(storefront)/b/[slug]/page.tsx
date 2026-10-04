@@ -45,12 +45,12 @@ export default async function BrandPage({ params, searchParams }: PageProps<'/b/
       <Breadcrumbs items={crumbs} />
       <header className="glass mb-10 mt-4 flex flex-col gap-5 rounded-[var(--radius-card)] p-6 sm:flex-row sm:items-center sm:p-8">
         {brand.logo_url ? (
-          <div className="grid h-20 w-40 shrink-0 place-items-center rounded-2xl bg-white p-3">
+          <div className="grid h-20 w-40 shrink-0 place-items-center rounded-[var(--radius-card)] bg-white p-3">
             <ProductImage src={brand.logo_url} alt={`${brand.name} logo`} width={140} height={60} className="h-full w-auto object-contain" />
           </div>
         ) : null}
         <div>
-          <h1 className="text-3xl font-extrabold sm:text-4xl">{brand.name}</h1>
+          <h1 className="text-3xl font-bold sm:text-4xl">{brand.name}</h1>
           {brand.description ? <p className="mt-2 max-w-2xl text-fg-secondary">{brand.description}</p> : null}
         </div>
       </header>
@@ -63,7 +63,7 @@ export default async function BrandPage({ params, searchParams }: PageProps<'/b/
       ) : null}
 
       <section aria-labelledby="brand-all">
-        <h2 id="brand-all" className="mb-6 text-2xl font-extrabold">
+        <h2 id="brand-all" className="mb-6 text-2xl font-bold">
           All {brand.name} products
         </h2>
         <CatalogListing result={result} facets={facets} searchParams={sp} basePath={`/b/${brand.slug}`} />

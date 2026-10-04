@@ -27,15 +27,15 @@ export default async function AccountPage() {
   ]
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-extrabold">Hello{user.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}</h1>
+      <h1 className="text-3xl font-bold">Hello{user.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}</h1>
       <div className="grid gap-3 sm:grid-cols-3">
         {stats.map(({ label, value, href, icon: Icon }) => (
-          <Link key={label} href={href} className="glass-flat flex items-center gap-4 rounded-2xl p-5 hover:border-primary/50">
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/15 text-primary-light">
+          <Link key={label} href={href} className="glass-flat flex items-center gap-4 rounded-[var(--radius-card)] p-5 hover:border-primary/50">
+            <span className="grid h-11 w-11 place-items-center rounded-md bg-primary/15 text-primary-light">
               <Icon className="h-5 w-5" aria-hidden="true" />
             </span>
             <span>
-              <span className="block text-2xl font-extrabold">{value}</span>
+              <span className="block text-2xl font-bold">{value}</span>
               <span className="text-sm text-fg-muted">{label}</span>
             </span>
           </Link>

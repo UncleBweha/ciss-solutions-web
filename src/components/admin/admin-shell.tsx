@@ -61,7 +61,7 @@ export function AdminShell({ nav, user, unread, children }: { nav: AdminNavItem[
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-border bg-admin-panel p-3 lg:flex">
         <Link href="/admin" className="mb-4 flex items-center gap-2 px-3 py-2">
           <span className="ink-stripe h-6 w-1.5 rounded-full" aria-hidden="true" />
-          <span className="font-display text-lg font-extrabold">CISS Admin</span>
+          <span className="font-display text-lg font-bold">CISS Admin</span>
         </Link>
         <div className="flex-1 overflow-y-auto">{navList}</div>
       </aside>

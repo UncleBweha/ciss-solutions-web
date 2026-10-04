@@ -86,7 +86,7 @@ export function CartView() {
             href="/checkout"
             aria-disabled={!canCheckout}
             onClick={(e) => !canCheckout && e.preventDefault()}
-            className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary-strong font-semibold text-white hover:bg-primary-hover ${canCheckout ? '' : 'pointer-events-none opacity-50'}`}
+            className={`flex h-12 w-full items-center justify-center gap-2 rounded-md bg-primary-strong font-semibold text-white hover:bg-primary-hover ${canCheckout ? '' : 'pointer-events-none opacity-50'}`}
           >
             Proceed to Checkout <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>

@@ -16,7 +16,7 @@ export default async function AccountOrdersPage() {
     .limit(100)
   return (
     <div>
-      <h1 className="mb-6 text-3xl font-extrabold">My orders</h1>
+      <h1 className="mb-6 text-3xl font-bold">My orders</h1>
       <OrderList orders={(data ?? []).map((o) => ({ ...o, total: Number(o.total) })) as AccountOrder[]} />
     </div>
   )

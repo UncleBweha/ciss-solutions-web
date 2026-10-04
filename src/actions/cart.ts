@@ -61,13 +61,24 @@ export async function syncCartAction(localItems: CartItemInput[]): Promise<CartI
 }
 
 async function writeCart(supabase: Awaited<ReturnType<typeof createClient>>, cartId: string, items: CartItemInput[]) {
-  await supabase.from('cart_items').delete().eq('cart_id', cartId)
+  // Upsert then prune (rather than delete-all + insert) so overlapping writes
+  // from sync and save cannot collide on the unique line constraint.
+  let keep: string[] = []
   if (items.length) {
-    const { error } = await supabase.from('cart_items').insert(
-      items.map((i) => ({ cart_id: cartId, product_id: i.productId, variant_id: i.variantId, quantity: i.quantity })),
-    )
+    const { data, error } = await supabase
+      .from('cart_items')
+      .upsert(
+        items.map((i) => ({ cart_id: cartId, product_id: i.productId, variant_id: i.variantId ?? null, quantity: i.quantity })),
+        { onConflict: 'cart_id,product_id,variant_id' },
+      )
+      .select('id')
     if (error) throw new Error(error.message)
+    keep = (data ?? []).map((r) => r.id)
   }
+  let prune = supabase.from('cart_items').delete().eq('cart_id', cartId)
+  if (keep.length) prune = prune.not('id', 'in', `(${keep.join(',')})`)
+  const { error } = await prune
+  if (error) throw new Error(error.message)
 }
 
 /** Persists the signed-in user's cart (no-op for guests). */

@@ -65,10 +65,10 @@ on conflict (key) do nothing;
 insert into public.homepage_sections (key, title, subtitle, is_enabled, sort_order, config) values
   ('hero', null, null, true, 10, '{}'),
   ('trust', null, null, true, 20, '{}'),
-  ('categories', 'Shop by category', 'Everything you need to keep printing', true, 30, '{"limit": 6}'),
+  ('categories', 'Shop by category', null, true, 30, '{"limit": 6}'),
   ('featured', 'Featured products', null, true, 40, '{"limit": 10}'),
   ('part_finder', 'Find the right spare part', 'Search by printer model or part number', true, 50, '{}'),
-  ('deals', 'Deals', 'Limited-time savings on printers and supplies', true, 60, '{"limit": 5}'),
+  ('deals', 'Deals', null, true, 60, '{"limit": 5}'),
   ('bestsellers', 'Best sellers', null, true, 70, '{"limit": 5}'),
   ('brands', 'Shop by brand', null, true, 80, '{}'),
   ('cta', 'Not sure which part you need?', 'Send us your printer model and the problem. Our technicians will find the right part.', true, 90,

@@ -30,7 +30,7 @@ export function CartItem({
 }) {
   return (
     <li className="flex gap-4 py-5">
-      <Link href={`/p/${slug}`} className="product-stage relative h-24 w-24 shrink-0 overflow-hidden rounded-xl sm:h-28 sm:w-28">
+      <Link href={`/p/${slug}`} className="product-stage relative h-24 w-24 shrink-0 overflow-hidden rounded-md sm:h-28 sm:w-28">
         <ProductImage src={imageUrl} alt={name} fill sizes="112px" className="object-contain p-2" />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

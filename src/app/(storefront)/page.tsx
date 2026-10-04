@@ -81,8 +81,8 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
       if (!slides.length) {
         return (
           <section className="container-page py-10">
-            <h1 className="text-4xl font-extrabold sm:text-6xl">
-              CISS Solutions <span className="text-gradient block">Printers & Spare Parts</span>
+            <h1 className="text-4xl font-bold sm:text-6xl">
+              CISS Solutions <span className="block text-primary-light">Printers & Spare Parts</span>
             </h1>
           </section>
         )
@@ -178,18 +178,18 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
       const config = (section.config ?? {}) as { cta_text?: string; cta_url?: string }
       return (
         <section className="container-page">
-          <div className="glass relative overflow-hidden rounded-[2rem] p-8 sm:p-12">
-            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-accent/30 blur-3xl" aria-hidden="true" />
-            <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
-              <div className="max-w-2xl">
-                <h2 className="text-2xl font-extrabold sm:text-3xl">{section.title ?? 'Not sure which part you need?'}</h2>
-                {section.subtitle ? <p className="mt-2 text-fg-secondary">{section.subtitle}</p> : null}
-              </div>
-              <Link href={config.cta_url || '/support/part-request'} className={buttonClass('primary', 'lg')}>
-                <Wrench className="h-5 w-5" aria-hidden="true" />
-                {config.cta_text || 'Get help finding a part'}
-              </Link>
+          <div className="flex flex-col items-start gap-6 rounded-[var(--radius-card)] border border-border bg-panel p-6 sm:p-8 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <p className="label-mono mb-2 flex items-center gap-2 text-primary-light">
+                <span className="reg-mark" aria-hidden="true" /> Parts desk
+              </p>
+              <h2 className="text-xl font-semibold sm:text-2xl">{section.title ?? 'Not sure which part you need?'}</h2>
+              {section.subtitle ? <p className="mt-1 text-fg-secondary">{section.subtitle}</p> : null}
             </div>
+            <Link href={config.cta_url || '/support/part-request'} className={buttonClass('primary', 'lg')}>
+              <Wrench className="h-5 w-5" aria-hidden="true" />
+              {config.cta_text || 'Get help finding a part'}
+            </Link>
           </div>
         </section>
       )

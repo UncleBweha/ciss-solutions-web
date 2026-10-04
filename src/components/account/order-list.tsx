@@ -32,7 +32,7 @@ export function OrderList({ orders }: { orders: AccountOrder[] }) {
   return (
     <ul className="space-y-3">
       {orders.map((o) => (
-        <li key={o.id} className="glass-flat rounded-2xl p-4 sm:p-5">
+        <li key={o.id} className="glass-flat rounded-[var(--radius-card)] p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <Link href={`/order/${encodeURIComponent(o.order_number)}`} className="font-mono font-bold hover:text-primary-light">

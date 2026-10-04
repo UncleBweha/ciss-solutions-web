@@ -32,7 +32,7 @@ export default async function ContentPage({ params }: PageProps<'/[page]'>) {
     <div className="container-page max-w-3xl py-8">
       <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: content.title, href: `/${page}` }]} />
       <article className="glass-flat mt-6 rounded-[var(--radius-card)] p-6 sm:p-10">
-        <h1 className="mb-6 text-3xl font-extrabold">{content.title}</h1>
+        <h1 className="mb-6 text-3xl font-bold">{content.title}</h1>
         <Markdown source={content.body} />
         {zones.length ? (
           <table className="mt-8 w-full text-sm">

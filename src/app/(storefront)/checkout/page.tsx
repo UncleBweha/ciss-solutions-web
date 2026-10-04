@@ -27,7 +27,7 @@ export default async function CheckoutPage() {
   const pm = settings.payment_methods
   return (
     <div className="container-page py-8">
-      <h1 className="mb-8 text-3xl font-extrabold sm:text-4xl">Checkout</h1>
+      <h1 className="mb-8 text-3xl font-bold sm:text-4xl">Checkout</h1>
       <CheckoutForm
         signedIn={Boolean(user)}
         defaults={{

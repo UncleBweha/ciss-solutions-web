@@ -107,7 +107,7 @@ export function Footer({ business }: { business: BusinessSettings }) {
         </div>
         {columns.map((col) => (
           <nav key={col.title} aria-label={col.title}>
-            <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-fg">{col.title}</h2>
+            <h2 className="label-mono mb-4 text-fg-muted">{col.title}</h2>
             <ul className="space-y-2.5">
               {col.links.map(([label, href]) => (
                 <li key={label}>

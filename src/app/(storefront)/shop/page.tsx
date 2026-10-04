@@ -20,7 +20,7 @@ export default async function ShopPage({ searchParams }: PageProps<'/shop'>) {
   return (
     <div className="container-page py-8">
       <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Shop', href: '/shop' }]} />
-      <h1 className="mb-8 mt-3 text-3xl font-extrabold sm:text-4xl">Shop all products</h1>
+      <h1 className="mb-8 mt-3 text-3xl font-bold sm:text-4xl">Shop all products</h1>
       <CatalogListing result={result} facets={facets} searchParams={sp} basePath="/shop" />
     </div>
   )

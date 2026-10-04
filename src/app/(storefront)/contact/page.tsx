@@ -26,14 +26,14 @@ export default async function ContactPage() {
   return (
     <div className="container-page py-8">
       <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Contact', href: '/contact' }]} />
-      <h1 className="mb-8 mt-3 text-3xl font-extrabold sm:text-4xl">Contact {business.name}</h1>
+      <h1 className="mb-8 mt-3 text-3xl font-bold sm:text-4xl">Contact {business.name}</h1>
       <div className="grid gap-8 lg:grid-cols-[22rem_1fr]">
         <aside className="space-y-3">
           {items.map(({ icon: Icon, label, value, ...rest }) => {
             const href = 'href' in rest ? rest.href : undefined
             const content = (
               <>
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary-light">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary/15 text-primary-light">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <span>
@@ -43,17 +43,17 @@ export default async function ContactPage() {
               </>
             )
             return href ? (
-              <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" className="glass-flat flex items-center gap-4 rounded-2xl p-4 hover:border-primary/50">
+              <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" className="glass-flat flex items-center gap-4 rounded-[var(--radius-card)] p-4 hover:border-primary/50">
                 {content}
               </a>
             ) : (
-              <div key={label} className="glass-flat flex items-center gap-4 rounded-2xl p-4">
+              <div key={label} className="glass-flat flex items-center gap-4 rounded-[var(--radius-card)] p-4">
                 {content}
               </div>
             )
           })}
           {wa ? (
-            <a href={wa} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#25D366] font-semibold text-[#06290f] hover:brightness-110">
+            <a href={wa} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-md bg-[#25D366] font-semibold text-[#06290f] hover:brightness-110">
               <MessageCircle className="h-5 w-5" aria-hidden="true" /> Chat on WhatsApp
             </a>
           ) : null}

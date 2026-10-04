@@ -48,7 +48,7 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
       onBlur={() => setPaused(false)}
     >
       <div className="container-page">
-        <div className="relative overflow-hidden rounded-[2rem] border border-border">
+        <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-border bg-panel">
           {slides.map((slide, i) => (
             <div
               key={slide.id}
@@ -58,33 +58,30 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
               aria-hidden={i !== index}
               inert={i !== index}
               className={cn(
-                'grid items-center gap-8 px-6 pb-16 pt-10 transition-opacity duration-700 sm:px-10 lg:grid-cols-[1.05fr_1fr] lg:gap-4 lg:px-14 lg:py-16',
+                'grid grid-cols-[minmax(0,1fr)] items-stretch transition-opacity duration-500 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]',
                 i === index ? 'relative opacity-100' : 'pointer-events-none absolute inset-0 opacity-0',
               )}
-              style={{
-                background:
-                  slide.background ||
-                  'radial-gradient(70% 90% at 80% 40%, rgba(22,140,255,.28), transparent 60%), radial-gradient(50% 70% at 10% 90%, rgba(139,92,246,.22), transparent 60%), linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.02))',
-              }}
+              style={slide.background ? { background: slide.background } : undefined}
             >
-              <div className="relative z-10 max-w-xl">
+              <div className="relative z-10 flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-12 lg:py-14">
                 {slide.eyebrow ? (
-                  <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-primary-light">
+                  <p className="label-mono mb-5 flex items-center gap-2 text-primary-light">
+                    <span className="reg-mark" aria-hidden="true" />
                     {slide.eyebrow}
                   </p>
                 ) : null}
                 {i === 0 ? (
-                  <h1 className="text-4xl font-extrabold leading-[1.05] sm:text-5xl xl:text-6xl">
+                  <h1 className="text-4xl font-bold leading-[1.08] sm:text-5xl">
                     {slide.title}
-                    {slide.highlight ? <span className="text-gradient mt-1 block">{slide.highlight}</span> : null}
+                    {slide.highlight ? <span className="mt-1 block text-primary-light">{slide.highlight}</span> : null}
                   </h1>
                 ) : (
-                  <h2 className="text-4xl font-extrabold leading-[1.05] sm:text-5xl xl:text-6xl">
+                  <h2 className="text-4xl font-bold leading-[1.08] sm:text-5xl">
                     {slide.title}
-                    {slide.highlight ? <span className="text-gradient mt-1 block">{slide.highlight}</span> : null}
+                    {slide.highlight ? <span className="mt-1 block text-primary-light">{slide.highlight}</span> : null}
                   </h2>
                 )}
-                {slide.subtitle ? <p className="mt-5 max-w-lg text-base text-fg-secondary sm:text-lg">{slide.subtitle}</p> : null}
+                {slide.subtitle ? <p className="mt-5 max-w-md text-base text-fg-secondary sm:text-lg">{slide.subtitle}</p> : null}
                 <div className="mt-8 flex flex-wrap gap-3">
                   {slide.ctaText && slide.ctaUrl ? (
                     <Link href={slide.ctaUrl} className={buttonClass('primary', 'lg')}>
@@ -98,54 +95,55 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
                     </Link>
                   ) : null}
                 </div>
+                {count > 1 ? (
+                  <div className="mt-10 flex items-center gap-1">
+                    <button type="button" onClick={() => setIndex((index - 1 + count) % count)} className="grid h-9 w-9 place-items-center rounded-md border border-border text-fg-secondary hover:border-border-strong hover:text-fg" aria-label="Previous slide">
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button type="button" onClick={() => setIndex((index + 1) % count)} className="grid h-9 w-9 place-items-center rounded-md border border-border text-fg-secondary hover:border-border-strong hover:text-fg" aria-label="Next slide">
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                    <span className="label-mono ml-3 text-fg-muted">
+                      {String(index + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}
+                    </span>
+                  </div>
+                ) : null}
               </div>
 
-              <div className="relative mx-auto aspect-square w-full max-w-md lg:max-w-lg">
-                <div className="absolute inset-[12%] rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
-                <ProductImage
-                  src={slide.imageUrl}
-                  alt={slide.imageAlt ?? ''}
-                  fill
-                  priority={i === 0}
-                  sizes="(min-width: 1024px) 40vw, 90vw"
-                  className="animate-float object-contain drop-shadow-[0_30px_40px_rgba(0,0,0,0.45)]"
-                />
+              <div className="product-stage relative flex flex-col lg:border-l lg:border-border">
+                <div className="relative aspect-[4/3] w-full lg:aspect-auto lg:flex-1">
+                  <ProductImage
+                    src={slide.imageUrl}
+                    alt={slide.imageAlt ?? ''}
+                    fill
+                    priority={i === 0}
+                    sizes="(min-width: 1024px) 45vw, 100vw"
+                    className="object-contain p-8 sm:p-12"
+                  />
+                </div>
                 {slide.product ? (
-                  <div className="glass absolute bottom-2 right-0 hidden w-56 sm:block rounded-2xl bg-background/75 p-4 sm:bottom-6 sm:right-2 sm:w-64">
-                    <p className="font-bold leading-tight">{slide.product.name}</p>
-                    {slide.product.short ? <p className="mt-1 text-xs text-fg-secondary">{slide.product.short}</p> : null}
-                    <p className="mt-2 text-xl font-extrabold">{formatKES(slide.product.price)}</p>
-                    <Link href={`/p/${slide.product.slug}`} className={buttonClass('primary', 'sm', 'mt-3 w-full')}>
-                      View Details
-                    </Link>
-                  </div>
+                  <Link
+                    href={`/p/${slide.product.slug}`}
+                    className="group flex items-center justify-between gap-4 border-t border-black/10 bg-white px-6 py-4 text-background"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold">{slide.product.name}</span>
+                      {slide.product.short ? <span className="block truncate text-sm text-slate-500">{slide.product.short}</span> : null}
+                    </span>
+                    <span className="flex shrink-0 items-center gap-3">
+                      <span className="text-lg font-bold">{formatKES(slide.product.price)}</span>
+                      <span className="hidden items-center gap-1 text-sm font-semibold text-primary-strong group-hover:underline sm:flex">
+                        View <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                    </span>
+                  </Link>
                 ) : null}
               </div>
             </div>
           ))}
 
-          {count > 1 ? (
-            <div className="absolute inset-x-0 bottom-5 z-20 flex items-center justify-center gap-3">
-              <button type="button" onClick={() => setIndex((index - 1 + count) % count)} className="grid h-9 w-9 place-items-center rounded-full bg-background/50 text-fg-secondary backdrop-blur hover:text-fg" aria-label="Previous slide">
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {slides.map((s, i) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setIndex(i)}
-                  aria-label={`Go to slide ${i + 1}`}
-                  aria-current={i === index}
-                  className="group grid h-6 min-w-6 place-items-center"
-                >
-                  <span className={cn('block h-2 rounded-full transition-all', i === index ? 'w-8 bg-primary' : 'w-2 bg-white/30 group-hover:bg-white/50')} />
-                </button>
-              ))}
-              <button type="button" onClick={() => setIndex((index + 1) % count)} className="grid h-9 w-9 place-items-center rounded-full bg-background/50 text-fg-secondary backdrop-blur hover:text-fg" aria-label="Next slide">
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          ) : null}
+          <div className="ink-stripe absolute inset-x-0 bottom-0 h-1" aria-hidden="true" />
+
         </div>
       </div>
     </section>

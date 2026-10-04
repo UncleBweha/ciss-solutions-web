@@ -50,7 +50,7 @@ export function OrderSummary({
         ) : null}
         <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-border pt-4">
           <dt className="font-bold">Total</dt>
-          <dd className="text-2xl font-extrabold">{formatKES(total)}</dd>
+          <dd className="text-2xl font-bold">{formatKES(total)}</dd>
         </div>
       </dl>
       {children ? <div className="mt-5 space-y-3">{children}</div> : null}

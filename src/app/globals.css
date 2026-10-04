@@ -12,6 +12,8 @@
   --surface-hover: rgba(255, 255, 255, 0.11);
   --surface-strong: rgba(255, 255, 255, 0.14);
   --surface-solid: #0e2245;
+  --panel: #0c1c3a;
+  --stage: #eef1f5;
   --border: rgba(255, 255, 255, 0.14);
   --border-strong: rgba(255, 255, 255, 0.24);
   --primary: #168cff;
@@ -34,8 +36,8 @@
   --ink-magenta: #db2777;
   --ink-yellow: #facc15;
 
-  --radius-card: 1.25rem;
-  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.18);
+  --radius-card: 0.625rem;
+  --shadow-glass: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.25);
   --shadow-lift: 0 18px 50px rgba(2, 8, 23, 0.45);
   --header-height: 4.5rem;
 
@@ -53,6 +55,8 @@
   --color-surface-hover: var(--surface-hover);
   --color-surface-strong: var(--surface-strong);
   --color-surface-solid: var(--surface-solid);
+  --color-panel: var(--panel);
+  --color-stage: var(--stage);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-primary: var(--primary);
@@ -77,8 +81,9 @@
   --radius-card: var(--radius-card);
   --shadow-glass: var(--shadow-glass);
   --shadow-lift: var(--shadow-lift);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: var(--font-manrope), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
 }
 
 @layer base {
@@ -95,7 +100,7 @@
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
     text-wrap: balance;
   }
   :focus-visible {
@@ -125,8 +130,9 @@
     -webkit-backdrop-filter: blur(20px) saturate(140%);
   }
   /* Same look without backdrop blur: cheap enough for grids of product cards. */
+  /* Flat panel: the default surface. Glass (above) is reserved for the header. */
   .glass-flat {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.045));
+    background: var(--panel);
     border: 1px solid var(--border);
   }
   .text-gradient {
@@ -151,10 +157,28 @@
     .container-page { padding-inline: 2rem; }
   }
   /* Product imagery sits on a soft light pad so it stays the visual focus. */
+  /* Products sit on a light "studio" tile, the way real product photos are shot,
+     so uploaded photos on white backgrounds blend in. */
   .product-stage {
+    background: var(--stage);
+  }
+  /* Registration mark: the print-industry crosshair used as a small brand glyph. */
+  .reg-mark {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    border: 1.5px solid currentColor;
     background:
-      radial-gradient(120% 80% at 50% 0%, rgba(56, 189, 248, 0.16), transparent 60%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+      linear-gradient(currentColor, currentColor) center / 1.5px 100% no-repeat,
+      linear-gradient(currentColor, currentColor) center / 100% 1.5px no-repeat;
+    flex-shrink: 0;
+  }
+  .label-mono {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
   .skeleton {
     background: linear-gradient(90deg, var(--surface) 25%, var(--surface-strong) 50%, var(--surface) 75%);
@@ -175,11 +199,7 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(60rem 40rem at 85% -10%, rgba(22, 140, 255, 0.22), transparent 60%),
-    radial-gradient(45rem 35rem at -10% 20%, rgba(139, 92, 246, 0.16), transparent 60%),
-    radial-gradient(40rem 30rem at 60% 110%, rgba(56, 189, 248, 0.12), transparent 60%),
-    linear-gradient(180deg, var(--background) 0%, var(--background-secondary) 100%);
+  background: linear-gradient(180deg, #0a1c3d 0%, var(--background) 420px);
 }
 
 @keyframes shimmer {

@@ -15,11 +15,11 @@ export default async function AddressesPage() {
   const { data } = await supabase.from('addresses').select('*').eq('user_id', user.id).order('is_default', { ascending: false }).order('created_at', { ascending: false })
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-extrabold">Saved addresses</h1>
+      <h1 className="text-3xl font-bold">Saved addresses</h1>
       {data?.length ? (
         <ul className="grid gap-3 sm:grid-cols-2">
           {data.map((a) => (
-            <li key={a.id} className="glass-flat rounded-2xl p-5">
+            <li key={a.id} className="glass-flat rounded-[var(--radius-card)] p-5">
               <div className="flex items-center justify-between gap-2">
                 <p className="font-bold">{a.label || `${a.town}, ${a.county}`}</p>
                 {a.is_default ? <Badge tone="info">Default</Badge> : null}

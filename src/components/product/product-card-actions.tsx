@@ -76,8 +76,8 @@ export function WishlistButton({ productId, name, className }: { productId: stri
         }
       }}
       className={cn(
-        'z-10 grid h-9 w-9 place-items-center rounded-full border border-border bg-background/60 backdrop-blur transition-colors hover:border-border-strong',
-        saved ? 'text-ink-magenta' : 'text-fg-secondary hover:text-fg',
+        'z-10 grid h-9 w-9 place-items-center rounded-md border border-black/10 bg-white transition-colors hover:border-black/25',
+        saved ? 'text-ink-magenta' : 'text-slate-500 hover:text-slate-900',
         className,
       )}
     >

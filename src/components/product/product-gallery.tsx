@@ -70,7 +70,7 @@ export function ProductGallery({ images, name, activeUrl }: { images: GalleryIma
                 onClick={() => setIndex(i)}
                 aria-label={`Show image ${i + 1}`}
                 aria-current={i === current}
-                className={cn('product-stage relative block h-20 w-20 overflow-hidden rounded-xl border-2 transition-colors', i === current ? 'border-primary' : 'border-border hover:border-border-strong')}
+                className={cn('product-stage relative block h-20 w-20 overflow-hidden rounded-md border-2 transition-colors', i === current ? 'border-primary' : 'border-border hover:border-border-strong')}
               >
                 <ProductImage src={img.url} alt="" fill sizes="80px" className="object-contain p-2" />
               </button>

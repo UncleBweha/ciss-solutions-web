@@ -40,7 +40,7 @@ function Dropdown({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => (open ? onClose() : onOpen())}
-        className={cn('flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors', open ? 'text-fg' : 'text-fg-secondary hover:text-fg')}
+        className={cn('flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors', open ? 'text-fg' : 'text-fg-secondary hover:text-fg')}
       >
         {label}
         <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} aria-hidden="true" />
@@ -50,7 +50,7 @@ function Dropdown({
         hidden={!open}
         className={cn('absolute left-0 top-full z-50 pt-2', wide ? 'w-[36rem]' : 'w-64')}
       >
-        <div className="animate-fade-up rounded-2xl border border-border bg-background-secondary/98 p-3 shadow-[var(--shadow-lift)] backdrop-blur-xl">{children}</div>
+        <div className="animate-fade-up rounded-[var(--radius-card)] border border-border bg-background-secondary/98 p-3 shadow-[var(--shadow-lift)] backdrop-blur-xl">{children}</div>
       </div>
     </div>
   )
@@ -58,7 +58,7 @@ function Dropdown({
 
 function MenuLink({ href, children, count, onClick }: { href: string; children: React.ReactNode; count?: number; onClick?: () => void }) {
   return (
-    <Link href={href} onClick={onClick} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm text-fg-secondary transition-colors hover:bg-surface hover:text-fg">
+    <Link href={href} onClick={onClick} className="flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-fg-secondary transition-colors hover:bg-surface hover:text-fg">
       <span>{children}</span>
       {count !== undefined ? <span className="text-xs text-fg-muted">{count}</span> : null}
     </Link>
@@ -133,7 +133,7 @@ export function Header({ nav }: { nav: NavData }) {
           <Logo priority />
 
           <nav ref={navRef} aria-label="Main" className="hidden items-center lg:flex">
-            <Link href="/" className={cn('rounded-lg px-3 py-2 text-sm font-semibold', pathname === '/' ? 'text-fg' : 'text-fg-secondary hover:text-fg')}>
+            <Link href="/" className={cn('rounded-md px-3 py-2 text-sm font-semibold', pathname === '/' ? 'text-fg' : 'text-fg-secondary hover:text-fg')}>
               Home
             </Link>
             <Dropdown label="Shop" open={menu === 'shop'} onOpen={() => setMenu('shop')} onClose={close} wide>
@@ -184,10 +184,10 @@ export function Header({ nav }: { nav: NavData }) {
                 ))}
               </div>
             </Dropdown>
-            <Link href="/about" className="rounded-lg px-3 py-2 text-sm font-semibold text-fg-secondary hover:text-fg">
+            <Link href="/about" className="rounded-md px-3 py-2 text-sm font-semibold text-fg-secondary hover:text-fg">
               About
             </Link>
-            <Link href="/contact" className="rounded-lg px-3 py-2 text-sm font-semibold text-fg-secondary hover:text-fg">
+            <Link href="/contact" className="rounded-md px-3 py-2 text-sm font-semibold text-fg-secondary hover:text-fg">
               Contact
             </Link>
           </nav>
@@ -195,17 +195,17 @@ export function Header({ nav }: { nav: NavData }) {
           <SearchBar className="ml-auto hidden w-full max-w-sm md:block xl:max-w-md" />
 
           <div className="ml-auto flex items-center gap-1 md:ml-0">
-            <button type="button" onClick={() => setSearchOpen(true)} className="rounded-xl p-2.5 text-fg-secondary hover:bg-surface hover:text-fg md:hidden" aria-label="Search">
+            <button type="button" onClick={() => setSearchOpen(true)} className="rounded-md p-2.5 text-fg-secondary hover:bg-surface hover:text-fg md:hidden" aria-label="Search">
               <Search className="h-5 w-5" />
             </button>
             <Link
               href={signedIn ? '/account' : '/login'}
-              className="hidden items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-semibold text-fg-secondary hover:bg-surface hover:text-fg sm:flex"
+              className="hidden items-center gap-2 whitespace-nowrap rounded-md px-3 py-2.5 text-sm font-semibold text-fg-secondary hover:bg-surface hover:text-fg sm:flex"
             >
               <User className="h-5 w-5" aria-hidden="true" />
               <span className="hidden xl:inline">{signedIn ? 'Account' : 'Sign in'}</span>
             </Link>
-            <Link href="/cart" className="relative flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-fg-secondary hover:bg-surface hover:text-fg" aria-label={`Cart, ${count} ${count === 1 ? 'item' : 'items'}`}>
+            <Link href="/cart" className="relative flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-fg-secondary hover:bg-surface hover:text-fg" aria-label={`Cart, ${count} ${count === 1 ? 'item' : 'items'}`}>
               <ShoppingCart className="h-5 w-5" aria-hidden="true" />
               <span className="hidden xl:inline">Cart</span>
               {count > 0 ? (
@@ -214,7 +214,7 @@ export function Header({ nav }: { nav: NavData }) {
                 </span>
               ) : null}
             </Link>
-            <button type="button" onClick={() => setMobileOpen(true)} className="rounded-xl p-2.5 text-fg-secondary hover:bg-surface hover:text-fg lg:hidden" aria-label="Open menu">
+            <button type="button" onClick={() => setMobileOpen(true)} className="rounded-md p-2.5 text-fg-secondary hover:bg-surface hover:text-fg lg:hidden" aria-label="Open menu">
               <Menu className="h-5 w-5" />
             </button>
           </div>
@@ -229,7 +229,7 @@ export function Header({ nav }: { nav: NavData }) {
                 <Link
                   href={href}
                   onClick={() => setMobileOpen(false)}
-                  className={cn('block rounded-xl px-3 py-2.5 font-semibold', pathname === href ? 'bg-surface text-fg' : 'text-fg-secondary hover:bg-surface hover:text-fg')}
+                  className={cn('block rounded-md px-3 py-2.5 font-semibold', pathname === href ? 'bg-surface text-fg' : 'text-fg-secondary hover:bg-surface hover:text-fg')}
                 >
                   {label}
                 </Link>

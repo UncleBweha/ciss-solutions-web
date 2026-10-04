@@ -24,8 +24,8 @@ export default async function DealsPage({ searchParams }: PageProps<'/deals'>) {
     <div className="container-page py-8">
       <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Deals', href: '/deals' }]} />
       <header className="glass mb-8 mt-4 overflow-hidden rounded-[var(--radius-card)] p-6 sm:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary-light">Limited-time savings</p>
-        <h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">Deals</h1>
+        <p className="label-mono text-primary-light">Limited-time savings</p>
+        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Deals</h1>
         <p className="mt-2 max-w-2xl text-fg-secondary">Every product below is currently priced under its regular price. Discounts shown are against our previous selling price.</p>
       </header>
       <CatalogListing
