@@ -26,7 +26,11 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
 
   const settings = await getSettings()
   const isMpesa = order.payment_method === 'mpesa'
-  const view = isMpesa && order.payment_status !== 'PAID' ? await refreshPaymentStatus(order.id) : null
+  const view = !isMpesa
+    ? null
+    : order.payment_status === 'PAID'
+      ? { state: 'paid' as const, message: null }
+      : await refreshPaymentStatus(order.id)
   const failed = isTerminalFailure(order.order_status)
   const paid = order.payment_status === 'PAID'
   const bank = settings.payment_methods.bank_transfer
