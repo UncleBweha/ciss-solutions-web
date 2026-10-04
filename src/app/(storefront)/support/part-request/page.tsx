@@ -15,7 +15,7 @@ export default async function PartRequestPage({ searchParams }: PageProps<'/supp
   return (
     <div className="container-page max-w-3xl py-8">
       <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Part request', href: '/support/part-request' }]} />
-      <div className="glass mt-6 rounded-[var(--radius-card)] p-6 sm:p-8">
+      <div className="glass-flat mt-6 rounded-[var(--radius-card)] p-6 sm:p-8">
         <span className="mb-4 grid h-14 w-14 place-items-center rounded-[var(--radius-card)] bg-primary/15 text-primary-light">
           <Wrench className="h-7 w-7" aria-hidden="true" />
         </span>

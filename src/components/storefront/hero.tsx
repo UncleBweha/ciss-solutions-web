@@ -42,7 +42,7 @@ export function Hero({ slides, className }: { slides: HeroSlide[]; className?: s
     <section
       aria-roledescription="carousel"
       aria-label="Offers"
-      className={cn('relative overflow-hidden rounded-[var(--radius-card)] border border-border bg-white', className)}
+      className={cn('glass relative overflow-hidden rounded-[var(--radius-card)]', className)}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -104,13 +104,13 @@ export function Hero({ slides, className }: { slides: HeroSlide[]; className?: s
 
       {count > 1 ? (
         <div className="absolute right-3 top-3 flex items-center gap-1 sm:bottom-3 sm:top-auto">
-          <button type="button" onClick={() => setIndex((index - 1 + count) % count)} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-white text-fg-secondary hover:text-fg" aria-label="Previous slide">
+          <button type="button" onClick={() => setIndex((index - 1 + count) % count)} className="glass-strong grid h-8 w-8 place-items-center rounded-full text-fg-secondary hover:text-fg" aria-label="Previous slide">
             <ChevronLeft className="h-4 w-4" />
           </button>
           <span className="px-1 font-mono text-xs text-fg-muted" aria-live="polite">
             {index + 1}/{count}
           </span>
-          <button type="button" onClick={() => setIndex((index + 1) % count)} className="grid h-8 w-8 place-items-center rounded-full border border-border bg-white text-fg-secondary hover:text-fg" aria-label="Next slide">
+          <button type="button" onClick={() => setIndex((index + 1) % count)} className="glass-strong grid h-8 w-8 place-items-center rounded-full text-fg-secondary hover:text-fg" aria-label="Next slide">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>

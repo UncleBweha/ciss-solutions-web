@@ -5,22 +5,23 @@
    Tailwind theme below), never raw hex values.
    --------------------------------------------------------------------------- */
 :root {
-  /* Light retail palette: grey page, white panels, one blue for actions.
-     CMYK inks appear only as small accents (stripe, chips). */
-  --background: #f3f4f6;
+  /* Glass UI on a soft CMYK backdrop. Surfaces are translucent white with a
+     bright edge; text and controls stay high-contrast on top. */
+  --background: #eaeef5;
   --background-secondary: #ffffff;
   --background-elevated: #ffffff;
-  --surface: #eef0f3;
-  --surface-hover: #e5e8ec;
-  --surface-strong: #dde1e7;
+  --surface: rgba(15, 23, 42, 0.045);
+  --surface-hover: rgba(15, 23, 42, 0.075);
+  --surface-strong: rgba(15, 23, 42, 0.12);
   --surface-solid: #ffffff;
-  --panel: #ffffff;
-  --stage: #f5f6f8;
-  --border: #dfe3e8;
-  --border-strong: #c5ccd6;
+  --panel: rgba(255, 255, 255, 0.66);
+  --stage: rgba(255, 255, 255, 0.55);
+  --border: rgba(15, 23, 42, 0.09);
+  --border-strong: rgba(15, 23, 42, 0.18);
+  --glass-edge: rgba(255, 255, 255, 0.85);
   --primary: #0b6fd8;
   --primary-hover: #095bb3;
-  /* Blue used as text (links, prices in lists) on white: >= 4.5:1. */
+  /* Blue used as text (links, accents) on light glass: >= 4.5:1. */
   --primary-light: #0a5fb8;
   /* Filled surfaces with white text use the strong variants (WCAG AA >= 4.5:1). */
   --primary-strong: #0b6fd8;
@@ -28,9 +29,9 @@
   --accent-strong: #6d28d9;
   --danger-strong: #c81e1e;
   --accent: #6d28d9;
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #5b6472;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #556274;
   --success: #15803d;
   --warning: #b45309;
   --danger: #c81e1e;
@@ -38,15 +39,16 @@
   --ink-cyan: #0891b2;
   --ink-magenta: #db2777;
   --ink-yellow: #eab308;
-  --ink-key: #111827;
+  --ink-key: #0f172a;
 
-  --radius-card: 0.5rem;
-  --shadow-glass: 0 1px 2px rgba(17, 24, 39, 0.06);
-  --shadow-lift: 0 10px 30px rgba(17, 24, 39, 0.12);
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+  --shadow-glass: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 18px 48px rgba(15, 23, 42, 0.14);
   --header-height: 4.5rem;
 
-  --admin-bg: #f3f4f6;
-  --admin-panel: #ffffff;
+  --admin-bg: transparent;
+  --admin-panel: rgba(255, 255, 255, 0.7);
   color-scheme: light;
 }
 
@@ -83,6 +85,7 @@
   --color-admin-bg: var(--admin-bg);
   --color-admin-panel: var(--admin-panel);
   --radius-card: var(--radius-card);
+  --radius-control: var(--radius-control);
   --shadow-glass: var(--shadow-glass);
   --shadow-lift: var(--shadow-lift);
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -97,6 +100,7 @@
   }
   body {
     background-color: var(--background);
+    position: relative;
     color: var(--text-primary);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -119,21 +123,79 @@
     font: inherit;
   }
   select option {
-    background: var(--background-secondary);
+    background: #ffffff;
     color: var(--text-primary);
   }
 }
 
 @layer components {
-  /* Panels: white with a hairline border. (Class names kept from the earlier theme.) */
+  /* Glass surfaces. .glass blurs what is behind it (hero, header, overlays);
+     .glass-flat / .glass-card are translucent without a blur filter, which reads as
+     frosted over the soft site backdrop and stays cheap in long product grids. */
   .glass {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(10px) saturate(160%);
+  }
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--shadow-lift);
+    backdrop-filter: blur(14px) saturate(160%);
+  }
+  .glass-flat,
+  .glass-card {
     background: var(--panel);
-    border: 1px solid var(--border);
+    border: 1px solid var(--glass-edge);
     box-shadow: var(--shadow-glass);
   }
-  .glass-flat {
-    background: var(--panel);
-    border: 1px solid var(--border);
+  .glass-card {
+    transition: box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+  }
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: var(--shadow-lift);
+  }
+  @supports not (backdrop-filter: blur(1px)) {
+    .glass { background: rgba(255, 255, 255, 0.86); }
+  }
+  /* Fixed colour field behind every page: soft cyan / magenta / yellow light. */
+  .site-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 45% at 6% 8%, rgba(8, 145, 178, 0.22), transparent 70%),
+      radial-gradient(34% 40% at 96% 30%, rgba(219, 39, 119, 0.16), transparent 70%),
+      radial-gradient(40% 45% at 18% 96%, rgba(234, 179, 8, 0.18), transparent 70%),
+      radial-gradient(36% 40% at 82% 98%, rgba(8, 145, 178, 0.12), transparent 70%),
+      var(--background);
+  }
+  /* CMYK halftone screens: the colour that the glass panels blur. Each screen is
+     a dot grid faded in by its own mask (see InkBackdrop). */
+  .halftone-c, .halftone-m, .halftone-y {
+    position: absolute;
+    inset: 0;
+    background-size: 11px 11px;
+  }
+  .halftone-c {
+    background-image: radial-gradient(circle, var(--ink-cyan) 2.3px, transparent 2.9px);
+    mask-image: radial-gradient(55% 85% at 18% 40%, #000 10%, transparent 80%);
+    opacity: 0.75;
+  }
+  .halftone-m {
+    background-image: radial-gradient(circle, var(--ink-magenta) 2.3px, transparent 2.9px);
+    background-position: 4px 6px;
+    mask-image: radial-gradient(45% 80% at 58% 80%, #000 10%, transparent 80%);
+    opacity: 0.6;
+  }
+  .halftone-y {
+    background-image: radial-gradient(circle, var(--ink-yellow) 2.5px, transparent 3.1px);
+    background-position: 8px 2px;
+    mask-image: radial-gradient(45% 85% at 88% 25%, #000 10%, transparent 80%);
+    opacity: 0.9;
   }
   .ink-stripe {
     background: linear-gradient(90deg, var(--ink-cyan) 0 25%, var(--ink-magenta) 25% 50%, var(--ink-yellow) 50% 75%, var(--ink-key) 75%);

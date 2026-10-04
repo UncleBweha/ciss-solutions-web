@@ -99,7 +99,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
                   aria-pressed={v.id === variantId}
                   onClick={() => setVariantId(v.id)}
                   className={cn(
-                    'rounded-md border px-4 py-2 text-sm font-semibold transition-colors',
+                    'rounded-full border px-4 py-2 text-sm font-semibold transition-colors',
                     v.id === variantId ? 'border-primary bg-primary/15 text-fg' : 'border-border text-fg-secondary hover:border-border-strong hover:text-fg',
                     out && 'line-through opacity-60',
                   )}
@@ -167,7 +167,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
       </ul>
 
       {/* Sticky purchase bar on mobile */}
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 border-t border-border bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(17,24,39,0.08)] lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 border-t border-black/[0.07] bg-white/80 px-4 py-3 backdrop-blur-md backdrop-saturate-150 lg:hidden">
         <div>
           <p className="text-xs text-fg-muted">{variant ? variant.name : 'Price'}</p>
           <p className="text-lg font-bold">{formatKES(price)}</p>

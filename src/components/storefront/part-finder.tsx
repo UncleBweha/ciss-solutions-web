@@ -144,7 +144,7 @@ export function PartFinderPanel({ models, className }: { models: FinderModel[]; 
   const brandModels = models.filter((m) => !brand || m.brand_slug === brand)
 
   return (
-    <div className={cn('flex flex-col rounded-[var(--radius-card)] border border-border bg-white', className)}>
+    <div className={cn('glass flex flex-col overflow-hidden rounded-[var(--radius-card)]', className)}>
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -205,7 +205,7 @@ export function PartFinderPanel({ models, className }: { models: FinderModel[]; 
           e.preventDefault()
           if (partNumber.trim()) router.push(`/search?q=${encodeURIComponent(partNumber.trim())}`)
         }}
-        className="mt-auto border-t border-border bg-surface/60 p-4 sm:px-5"
+        className="mt-auto border-t border-white/70 bg-white/45 p-4 sm:px-5"
       >
         <label htmlFor="panel-part-number" className="mb-1 block text-xs font-semibold text-fg-secondary">
           Know the part number?

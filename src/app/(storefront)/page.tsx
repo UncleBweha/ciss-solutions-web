@@ -7,6 +7,7 @@ import { PartFinder, PartFinderPanel } from '@/components/storefront/part-finder
 import { TrustBar } from '@/components/storefront/trust-bar'
 import { buttonClass } from '@/components/ui/button'
 import { SectionHeading } from '@/components/ui/misc'
+import { InkBackdrop } from '@/components/storefront/ink-backdrop'
 import { JsonLd } from '@/components/seo/json-ld'
 import {
   categoryHref,
@@ -83,10 +84,12 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
       const models = await getPrinterModels()
       const finderModels = models.map((m) => ({ id: m.id, slug: m.slug, name: m.name, model_number: m.model_number, brand_slug: m.brand_slug, brand_name: m.brand_name }))
       return (
-        <div className="container-page grid gap-3 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)]">
-          {slides.length ? <Hero slides={slides} /> : <div className="hidden lg:block" />}
-          <PartFinderPanel models={finderModels} />
-        </div>
+        <InkBackdrop className="-mt-4 py-5 sm:-mt-5 sm:py-8">
+          <div className="container-page grid gap-3 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)]">
+            {slides.length ? <Hero slides={slides} /> : <div className="hidden lg:block" />}
+            <PartFinderPanel models={finderModels} />
+          </div>
+        </InkBackdrop>
       )
     }
 
@@ -180,9 +183,9 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
       const config = (section.config ?? {}) as { cta_text?: string; cta_url?: string }
       return (
         <section className="container-page">
-          <div className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-border bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="glass-flat flex flex-col gap-4 rounded-[var(--radius-card)] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
             <div className="flex items-start gap-4">
-              <span className="hidden h-11 w-11 shrink-0 place-items-center rounded-full bg-surface text-fg-secondary sm:grid">
+              <span className="hidden h-11 w-11 shrink-0 place-items-center rounded-full bg-white/80 text-primary-light shadow-sm sm:grid">
                 <MessageCircle className="h-5 w-5" aria-hidden="true" />
               </span>
               <div className="max-w-2xl">

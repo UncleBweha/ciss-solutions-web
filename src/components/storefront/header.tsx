@@ -49,7 +49,7 @@ function Dropdown({
         <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} aria-hidden="true" />
       </button>
       <div id={panelId} hidden={!open} className={cn('absolute left-0 top-full z-50', wide ? 'w-[40rem]' : 'w-64')}>
-        <div className="rounded-b-md border border-border bg-white p-2 shadow-[var(--shadow-lift)]">{children}</div>
+        <div className="glass-strong mt-1.5 rounded-2xl bg-white/92! p-2">{children}</div>
       </div>
     </div>
   )
@@ -57,7 +57,7 @@ function Dropdown({
 
 function MenuLink({ href, children, count, onClick }: { href: string; children: React.ReactNode; count?: number; onClick?: () => void }) {
   return (
-    <Link href={href} onClick={onClick} className="flex items-center justify-between gap-3 rounded px-3 py-2 text-sm text-fg-secondary hover:bg-surface hover:text-fg">
+    <Link href={href} onClick={onClick} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm text-fg-secondary hover:bg-white hover:text-fg">
       <span>{children}</span>
       {count !== undefined ? <span className="font-mono text-xs text-fg-muted">{count}</span> : null}
     </Link>
@@ -69,6 +69,15 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
   const pathname = usePathname()
   const [menu, setMenu] = useState<MenuKey | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  // Frost only once content scrolls under the header: a backdrop-filter on screen
+  // during first paint measurably delays LCP on mid-range phones.
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   // Close menus when the route changes (state adjusted during render, per React docs).
   const [lastPath, setLastPath] = useState(pathname)
@@ -107,7 +116,7 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
       </a>
 
       {/* Info bar: who we are and how to reach us. Scrolls away. */}
-      <div className="hidden border-b border-border bg-surface text-xs text-fg-secondary md:block">
+      <div className="hidden text-xs text-fg-secondary md:block">
         <div className="container-page flex h-9 items-center gap-5">
           <span>{[contact.location, contact.hours].filter(Boolean).join(' · ')}</span>
           <span className="ml-auto flex items-center gap-5">
@@ -131,7 +140,16 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
         </div>
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-border bg-white">
+      {/* Frosted header. Menus inside it are solid: a nested backdrop-filter would
+          switch off the header's own frost in Chromium. */}
+      <header className="sticky top-0 z-40 border-b border-white/70">
+        <span
+          aria-hidden="true"
+          className={cn(
+            'pointer-events-none absolute inset-0 -z-10 transition-colors duration-300',
+            scrolled ? 'bg-white/72 shadow-[0_8px_24px_rgba(15,23,42,0.05)] backdrop-blur-md backdrop-saturate-150' : 'bg-white/60',
+          )}
+        />
         <div className="container-page flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5 md:h-[var(--header-height)] md:flex-nowrap md:gap-6 md:py-0">
           <button type="button" onClick={() => setMobileOpen(true)} className="-ml-2 rounded p-2 text-fg lg:hidden" aria-label="Open menu">
             <Menu className="h-6 w-6" />
@@ -143,7 +161,7 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
           <div className="ml-auto flex items-center gap-1">
             <Link
               href={signedIn ? '/account' : '/login'}
-              className="flex items-center gap-2 whitespace-nowrap rounded px-2 py-2 text-sm text-fg hover:text-primary-light"
+              className="flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm text-fg hover:bg-white/70"
             >
               <User className="h-6 w-6" aria-hidden="true" />
               <span className="hidden leading-tight xl:block">
@@ -154,7 +172,7 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
             </Link>
             <Link
               href="/cart"
-              className="relative flex items-center gap-2 rounded px-2 py-2 text-sm font-semibold text-fg hover:text-primary-light"
+              className="relative flex items-center gap-2 rounded-full px-2.5 py-1.5 text-sm font-semibold text-fg hover:bg-white/70"
               aria-label={`Cart, ${count} ${count === 1 ? 'item' : 'items'}`}
             >
               <ShoppingCart className="h-6 w-6" aria-hidden="true" />
@@ -176,7 +194,7 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
               href={href}
               className={cn(
                 'shrink-0 rounded-full border px-3 py-1 text-sm',
-                isActive(href) ? 'border-primary bg-primary/5 text-primary-light' : 'border-border-strong text-fg-secondary',
+                isActive(href) ? 'border-primary bg-primary/5 text-primary-light' : 'border-border-strong bg-white/60 text-fg-secondary',
               )}
             >
               {label}
@@ -185,7 +203,7 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
         </nav>
 
         {/* Category bar */}
-        <nav aria-label="Main" className="hidden border-t border-border lg:block">
+        <nav aria-label="Main" className="hidden border-t border-white/60 lg:block">
           <div className="container-page flex items-center">
             <Dropdown label="All categories" open={menu === 'all'} onOpen={() => setMenu('all')} onClose={close} wide className="-ml-3">
               <div className="grid grid-cols-2 gap-1">

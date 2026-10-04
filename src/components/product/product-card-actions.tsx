@@ -16,7 +16,7 @@ export function AddToCartButton({ product }: { product: ProductCardData }) {
     return (
       <Link
         href={`/p/${product.slug}`}
-        className="relative z-10 shrink-0 rounded-md border border-border-strong px-2.5 py-1.5 text-xs font-semibold text-fg hover:border-primary hover:text-primary-light"
+        className="relative z-10 shrink-0 rounded-full border border-border-strong bg-white/70 px-3 py-1.5 text-xs font-semibold text-fg hover:border-primary hover:text-primary-light"
       >
         {soldOut ? 'Details' : 'Options'}
       </Link>
@@ -30,7 +30,7 @@ export function AddToCartButton({ product }: { product: ProductCardData }) {
       disabled={!ready}
       aria-label={`Add ${product.name} to cart`}
       title="Add to cart"
-      className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary-strong text-white transition-colors hover:bg-primary-strong-hover disabled:opacity-60"
+      className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-strong text-white shadow-[0_6px_16px_rgba(11,111,216,0.35)] transition-colors hover:bg-primary-strong-hover disabled:opacity-60"
       onClick={() => {
         add({
           productId: product.id,
@@ -78,7 +78,7 @@ export function WishlistButton({ productId, name, className }: { productId: stri
         }
       }}
       className={cn(
-        'z-10 grid h-9 w-9 place-items-center rounded-full bg-white/80 transition-colors',
+        'z-10 grid h-9 w-9 place-items-center rounded-full border border-white bg-white/85 shadow-sm transition-colors',
         saved ? 'text-ink-magenta' : 'text-fg-muted hover:text-ink-magenta',
         className,
       )}

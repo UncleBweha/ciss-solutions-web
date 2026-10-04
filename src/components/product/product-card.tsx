@@ -10,8 +10,8 @@ export function ProductCard({ product, priority, className }: { product: Product
   const href = `/p/${product.slug}`
   const soldOut = product.available_quantity <= 0
   return (
-    <article className={cn('group relative flex flex-col rounded-[var(--radius-card)] border border-border bg-white transition-shadow hover:shadow-[var(--shadow-lift)]', className)}>
-      <div className="relative aspect-[4/3.4]">
+    <article className={cn('glass-card group relative flex flex-col rounded-[var(--radius-card)]', className)}>
+      <div className="relative m-1.5 aspect-[4/3.4] rounded-[calc(var(--radius-card)-4px)] bg-white/80">
         <Link href={href} tabIndex={-1} aria-hidden="true" className="absolute inset-0">
           <ProductImage
             src={product.image_url}
@@ -28,7 +28,7 @@ export function ProductCard({ product, priority, className }: { product: Product
         ) : null}
         <WishlistButton productId={product.id} name={product.name} className="absolute right-1.5 top-1.5" />
       </div>
-      <div className="flex flex-1 flex-col border-t border-border px-3 pb-3 pt-2.5">
+      <div className="flex flex-1 flex-col px-3.5 pb-3.5 pt-1">
         {product.brand_name ? <p className="text-xs text-fg-muted">{product.brand_name}</p> : null}
         <h3 className="mt-0.5 line-clamp-2 text-sm leading-snug text-fg">
           <Link href={href} className="after:absolute after:inset-0 after:content-[''] hover:text-primary-light focus-visible:outline-none">
@@ -77,7 +77,7 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6" aria-busy="true" aria-label="Loading products">
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-white">
+        <div key={i} className="glass-card overflow-hidden rounded-[var(--radius-card)]">
           <div className="skeleton aspect-[4/3.4]" />
           <div className="space-y-2 p-4">
             <div className="skeleton h-3 w-1/3 rounded" />

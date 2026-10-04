@@ -117,11 +117,24 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
 
 ## Design system
 
-Tokens live in `src/app/globals.css` (`@theme inline`). The storefront follows a plain retail
-layout: light grey page, white panels with hairline borders, one blue for actions and links, and
-the logo's CMYK inks only as small accents (discount tags, cart count, the finder mark). The header
-has an info bar (location, hours, phone, WhatsApp), a main row with logo, search, account and cart,
-and a category bar; on mobile the search stays visible with category shortcuts under it. Product
-cards are compact (image, brand, name, rating, price, stock, small cart button) and homepage shelves
-scroll horizontally. Shared primitives are in `src/components/ui`. Contrast was checked with
-Lighthouse, and touch targets are at least 24 px.
+Tokens and surface classes live in `src/app/globals.css` (`@theme inline`). The UI is light
+glassmorphism over a fixed backdrop (`.site-backdrop`): soft cyan, magenta and yellow light from
+the logo's inks behind every page, including admin.
+
+- `.glass-flat` / `.glass-card`: translucent white with a bright edge and soft shadow, **no**
+  blur filter. Used for product cards, tiles, panels, forms and the footer. Over the smooth
+  backdrop they read as frosted glass and stay cheap in long product grids.
+- `.glass` / `.glass-strong`: real `backdrop-filter` blur. Reserved for surfaces with something
+  worth blurring: the homepage hero and parts finder (over CMYK halftone screens,
+  `InkBackdrop`), menus, drawers, dialogs, toasts and the mobile buy bar. The sticky header
+  switches its blur on only after the page scrolls, so no blur layer is on screen during first
+  paint.
+- Write `backdrop-filter` without the `-webkit-` prefix: the CSS optimiser adds the prefix,
+  and declaring both makes it drop the standard property.
+- Menus inside the header are near-opaque: a nested blur inside a blurred header is unreliable
+  in Chromium.
+
+Layout follows a retail store: info bar, header with logo, search, account and cart, a category
+bar (category chips on mobile), compact product cards and horizontally scrolling homepage
+shelves. Controls are pill-shaped (`rounded-full` buttons, `--radius-control` inputs). Text stays
+dark on near-white glass, and Lighthouse accessibility is 100 on the storefront pages.

@@ -16,10 +16,10 @@ const variants: Record<Variant, string> = {
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-9 px-3 text-sm gap-1.5 rounded-md',
-  md: 'h-11 px-5 text-sm gap-2 rounded-md',
-  lg: 'h-12 px-6 text-base gap-2.5 rounded-md',
-  icon: 'h-10 w-10 rounded-md',
+  sm: 'h-9 px-3.5 text-sm gap-1.5 rounded-full',
+  md: 'h-11 px-5 text-sm gap-2 rounded-full',
+  lg: 'h-12 px-7 text-base gap-2.5 rounded-full',
+  icon: 'h-10 w-10 rounded-full',
 }
 
 export function buttonClass(variant: Variant = 'primary', size: Size = 'md', className?: string) {

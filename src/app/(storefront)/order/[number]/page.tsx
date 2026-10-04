@@ -150,7 +150,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
           </OrderSummary>
           <div className="grid gap-2">
             {paid ? (
-              <Link href={`/api/orders/${encodeURIComponent(order.order_number)}/invoice${tokenQs}`} className="flex items-center justify-center gap-2 rounded-md border border-border py-2.5 text-sm font-semibold hover:bg-surface">
+              <Link href={`/api/orders/${encodeURIComponent(order.order_number)}/invoice${tokenQs}`} className="flex items-center justify-center gap-2 rounded-full border border-white bg-white/70 py-2.5 text-sm font-semibold hover:bg-white">
                 <FileText className="h-4 w-4" aria-hidden="true" /> Download invoice
               </Link>
             ) : null}

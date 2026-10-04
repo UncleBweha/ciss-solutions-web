@@ -41,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-KE" className={`${plexSans.variable} ${plexMono.variable}`}>
       <body>
+        <div className="site-backdrop" aria-hidden="true" />
         <ToastProvider>
           <CartProvider>{children}</CartProvider>
         </ToastProvider>
