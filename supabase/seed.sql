@@ -841,16 +841,16 @@ values ((select id from public.products where sku = 'PAN-P2500W'), '00000000-000
 
 insert into public.homepage_banners (eyebrow, title, highlight, subtitle, image_url, image_alt, cta_text, cta_url,
   secondary_cta_text, secondary_cta_url, featured_product_id, sort_order) values
-  ('Print smarter. Shop better.', 'CISS Solutions', 'Printers & Spare Parts',
-   'Get genuine printers, accessories and spare parts from top brands at competitive prices in Kenya.',
-   '/images/products/printer-inktank-black.svg', 'Epson EcoTank ink tank printer', 'Shop Now', '/shop', 'Browse Brands', '/brands',
+  ('In stock', 'Epson EcoTank L3250', null,
+   'Refillable ink tanks for a low cost per page. Prints, scans and copies over Wi-Fi.',
+   '/images/products/printer-inktank-black.svg', 'Epson EcoTank ink tank printer', 'View printer', '/p/epson-ecotank-l3250-all-in-one-printer', 'All ink tank printers', '/c/printers/ink-tank',
    (select id from public.products where sku = 'EPS-L3250'), 10),
-  ('Office laser printers', 'Fast, reliable', 'Laser printing',
-   'Duplex, networked laser printers from HP, Brother, Kyocera and Pantum, with original toner in stock.',
+  ('For the office', 'Mono laser printers', null,
+   'Duplex, networked laser printers from HP, Brother, Kyocera and Pantum, with toner to match.',
    '/images/products/printer-laser-white.svg', 'Mono laser printer', 'Shop laser printers', '/c/printers/laser', 'Find toner', '/c/ink-toner/toner',
    (select id from public.products where sku = 'HP-M404DN'), 20),
-  ('Spare parts finder', 'Fix it fast with', 'Genuine spare parts',
-   'Pickup rollers, printheads, fusers and maintenance kits matched to your exact printer model.',
+  ('Spare parts', 'Rollers, printheads and fusers', null,
+   'Matched to your printer model. Not sure what you need? Send us the model and the problem.',
    '/images/products/printhead.svg', 'Printer printhead spare part', 'Find a part', '/parts-finder', 'Ask a technician', '/support/part-request',
    (select id from public.products where sku = 'SP-FA04010'), 30);
 

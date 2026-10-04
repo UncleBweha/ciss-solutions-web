@@ -53,7 +53,7 @@ export function Dialog({ open, onClose, title, children, className, variant = 'm
       }}
       aria-label={title}
       className={cn(
-        'border border-border bg-background-secondary/95 p-0 text-fg shadow-[var(--shadow-lift)] backdrop:bg-black/60 backdrop:backdrop-blur-sm',
+        'border border-border bg-white p-0 text-fg shadow-[var(--shadow-lift)] backdrop:bg-black/40 backdrop:backdrop-blur-sm',
         placement,
         className,
       )}

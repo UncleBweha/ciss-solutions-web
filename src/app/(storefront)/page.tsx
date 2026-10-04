@@ -1,9 +1,9 @@
 import Link from 'next/link'
-import { ArrowRight, Wrench } from 'lucide-react'
-import { ProductGrid } from '@/components/product/product-card'
+import { ArrowRight, MessageCircle } from 'lucide-react'
+import { ProductRail } from '@/components/product/product-card'
 import { BrandCard, CategoryCard } from '@/components/storefront/cards'
 import { Hero, type HeroSlide } from '@/components/storefront/hero'
-import { PartFinder } from '@/components/storefront/part-finder'
+import { PartFinder, PartFinderPanel } from '@/components/storefront/part-finder'
 import { TrustBar } from '@/components/storefront/trust-bar'
 import { buttonClass } from '@/components/ui/button'
 import { SectionHeading } from '@/components/ui/misc'
@@ -46,12 +46,14 @@ export default async function HomePage() {
         updated_at: '',
       })) as HomepageSection[])
 
-  const rendered = await Promise.all(ordered.map((section) => renderSection(section, banners)))
+  const heroShown = ordered.some((s) => s.key === 'hero')
+  const rendered = await Promise.all(ordered.map((section) => renderSection(section, banners, heroShown)))
 
   return (
     <>
       <JsonLd data={[organizationSchema(settings.business), websiteSchema(settings.business.name)]} />
-      <div className="space-y-16 pb-8 pt-6 sm:space-y-20 sm:pt-8">
+      <h1 className="sr-only">CISS Solutions: printers, spare parts, ink and toner in Kenya</h1>
+      <div className="space-y-8 pb-6 pt-4 sm:space-y-10 sm:pt-5">
         {rendered.map((node, i) => (
           <div key={ordered[i].key}>{node}</div>
         ))}
@@ -60,7 +62,7 @@ export default async function HomePage() {
   )
 }
 
-async function renderSection(section: HomepageSection, banners: Awaited<ReturnType<typeof getHomepage>>['banners']) {
+async function renderSection(section: HomepageSection, banners: Awaited<ReturnType<typeof getHomepage>>['banners'], heroShown: boolean) {
   switch (section.key) {
     case 'hero': {
       const slides: HeroSlide[] = banners.map((b) => ({
@@ -78,16 +80,14 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
         background: b.background,
         product: b.product ? { name: b.product.name, slug: b.product.slug, price: b.product.price, short: b.product.short_description } : null,
       }))
-      if (!slides.length) {
-        return (
-          <section className="container-page py-10">
-            <h1 className="text-4xl font-bold sm:text-6xl">
-              CISS Solutions <span className="block text-primary-light">Printers & Spare Parts</span>
-            </h1>
-          </section>
-        )
-      }
-      return <Hero slides={slides} />
+      const models = await getPrinterModels()
+      const finderModels = models.map((m) => ({ id: m.id, slug: m.slug, name: m.name, model_number: m.model_number, brand_slug: m.brand_slug, brand_name: m.brand_name }))
+      return (
+        <div className="container-page grid gap-3 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)]">
+          {slides.length ? <Hero slides={slides} /> : <div className="hidden lg:block" />}
+          <PartFinderPanel models={finderModels} />
+        </div>
+      )
     }
 
     case 'trust':
@@ -100,7 +100,7 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
       return (
         <section aria-labelledby="home-categories" className="container-page">
           <SectionHeading id="home-categories" title={section.title ?? 'Shop by category'} subtitle={section.subtitle} />
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3 md:grid-cols-6">
             {roots.map((c) => (
               <CategoryCard key={c.id} name={c.name} href={categoryHref(c)} imageUrl={c.image_url} count={c.product_count} />
             ))}
@@ -116,7 +116,7 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
       const products = await getProductCards(filter, limitOf(section, section.key === 'featured' ? 10 : 5))
       if (!products.length) return null
       const href = section.key === 'deals' ? '/deals' : section.key === 'featured' ? '/shop' : '/shop?sort=best-selling'
-      const fallbackTitle = { featured: 'Featured Products', deals: 'Deals', bestsellers: 'Best Sellers' }[section.key]
+      const fallbackTitle = { featured: 'Popular right now', deals: 'Deals', bestsellers: 'Best sellers' }[section.key]
       return (
         <section aria-labelledby={`home-${section.key}`} className="container-page">
           <SectionHeading
@@ -124,17 +124,19 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
             title={section.title ?? fallbackTitle}
             subtitle={section.subtitle}
             action={
-              <Link href={href} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-light hover:text-fg">
-                View All <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              <Link href={href} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-light hover:underline">
+                See all <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             }
           />
-          <ProductGrid products={products} />
+          <ProductRail products={products} label={section.title ?? fallbackTitle} />
         </section>
       )
     }
 
     case 'part_finder': {
+      // The hero row already carries the compact finder.
+      if (heroShown) return null
       const [models, tree] = await Promise.all([getPrinterModels(), getCategoryTree()])
       const parts = tree.find((c) => c.slug === 'spare-parts')
       const supplies = tree.find((c) => c.slug === 'ink-toner')
@@ -160,12 +162,12 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
             title={section.title ?? 'Shop by brand'}
             subtitle={section.subtitle}
             action={
-              <Link href="/brands" className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-light hover:text-fg">
+              <Link href="/brands" className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-light hover:underline">
                 All brands <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             }
           />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5 sm:gap-3">
             {brands.slice(0, 10).map((b) => (
               <BrandCard key={b.id} name={b.name} slug={b.slug} logoUrl={b.logo_url} />
             ))}
@@ -178,16 +180,17 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
       const config = (section.config ?? {}) as { cta_text?: string; cta_url?: string }
       return (
         <section className="container-page">
-          <div className="flex flex-col items-start gap-6 rounded-[var(--radius-card)] border border-border bg-panel p-6 sm:p-8 md:flex-row md:items-center md:justify-between">
-            <div className="max-w-2xl">
-              <p className="label-mono mb-2 flex items-center gap-2 text-primary-light">
-                <span className="reg-mark" aria-hidden="true" /> Parts desk
-              </p>
-              <h2 className="text-xl font-semibold sm:text-2xl">{section.title ?? 'Not sure which part you need?'}</h2>
-              {section.subtitle ? <p className="mt-1 text-fg-secondary">{section.subtitle}</p> : null}
+          <div className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-border bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex items-start gap-4">
+              <span className="hidden h-11 w-11 shrink-0 place-items-center rounded-full bg-surface text-fg-secondary sm:grid">
+                <MessageCircle className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="max-w-2xl">
+                <h2 className="text-lg font-bold">{section.title ?? 'Not sure which part you need?'}</h2>
+                {section.subtitle ? <p className="mt-0.5 text-sm text-fg-secondary">{section.subtitle}</p> : null}
+              </div>
             </div>
-            <Link href={config.cta_url || '/support/part-request'} className={buttonClass('primary', 'lg')}>
-              <Wrench className="h-5 w-5" aria-hidden="true" />
+            <Link href={config.cta_url || '/support/part-request'} className={buttonClass('secondary', 'md', 'shrink-0')}>
               {config.cta_text || 'Get help finding a part'}
             </Link>
           </div>

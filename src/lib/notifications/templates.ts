@@ -24,10 +24,10 @@ function layout(title: string, body: string) {
   return `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#0f172a">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden">
-<tr><td style="background:#07152f;padding:20px 28px;color:#fff;font-size:20px;font-weight:800">CISS Solutions</td></tr>
+<tr><td style="background:#ffffff;border-bottom:4px solid #0b6fd8;padding:20px 28px;color:#111827;font-size:20px;font-weight:800">CISS Solutions</td></tr>
 <tr><td style="height:4px;background:linear-gradient(90deg,#06b6d4 0 25%,#db2777 25% 50%,#facc15 50% 75%,#e2e8f0 75%)"></td></tr>
 <tr><td style="padding:28px"><h1 style="margin:0 0 12px;font-size:22px">${esc(title)}</h1>${body}</td></tr>
-<tr><td style="padding:18px 28px;background:#f8fafc;color:#64748b;font-size:12px">CISS Solutions · Printers, spare parts, ink &amp; toner in Kenya · <a href="${siteUrl}" style="color:#168cff">${siteUrl.replace(/^https?:\/\//, '')}</a></td></tr>
+<tr><td style="padding:18px 28px;background:#f8fafc;color:#64748b;font-size:12px">CISS Solutions · Printers, spare parts, ink &amp; toner in Kenya · <a href="${siteUrl}" style="color:#0b6fd8">${siteUrl.replace(/^https?:\/\//, '')}</a></td></tr>
 </table></td></tr></table></body></html>`
 }
 
@@ -44,7 +44,7 @@ ${line('Subtotal', formatKES(o.subtotal))}${o.discount ? line('Discount', `-${fo
 
 const orderLink = (o: OrderEmailData) => `${siteUrl}/order/${encodeURIComponent(o.orderNumber)}?t=${o.accessToken}`
 const button = (href: string, label: string) =>
-  `<p><a href="${href}" style="display:inline-block;background:#168cff;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:10px">${label}</a></p>`
+  `<p><a href="${href}" style="display:inline-block;background:#0b6fd8;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:10px">${label}</a></p>`
 
 const textSummary = (o: OrderEmailData) =>
   [...o.items.map((i) => `- ${i.name} x${i.quantity}: ${formatKES(i.total)}`), `Total: ${formatKES(o.total)}`].join('\n')

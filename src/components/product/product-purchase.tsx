@@ -167,7 +167,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
       </ul>
 
       {/* Sticky purchase bar on mobile */}
-      <div className="glass fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 rounded-none border-x-0 border-b-0 bg-background/85 px-4 py-3 lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 border-t border-border bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(17,24,39,0.08)] lg:hidden">
         <div>
           <p className="text-xs text-fg-muted">{variant ? variant.name : 'Price'}</p>
           <p className="text-lg font-bold">{formatKES(price)}</p>

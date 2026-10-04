@@ -2,6 +2,7 @@ import { Footer } from '@/components/storefront/footer'
 import { Header, type NavData } from '@/components/storefront/header'
 import { WhatsAppButton } from '@/components/storefront/whatsapp-button'
 import { categoryHref, getBrands, getCategoryTree, getSettings } from '@/lib/catalog'
+import { whatsappLink } from '@/lib/contact'
 
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const [tree, brands, settings] = await Promise.all([getCategoryTree(), getBrands(), getSettings()])
@@ -16,7 +17,15 @@ export default async function StorefrontLayout({ children }: { children: React.R
   }
   return (
     <>
-      <Header nav={nav} />
+      <Header
+        nav={nav}
+        contact={{
+          phone: settings.business.phone,
+          whatsappHref: whatsappLink(settings.business.whatsapp),
+          location: settings.business.location,
+          hours: settings.business.business_hours,
+        }}
+      />
       <main id="main" className="min-h-[60vh]">
         {children}
       </main>

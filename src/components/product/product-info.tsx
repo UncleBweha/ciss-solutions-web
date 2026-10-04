@@ -87,7 +87,7 @@ function Reviews({ product }: { product: ProductDetail }) {
               <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
                 {r.author_name || 'Customer'} · {formatDate(r.created_at)}
                 {r.is_verified_purchase ? (
-                  <span className="inline-flex items-center gap-1 font-semibold text-green-300">
+                  <span className="inline-flex items-center gap-1 font-semibold text-success">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" /> Verified Purchase
                   </span>
                 ) : null}

@@ -3,11 +3,11 @@ import type { Tone } from '@/lib/ecommerce/orders'
 import { cn } from '@/lib/utils'
 
 const tones: Record<Tone | 'primary' | 'accent', string> = {
-  neutral: 'bg-white/10 text-fg-secondary ring-white/15',
+  neutral: 'bg-surface text-fg-secondary ring-border',
   info: 'bg-primary/15 text-primary-light ring-primary/30',
-  success: 'bg-success/15 text-green-300 ring-success/30',
-  warning: 'bg-warning/15 text-amber-300 ring-warning/30',
-  danger: 'bg-danger/15 text-red-300 ring-danger/30',
+  success: 'bg-success/15 text-success ring-success/30',
+  warning: 'bg-warning/15 text-warning ring-warning/30',
+  danger: 'bg-danger/15 text-danger ring-danger/30',
   primary: 'bg-primary-strong text-white ring-primary',
   accent: 'bg-accent-strong text-white ring-accent',
 }

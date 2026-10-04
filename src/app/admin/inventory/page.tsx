@@ -94,7 +94,7 @@ export default async function InventoryPage({ searchParams }: PageProps<'/admin/
                 <Td>{t.product?.name}{t.variant ? <span className="text-fg-muted"> — {t.variant.name}</span> : null}</Td>
                 <Td>{reasonLabels[t.reason] ?? t.reason}</Td>
                 <Td className="text-right tabular-nums">{t.previous_quantity}</Td>
-                <Td className={`text-right font-semibold tabular-nums ${t.change < 0 ? 'text-red-300' : 'text-green-300'}`}>{t.change > 0 ? `+${t.change}` : t.change}</Td>
+                <Td className={`text-right font-semibold tabular-nums ${t.change < 0 ? 'text-danger' : 'text-success'}`}>{t.change > 0 ? `+${t.change}` : t.change}</Td>
                 <Td className="text-right tabular-nums">{t.new_quantity}</Td>
                 <Td className="text-xs text-fg-muted">{[t.reference, t.note].filter(Boolean).join(' · ')}</Td>
               </tr>

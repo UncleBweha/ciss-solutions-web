@@ -5,46 +5,49 @@
    Tailwind theme below), never raw hex values.
    --------------------------------------------------------------------------- */
 :root {
-  --background: #07152f;
-  --background-secondary: #0b1d3d;
-  --background-elevated: #0f2448;
-  --surface: rgba(255, 255, 255, 0.07);
-  --surface-hover: rgba(255, 255, 255, 0.11);
-  --surface-strong: rgba(255, 255, 255, 0.14);
-  --surface-solid: #0e2245;
-  --panel: #0c1c3a;
-  --stage: #eef1f5;
-  --border: rgba(255, 255, 255, 0.14);
-  --border-strong: rgba(255, 255, 255, 0.24);
-  --primary: #168cff;
-  --primary-hover: #3a9dff;
-  --primary-light: #38bdf8;
+  /* Light retail palette: grey page, white panels, one blue for actions.
+     CMYK inks appear only as small accents (stripe, chips). */
+  --background: #f3f4f6;
+  --background-secondary: #ffffff;
+  --background-elevated: #ffffff;
+  --surface: #eef0f3;
+  --surface-hover: #e5e8ec;
+  --surface-strong: #dde1e7;
+  --surface-solid: #ffffff;
+  --panel: #ffffff;
+  --stage: #f5f6f8;
+  --border: #dfe3e8;
+  --border-strong: #c5ccd6;
+  --primary: #0b6fd8;
+  --primary-hover: #095bb3;
+  /* Blue used as text (links, prices in lists) on white: >= 4.5:1. */
+  --primary-light: #0a5fb8;
   /* Filled surfaces with white text use the strong variants (WCAG AA >= 4.5:1). */
   --primary-strong: #0b6fd8;
   --primary-strong-hover: #095bb3;
-  --accent-strong: #7c3aed;
-  --danger-strong: #dc2626;
-  --accent: #8b5cf6;
-  --text-primary: #ffffff;
-  --text-secondary: #b9c7df;
-  --text-muted: #8a9bbb;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  /* CMYK brand stripe */
-  --ink-cyan: #06b6d4;
+  --accent-strong: #6d28d9;
+  --danger-strong: #c81e1e;
+  --accent: #6d28d9;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #5b6472;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #c81e1e;
+  /* CMYK brand inks */
+  --ink-cyan: #0891b2;
   --ink-magenta: #db2777;
-  --ink-yellow: #facc15;
+  --ink-yellow: #eab308;
+  --ink-key: #111827;
 
-  --radius-card: 0.625rem;
-  --shadow-glass: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.25);
-  --shadow-lift: 0 18px 50px rgba(2, 8, 23, 0.45);
+  --radius-card: 0.5rem;
+  --shadow-glass: 0 1px 2px rgba(17, 24, 39, 0.06);
+  --shadow-lift: 0 10px 30px rgba(17, 24, 39, 0.12);
   --header-height: 4.5rem;
 
-  /* Admin uses a calmer, denser palette */
-  --admin-bg: #0a1730;
-  --admin-panel: #0f1f3d;
-  color-scheme: dark;
+  --admin-bg: #f3f4f6;
+  --admin-panel: #ffffff;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -76,6 +79,7 @@
   --color-ink-cyan: var(--ink-cyan);
   --color-ink-magenta: var(--ink-magenta);
   --color-ink-yellow: var(--ink-yellow);
+  --color-ink-key: var(--ink-key);
   --color-admin-bg: var(--admin-bg);
   --color-admin-panel: var(--admin-panel);
   --radius-card: var(--radius-card);
@@ -104,12 +108,12 @@
     text-wrap: balance;
   }
   :focus-visible {
-    outline: 2px solid var(--primary-light);
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
     border-radius: 0.375rem;
   }
   ::selection {
-    background: color-mix(in srgb, var(--primary) 45%, transparent);
+    background: color-mix(in srgb, var(--primary) 22%, transparent);
   }
   input, select, textarea, button {
     font: inherit;
@@ -121,28 +125,18 @@
 }
 
 @layer components {
-  /* Frosted glass: used for header, hero cards, panels. Not on every element. */
+  /* Panels: white with a hairline border. (Class names kept from the earlier theme.) */
   .glass {
-    background: var(--surface);
+    background: var(--panel);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-glass);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
   }
-  /* Same look without backdrop blur: cheap enough for grids of product cards. */
-  /* Flat panel: the default surface. Glass (above) is reserved for the header. */
   .glass-flat {
     background: var(--panel);
     border: 1px solid var(--border);
   }
-  .text-gradient {
-    background: linear-gradient(90deg, var(--primary-light), var(--primary) 45%, var(--accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
   .ink-stripe {
-    background: linear-gradient(90deg, var(--ink-cyan) 0 25%, var(--ink-magenta) 25% 50%, var(--ink-yellow) 50% 75%, #e2e8f0 75%);
+    background: linear-gradient(90deg, var(--ink-cyan) 0 25%, var(--ink-magenta) 25% 50%, var(--ink-yellow) 50% 75%, var(--ink-key) 75%);
   }
   .container-page {
     width: 100%;
@@ -156,9 +150,7 @@
   @media (min-width: 1280px) {
     .container-page { padding-inline: 2rem; }
   }
-  /* Product imagery sits on a soft light pad so it stays the visual focus. */
-  /* Products sit on a light "studio" tile, the way real product photos are shot,
-     so uploaded photos on white backgrounds blend in. */
+  /* Product images sit on a very light tile so photos on white blend in. */
   .product-stage {
     background: var(--stage);
   }
@@ -193,22 +185,9 @@
   }
 }
 
-/* Ambient lighting behind the page: depth without competing with products. */
-.ambient {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: linear-gradient(180deg, #0a1c3d 0%, var(--background) 420px);
-}
-
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
 }
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(12px); }
@@ -218,7 +197,6 @@
   0%, 100% { transform: scale(1); }
   40% { transform: scale(1.25); }
 }
-.animate-float { animation: float 6s ease-in-out infinite; }
 .animate-fade-up { animation: fade-up 0.5s ease-out both; }
 .animate-cart-bump { animation: cart-bump 0.4s ease-out; }
 
@@ -232,6 +210,6 @@
 }
 
 @media print {
-  .ambient, header, footer, .no-print { display: none !important; }
+  header, footer, .no-print { display: none !important; }
   body { background: #fff; color: #000; }
 }

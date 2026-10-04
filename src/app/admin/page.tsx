@@ -40,7 +40,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<'/admin
     <div className="space-y-6">
       <AdminPageHeader title="Dashboard" description={`Welcome back${user.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}. Here is today at a glance.`} />
       {param(sp.denied) ? (
-        <p role="alert" className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-amber-200">
+        <p role="alert" className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
           <ShieldAlert className="h-4 w-4" aria-hidden="true" /> Your role does not have access to that page.
         </p>
       ) : null}
@@ -96,7 +96,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<'/admin
             {(notes ?? []).map((n) => (
               <li key={n.id} className="flex gap-3 text-sm">
                 {n.kind === 'low_stock' || n.kind === 'payment_failed' || n.kind === 'stock_shortage' ? (
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
                 ) : (
                   <Bell className="mt-0.5 h-4 w-4 shrink-0 text-primary-light" aria-hidden="true" />
                 )}

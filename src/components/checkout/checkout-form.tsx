@@ -248,7 +248,7 @@ export function CheckoutForm({
                 </Field>
               </div>
               {zoneForCounty ? (
-                <p className="rounded-md bg-primary/10 px-4 py-3 text-sm text-sky-100">
+                <p className="rounded-md bg-primary/10 px-4 py-3 text-sm text-primary-light">
                   <strong>{zoneForCounty.name}</strong> delivery: {zoneForCounty.estimate} · {zoneForCounty.fee ? formatKES(zoneForCounty.fee) : 'Free'}
                   {zoneForCounty.freeOver ? ` (free over ${formatKES(zoneForCounty.freeOver)})` : ''}
                 </p>
@@ -293,7 +293,7 @@ export function CheckoutForm({
                     />
                   ) : null}
                 </div>
-                {errors.paymentMethod ? <p className="mt-2 text-xs text-red-300">{errors.paymentMethod.message}</p> : null}
+                {errors.paymentMethod ? <p className="mt-2 text-xs text-danger">{errors.paymentMethod.message}</p> : null}
               </fieldset>
 
               {method === 'mpesa' ? (
@@ -354,12 +354,12 @@ export function CheckoutForm({
               </Button>
             </div>
             {coupon && quote?.couponMessage ? (
-              <p role="alert" className="mt-1.5 text-xs text-amber-300">
+              <p role="alert" className="mt-1.5 text-xs text-warning">
                 {quote.couponMessage}
               </p>
             ) : null}
             {quote?.coupon ? (
-              <p className="mt-1.5 flex items-center justify-between text-xs text-green-300">
+              <p className="mt-1.5 flex items-center justify-between text-xs text-success">
                 {quote.coupon.code} applied
                 <button type="button" className="underline" onClick={() => { setCoupon(null); setCouponInput('') }}>
                   Remove

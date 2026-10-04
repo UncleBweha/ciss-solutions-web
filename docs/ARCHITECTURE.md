@@ -117,7 +117,11 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
 
 ## Design system
 
-Tokens live in `src/app/globals.css` (`@theme inline`): a deep navy base, one blue action colour,
-CMYK accent stripes taken from the print trade, light "stage" tiles behind product images, and
-mono labels for specs, SKUs and counts. Shared primitives are in `src/components/ui`. Contrast
-was checked with Lighthouse (accessibility 100) and touch targets are at least 24 px.
+Tokens live in `src/app/globals.css` (`@theme inline`). The storefront follows a plain retail
+layout: light grey page, white panels with hairline borders, one blue for actions and links, and
+the logo's CMYK inks only as small accents (discount tags, cart count, the finder mark). The header
+has an info bar (location, hours, phone, WhatsApp), a main row with logo, search, account and cart,
+and a category bar; on mobile the search stays visible with category shortcuts under it. Product
+cards are compact (image, brand, name, rating, price, stock, small cart button) and homepage shelves
+scroll horizontally. Shared primitives are in `src/components/ui`. Contrast was checked with
+Lighthouse, and touch targets are at least 24 px.

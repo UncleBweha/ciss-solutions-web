@@ -40,7 +40,7 @@ export default async function AddressesPage() {
                 ) : null}
                 <form action={deleteAddressAction}>
                   <input type="hidden" name="id" value={a.id} />
-                  <Button type="submit" size="sm" variant="ghost" className="text-red-300">
+                  <Button type="submit" size="sm" variant="ghost" className="text-danger">
                     Delete
                   </Button>
                 </form>

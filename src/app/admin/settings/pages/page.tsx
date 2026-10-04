@@ -35,7 +35,7 @@ export default async function ContentPagesSettings({ searchParams }: PageProps<'
       </Panel>
       <Panel title={`Edit /${slug}`} actions={<Link href={`/${slug}`} target="_blank" className="text-xs text-primary-light">View page →</Link>}>
         {page && !page.reviewed ? (
-          <p className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-amber-200">
+          <p className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
             This is starter text. Review it (for legal pages, with your advisor) and tick “Reviewed” before launch.
           </p>
         ) : null}
