@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: seo.default_title, template: `%s | ${business.name}` },
     description: seo.default_description,
     applicationName: business.name,
-    icons: { icon: '/logo.webp', apple: '/logo.webp' },
+    icons: { apple: '/logo.webp' },
     openGraph: {
       type: 'website',
       siteName: business.name,

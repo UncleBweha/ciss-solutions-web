@@ -54,17 +54,12 @@ test('customer can find a printer and buy it with M-Pesa', async ({ page, isMobi
   await expect(page.getByText('Payment confirmed')).toBeVisible()
 })
 
-test('server rejects a tampered price: totals come from the database', async ({ page }) => {
-  // Seed a cart with a fake client-side price; the checkout must show the real price.
-  await page.goto('/')
-  await page.evaluate(async () => {
-    const res = await fetch('/api/search?q=pickup%20roller')
-    const { items } = await res.json()
-    localStorage.setItem(
-      'ciss-cart-v1',
-      JSON.stringify([{ productId: items[0].id, variantId: null, quantity: 1, snapshot: { name: items[0].name, slug: items[0].slug, price: 1, imageUrl: null, variantName: null, sku: 'x' } }]),
-    )
-  })
+test('server rejects a tampered price: totals come from the database', async ({ page, request }) => {
+  // Seed a cart with a fake client-side price (KSh 1); the cart must show the real price.
+  const { items } = await (await request.get('/api/search?q=pickup%20roller')).json()
+  const tampered = [{ productId: items[0].id, variantId: null, quantity: 1, snapshot: { name: items[0].name, slug: items[0].slug, price: 1, imageUrl: null, variantName: null, sku: 'x' } }]
+  await page.addInitScript((cart) => localStorage.setItem('ciss-cart-v1', JSON.stringify(cart)), tampered)
   await page.goto('/cart')
   await expect(page.getByText('KSh 2,500').first()).toBeVisible()
+  await expect(page.getByText('KSh 1 each')).toHaveCount(0)
 })

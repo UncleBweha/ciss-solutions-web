@@ -1,9 +1,14 @@
 import { expect, test } from '@playwright/test'
 
-// Uses the seeded demo customer (supabase/seed.sql).
-const CUSTOMER = { email: 'customer@ciss.local', password: 'Customer12345!' }
+// Seeded demo customers (supabase/seed.sql), one per project so parallel runs
+// never share a wishlist or cart.
+const CUSTOMERS = {
+  desktop: { email: 'customer@ciss.local', password: 'Customer12345!', firstName: 'Wanjiku' },
+  mobile: { email: 'brian@ciss.local', password: 'Customer12345!', firstName: 'Brian' },
+} as const
 
-test('guest cart merges into the account on sign in; wishlist and orders work', async ({ page }) => {
+test('guest cart merges into the account on sign in; wishlist and orders work', async ({ page }, testInfo) => {
+  const CUSTOMER = CUSTOMERS[testInfo.project.name as keyof typeof CUSTOMERS]
   // Guest adds a product
   await page.goto('/p/hp-laserjet-m404-m405-pickup-roller')
   await page.getByRole('button', { name: 'Add to Cart' }).first().click()
@@ -15,7 +20,7 @@ test('guest cart merges into the account on sign in; wishlist and orders work', 
   await page.getByLabel('Password').fill(CUSTOMER.password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/account$/)
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Hello, Wanjiku')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(`Hello, ${CUSTOMER.firstName}`)
 
   // Cart survived sign-in and is now stored on the account
   await page.goto('/cart')
@@ -23,7 +28,9 @@ test('guest cart merges into the account on sign in; wishlist and orders work', 
 
   // Wishlist (account)
   await page.goto('/p/brother-tn-2420-toner')
-  const saved = page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('/p/brother-tn-2420-toner'))
+  // Wait for the setWishlist server action itself (payload ["<product id>",true]),
+  // not the wishlist sync request that also posts to this page.
+  const saved = page.waitForResponse((r) => r.request().method() === 'POST' && /^\["[0-9a-f-]{36}",true\]$/.test(r.request().postData() ?? ''))
   await page.getByRole('button', { name: /Save Brother TN-2420 .* to wishlist/ }).first().click()
   await saved
   await expect(page.getByRole('button', { name: /Remove Brother TN-2420 .* from wishlist/ }).first()).toBeVisible()

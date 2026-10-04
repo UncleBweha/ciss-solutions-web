@@ -54,6 +54,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [signedIn, setSignedIn] = useState(false)
   const [bump, setBump] = useState(0)
   const signedInRef = useRef(false)
+  // Wishlist taps made while an account sync is in flight, re-applied on its result.
+  const pendingWishlist = useRef(new Map<string, boolean>())
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load from this browser, then merge with the account if signed in.
@@ -71,16 +73,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const supabase = createClient()
 
     const syncForUser = async () => {
+      pendingWishlist.current.clear()
       const [cart, wish] = await Promise.all([
         syncCartAction(load<CartLine[]>(CART_KEY, []).map(({ productId, variantId, quantity }) => ({ productId, variantId, quantity }))),
         syncWishlistAction(load<string[]>(WISHLIST_KEY, [])),
       ])
       if (cart) {
-        setItems((current) =>
-          cart.map((c) => ({ ...c, snapshot: current.find((x) => same(x, c.productId, c.variantId))?.snapshot })),
-        )
+        // The server merged this browser's cart as it was when sync started; keep
+        // anything added since (max quantity wins) instead of overwriting it.
+        setItems((current) => {
+          const merged: CartLine[] = cart.map((c) => {
+            const local = current.find((x) => same(x, c.productId, c.variantId))
+            return { ...c, quantity: Math.max(c.quantity, local?.quantity ?? 0), snapshot: local?.snapshot }
+          })
+          for (const local of current) if (!merged.some((m) => same(m, local.productId, local.variantId))) merged.push(local)
+          return merged
+        })
       }
-      if (wish) setWishlist(new Set(wish))
+      if (wish) {
+        setWishlist(() => {
+          const next = new Set(wish)
+          for (const [id, saved] of pendingWishlist.current) {
+            if (saved) next.add(id)
+            else next.delete(id)
+          }
+          return next
+        })
+      }
     }
 
     supabase.auth.getSession().then(({ data }) => {
@@ -162,6 +181,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       else next.add(productId)
       return next
     })
+    pendingWishlist.current.set(productId, !wasSaved)
     if (!wasSaved) track('wishlist_add', { items: [{ item_id: productId, item_name: name }] })
     if (!signedInRef.current) return 'local' as const
     const result = await setWishlistAction(productId, !wasSaved)
