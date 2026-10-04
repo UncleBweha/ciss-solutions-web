@@ -30,7 +30,7 @@ export default async function CheckoutSettings() {
       </Panel>
       <Panel title="Staff email alerts">
         <AdminForm action={saveNotificationSettingsAction} className="space-y-3">
-          <Field label="Admin alert emails" htmlFor="admin_emails" hint="New orders and payments. Comma-separated. (ADMIN_ALERT_EMAILS in the environment is used for delivery.)">
+          <Field label="Admin alert emails" htmlFor="admin_emails" hint="Emailed when an order is paid (M-Pesa) or placed (bank transfer, cash on delivery). Comma-separated; added to ADMIN_ALERT_EMAILS from the server environment.">
             <Textarea id="admin_emails" name="admin_emails" rows={3} defaultValue={(n.admin_emails ?? []).join(', ')} />
           </Field>
         </AdminForm>

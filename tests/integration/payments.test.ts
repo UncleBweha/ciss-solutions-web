@@ -104,4 +104,21 @@ run('M-Pesa callback processing (integration)', () => {
     expect(await handleStkCallback(forged)).toBe('invalid')
     expect(await handleStkCallback({ hello: 'world' })).toBe('invalid')
   })
+
+  it('cron reconciles a payment whose callback never arrived (STK query)', async () => {
+    const { orderId, paymentId } = await newOrder(1000)
+    // Mock-format request id from a minute ago; the mock answers "success" for this phone.
+    const sentAt = Date.now() - 60_000
+    await db
+      .from('payments')
+      .update({ provider: 'mpesa_mock', checkout_request_id: `ws_CO_MOCK_${sentAt}_254700000009_1000`, created_at: new Date(sentAt).toISOString() })
+      .eq('id', paymentId)
+
+    const { releaseExpiredReservations } = await import('@/lib/payments/service')
+    const result = await releaseExpiredReservations()
+    expect(result.reconciled).toBeGreaterThanOrEqual(1)
+
+    const { data: order } = await db.from('orders').select('order_status, payment_status').eq('id', orderId).single()
+    expect(order).toEqual({ order_status: 'PAID', payment_status: 'PAID' })
+  })
 })
