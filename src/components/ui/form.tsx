@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 const control =
-  'w-full rounded-md border border-border-strong bg-white px-3.5 text-sm text-fg placeholder:text-fg-muted transition-colors hover:border-border-strong focus:border-primary-light focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60 aria-[invalid=true]:border-danger'
+  'w-full rounded-[var(--radius-control)] border border-border-strong bg-white/80 px-3.5 text-sm text-fg placeholder:text-fg-muted transition-colors hover:border-border-strong focus:border-primary focus:bg-white focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60 aria-[invalid=true]:border-danger'
 
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cn(control, 'h-11', className)} {...props} />

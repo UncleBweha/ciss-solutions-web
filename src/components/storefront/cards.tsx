@@ -18,7 +18,7 @@ export function CategoryCard({
   return (
     <Link
       href={href}
-      className={cn('group flex flex-col items-center rounded-[var(--radius-card)] border border-border bg-white px-2 pb-3 pt-2 text-center transition-colors hover:border-primary', className)}
+      className={cn('glass-card group flex flex-col items-center rounded-[var(--radius-card)] px-2 pb-3 pt-2 text-center', className)}
     >
       <span className="relative block h-20 w-full sm:h-24">
         <ProductImage src={imageUrl} alt="" fill sizes="(min-width: 1024px) 12vw, 30vw" className="object-contain p-2" />
@@ -35,7 +35,7 @@ export function BrandCard({ name, slug, logoUrl, description }: { name: string; 
   return (
     <Link
       href={`/b/${slug}`}
-      className="group flex h-full flex-col justify-center gap-1.5 rounded-[var(--radius-card)] border border-border bg-white px-4 py-4 transition-colors hover:border-primary"
+      className="glass-card group flex h-full flex-col justify-center gap-1.5 rounded-[var(--radius-card)] px-4 py-4"
     >
       <span className="flex h-9 items-center">
         {logoUrl ? (

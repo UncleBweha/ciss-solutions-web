@@ -58,7 +58,7 @@ export function AdminShell({ nav, user, unread, children }: { nav: AdminNavItem[
 
   return (
     <div className="min-h-dvh bg-admin-bg">
-      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-border bg-admin-panel p-3 lg:flex">
+      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-white/80 bg-white/60 p-3 backdrop-blur-md lg:flex">
         <Link href="/admin" className="mb-4 flex items-center gap-2 px-3 py-2">
           <span className="ink-stripe h-6 w-1.5 rounded-full" aria-hidden="true" />
           <span className="font-display text-lg font-bold">CISS Admin</span>
@@ -69,7 +69,7 @@ export function AdminShell({ nav, user, unread, children }: { nav: AdminNavItem[
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Admin menu">
           <button className="absolute inset-0 bg-black/40" aria-label="Close menu" onClick={() => setOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-64 overflow-y-auto bg-admin-panel p-3">
+          <div className="absolute inset-y-0 left-0 w-64 overflow-y-auto bg-white/90 p-3 backdrop-blur-md">
             <button onClick={() => setOpen(false)} className="mb-3 ml-auto block rounded-lg p-2 hover:bg-surface" aria-label="Close menu">
               <X className="h-5 w-5" />
             </button>
@@ -79,7 +79,7 @@ export function AdminShell({ nav, user, unread, children }: { nav: AdminNavItem[
       ) : null}
 
       <div className="lg:pl-60">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-admin-bg/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-white/70 bg-white/60 px-4 backdrop-blur-md sm:px-6">
           <button onClick={() => setOpen(true)} className="rounded-lg p-2 hover:bg-surface lg:hidden" aria-label="Open menu">
             <Menu className="h-5 w-5" />
           </button>

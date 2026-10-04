@@ -27,7 +27,7 @@ export function OrderSummary({
 }) {
   const row = 'flex items-baseline justify-between gap-4 py-1.5 text-sm'
   return (
-    <section aria-labelledby="summary-title" className={cn('glass rounded-[var(--radius-card)] p-5 sm:p-6', className)} aria-busy={loading}>
+    <section aria-labelledby="summary-title" className={cn('glass-flat rounded-[var(--radius-card)] p-5 sm:p-6', className)} aria-busy={loading}>
       <h2 id="summary-title" className="mb-4 text-lg font-bold">
         {title}
       </h2>

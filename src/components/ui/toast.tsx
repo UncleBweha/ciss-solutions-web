@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={t.id}
               role={t.tone === 'error' ? 'alert' : 'status'}
-              className="glass animate-fade-up pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[var(--radius-card)] bg-background-secondary/90 p-4 text-sm"
+              className="glass-strong animate-fade-up pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[var(--radius-card)] p-4 text-sm"
             >
               <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', t.tone === 'success' ? 'text-success' : t.tone === 'error' ? 'text-danger' : 'text-primary-light')} aria-hidden="true" />
               <div className="flex-1">{t.message}</div>
