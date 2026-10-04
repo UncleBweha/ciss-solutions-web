@@ -7,12 +7,12 @@ type Size = 'sm' | 'md' | 'lg' | 'icon'
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-primary text-white shadow-[0_8px_24px_-8px_rgba(22,140,255,0.7)] hover:bg-primary-hover disabled:bg-primary/50',
+    'bg-primary-strong text-white shadow-[0_8px_24px_-8px_rgba(22,140,255,0.7)] hover:bg-primary-strong-hover disabled:bg-primary-strong/50',
   secondary: 'bg-white text-background hover:bg-white/90 disabled:bg-white/50',
   glass: 'glass-flat text-fg hover:bg-surface-hover hover:border-border-strong',
   ghost: 'text-fg-secondary hover:text-fg hover:bg-surface',
-  danger: 'bg-danger/90 text-white hover:bg-danger',
-  success: 'bg-success/90 text-white hover:bg-success',
+  danger: 'bg-danger-strong text-white hover:bg-red-700',
+  success: 'bg-green-700 text-white hover:bg-green-800',
 }
 
 const sizes: Record<Size, string> = {

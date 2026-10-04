@@ -44,7 +44,7 @@ export function PriceDisplay({
 export function DiscountBadge({ price, compareAt, className }: { price: number; compareAt?: number | null; className?: string }) {
   const pct = discountPercent(Number(price), compareAt != null ? Number(compareAt) : null)
   if (!pct) return null
-  return <span className={cn('rounded-full bg-danger px-2 py-0.5 text-xs font-bold text-white', className)}>-{pct}%</span>
+  return <span className={cn('rounded-full bg-danger-strong px-2 py-0.5 text-xs font-bold text-white', className)}>-{pct}%</span>
 }
 
 /** Stock state with icon + text (never colour alone). */

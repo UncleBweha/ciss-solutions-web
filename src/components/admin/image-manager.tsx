@@ -84,7 +84,7 @@ export function ImageManager({ productId, productName, initial }: { productId: s
             <li key={img.id} className={cn('rounded-lg border p-2', img.isPrimary ? 'border-primary' : 'border-border')}>
               <div className="product-stage relative aspect-square overflow-hidden rounded-md">
                 <ProductImage src={img.url} alt={img.alt} fill sizes="200px" className="object-contain p-2" />
-                {img.isPrimary ? <span className="absolute left-1.5 top-1.5 rounded bg-primary px-1.5 text-[10px] font-bold text-white">MAIN</span> : null}
+                {img.isPrimary ? <span className="absolute left-1.5 top-1.5 rounded bg-primary-strong px-1.5 text-[10px] font-bold text-white">MAIN</span> : null}
               </div>
               <Input
                 aria-label="Alt text"

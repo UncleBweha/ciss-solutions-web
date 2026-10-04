@@ -8,8 +8,8 @@ const tones: Record<Tone | 'primary' | 'accent', string> = {
   success: 'bg-success/15 text-green-300 ring-success/30',
   warning: 'bg-warning/15 text-amber-300 ring-warning/30',
   danger: 'bg-danger/15 text-red-300 ring-danger/30',
-  primary: 'bg-primary text-white ring-primary',
-  accent: 'bg-accent text-white ring-accent',
+  primary: 'bg-primary-strong text-white ring-primary',
+  accent: 'bg-accent-strong text-white ring-accent',
 }
 
 export function Badge({ tone = 'neutral', className, children }: { tone?: keyof typeof tones; className?: string; children: ReactNode }) {

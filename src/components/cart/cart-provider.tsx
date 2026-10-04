@@ -3,7 +3,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { saveCartAction, syncCartAction } from '@/actions/cart'
 import { setWishlistAction, syncWishlistAction } from '@/actions/wishlist'
 import { track } from '@/lib/analytics'
-import { createClient } from '@/lib/supabase/client'
 import { isSupabaseConfigured } from '@/lib/env'
 
 /** Display snapshot so the cart renders instantly; prices are re-quoted by the server. */
@@ -70,7 +69,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setReady(true)
 
     if (!isSupabaseConfigured) return
-    const supabase = createClient()
+    let unsubscribe: (() => void) | undefined
+    let cancelled = false
 
     const syncForUser = async () => {
       pendingWishlist.current.clear()
@@ -102,24 +102,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      const has = Boolean(data.session)
-      signedInRef.current = has
-      setSignedIn(has)
-      if (has) void syncForUser()
+    // The Supabase client is only needed after first paint (session check), so it
+    // is loaded lazily to keep it off the critical rendering path.
+    void import('@/lib/supabase/client').then(({ createClient }) => {
+      if (cancelled) return
+      const supabase = createClient()
+      supabase.auth.getSession().then(({ data }) => {
+        const has = Boolean(data.session)
+        signedInRef.current = has
+        setSignedIn(has)
+        if (has) void syncForUser()
+      })
+      const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+        const has = Boolean(session)
+        if (event === 'SIGNED_IN' && !signedInRef.current) void syncForUser()
+        if (event === 'SIGNED_OUT') {
+          // The account keeps its cart; this shared browser starts empty.
+          setItems([])
+          setWishlist(new Set())
+        }
+        signedInRef.current = has
+        setSignedIn(has)
+      })
+      unsubscribe = () => sub.subscription.unsubscribe()
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      const has = Boolean(session)
-      if (event === 'SIGNED_IN' && !signedInRef.current) void syncForUser()
-      if (event === 'SIGNED_OUT') {
-        // The account keeps its cart; this shared browser starts empty.
-        setItems([])
-        setWishlist(new Set())
-      }
-      signedInRef.current = has
-      setSignedIn(has)
-    })
-    return () => sub.subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
   }, [])
 
   // Persist locally always; to the account (debounced) when signed in.

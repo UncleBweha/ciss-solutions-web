@@ -119,7 +119,7 @@ export function Header({ nav }: { nav: NavData }) {
 
   return (
     <>
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-white">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-lg focus:bg-primary-strong focus:px-4 focus:py-2 focus:text-white">
         Skip to content
       </a>
       <div className="ink-stripe h-1" aria-hidden="true" />
@@ -209,7 +209,7 @@ export function Header({ nav }: { nav: NavData }) {
               <ShoppingCart className="h-5 w-5" aria-hidden="true" />
               <span className="hidden xl:inline">Cart</span>
               {count > 0 ? (
-                <span key={bump} className="animate-cart-bump absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-white xl:static">
+                <span key={bump} className="animate-cart-bump absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-primary-strong px-1 text-[11px] font-bold text-white xl:static">
                   {count > 99 ? '99+' : count}
                 </span>
               ) : null}

@@ -136,8 +136,10 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
                   onClick={() => setIndex(i)}
                   aria-label={`Go to slide ${i + 1}`}
                   aria-current={i === index}
-                  className={cn('h-2 rounded-full transition-all', i === index ? 'w-8 bg-primary' : 'w-2 bg-white/30 hover:bg-white/50')}
-                />
+                  className="group grid h-6 min-w-6 place-items-center"
+                >
+                  <span className={cn('block h-2 rounded-full transition-all', i === index ? 'w-8 bg-primary' : 'w-2 bg-white/30 group-hover:bg-white/50')} />
+                </button>
               ))}
               <button type="button" onClick={() => setIndex((index + 1) % count)} className="grid h-9 w-9 place-items-center rounded-full bg-background/50 text-fg-secondary backdrop-blur hover:text-fg" aria-label="Next slide">
                 <ChevronRight className="h-4 w-4" />

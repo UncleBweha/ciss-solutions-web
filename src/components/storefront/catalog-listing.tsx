@@ -52,6 +52,7 @@ export function CatalogListing({
         </div>
         {result.items.length ? (
           <>
+            <h2 className="sr-only">Products</h2>
             <ProductGrid products={result.items} priorityCount={4} layout="sidebar" />
             <Pagination
               page={result.page}
