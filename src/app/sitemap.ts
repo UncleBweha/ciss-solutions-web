@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { categoryHref, flattenTree, getBrands, getCategoryTree } from '@/lib/catalog'
-import { CONTENT_PAGES } from '@/lib/content'
+import { CONTENT_PAGES, getContentPage } from '@/lib/content'
 import { isSupabaseConfigured, siteUrl } from '@/lib/env'
 import { publicClient } from '@/lib/supabase/public'
 import { tags } from '@/lib/cache'
@@ -19,9 +19,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/contact`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${siteUrl}/track-order`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${siteUrl}/support/part-request`, changeFrequency: 'yearly', priority: 0.4 },
-    ...CONTENT_PAGES.map((p) => ({ url: `${siteUrl}/${p}`, changeFrequency: 'monthly' as const, priority: 0.3 })),
   ]
   if (!isSupabaseConfigured) return fixed
+
+  // Only content pages staff have marked as reviewed (drafts are noindex).
+  const pages = await Promise.all(CONTENT_PAGES.map(async (p) => ((await getContentPage(p))?.reviewed ? p : null)))
+  for (const p of pages) if (p) fixed.push({ url: `${siteUrl}/${p}`, changeFrequency: 'monthly', priority: 0.3 })
 
   const [tree, brands] = await Promise.all([getCategoryTree(), getBrands()])
   // Page through products so large catalogues are fully included.

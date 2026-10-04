@@ -12,8 +12,10 @@ const ACCEPTED = { ResultCode: 0, ResultDesc: 'Accepted' }
 
 export async function POST(request: NextRequest) {
   const secret = request.nextUrl.searchParams.get('secret')
-  if (serverEnv.mpesa.callbackSecret && !safeEqual(secret, serverEnv.mpesa.callbackSecret)) {
-    logger.warn('mpesa.callback_rejected', { reason: 'bad_secret' })
+  const expected = serverEnv.mpesa.callbackSecret
+  // Fail closed in production: without a configured secret, nothing is accepted.
+  if (expected ? !safeEqual(secret, expected) : process.env.NODE_ENV === 'production') {
+    logger.warn('mpesa.callback_rejected', { reason: expected ? 'bad_secret' : 'secret_not_configured' })
     return NextResponse.json({ ResultCode: 1, ResultDesc: 'Rejected' }, { status: 403 })
   }
 

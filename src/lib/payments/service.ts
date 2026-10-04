@@ -232,8 +232,31 @@ async function refreshView(db: Db, orderId: string): Promise<PaymentView> {
   return { orderStatus: o.order_status, paymentStatus: o.payment_status, state: 'none', message: null }
 }
 
+/**
+ * Cron: first ask Safaricom about STK pushes still awaiting a result (covers a lost
+ * callback when nobody has the order page open), then cancel unpaid orders whose
+ * payment window has passed and release their stock.
+ */
 export async function releaseExpiredReservations() {
-  const { data, error } = await createAdminClient().rpc('expire_stale_orders')
+  const db = createAdminClient()
+  const { data: inFlight } = await db
+    .from('payments')
+    .select('order_id')
+    .eq('status', 'PROCESSING')
+    .not('checkout_request_id', 'is', null)
+    .lt('created_at', new Date(Date.now() - 30_000).toISOString())
+    .order('created_at')
+    .limit(25)
+  let reconciled = 0
+  for (const orderId of new Set((inFlight ?? []).map((p) => p.order_id))) {
+    try {
+      await refreshPaymentStatus(orderId)
+      reconciled++
+    } catch (error) {
+      logger.warn('mpesa.reconcile_failed', { orderId, error })
+    }
+  }
+  const { data, error } = await db.rpc('expire_stale_orders')
   if (error) throw new Error(error.message)
-  return data ?? 0
+  return { released: data ?? 0, reconciled }
 }

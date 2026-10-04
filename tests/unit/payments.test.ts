@@ -82,3 +82,28 @@ describe('logging redaction', () => {
     ).toEqual({ phone: '2547', password: '[redacted]', nested: { MPESA_PASSKEY: '[redacted]', access_token: '[redacted]', ok: 1 }, list: [{ apiKey: '[redacted]' }] })
   })
 })
+
+describe('DarajaProvider configuration', () => {
+  const config = {
+    env: 'sandbox' as const,
+    allowMockInProduction: false,
+    consumerKey: 'key',
+    consumerSecret: 'secret',
+    shortcode: '174379',
+    passkey: 'passkey',
+    transactionType: 'CustomerPayBillOnline' as const,
+    partyB: undefined,
+    callbackUrl: 'https://example.com/api/mpesa/callback',
+    callbackSecret: 'long-random-secret',
+  }
+
+  it('accepts a complete configuration', async () => {
+    const { DarajaProvider } = await import('@/lib/payments/daraja')
+    expect(() => new DarajaProvider(config)).not.toThrow()
+  })
+
+  it('refuses to run without a callback secret (callbacks would be unauthenticated)', async () => {
+    const { DarajaProvider } = await import('@/lib/payments/daraja')
+    expect(() => new DarajaProvider({ ...config, callbackSecret: undefined })).toThrow(/callbackSecret/)
+  })
+})

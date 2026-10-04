@@ -18,7 +18,7 @@ export class DarajaProvider implements MpesaProvider {
 
   constructor(private readonly config = serverEnv.mpesa) {
     if (config.env === 'mock') throw new Error('DarajaProvider requires MPESA_ENV=sandbox or production')
-    const missing = (['consumerKey', 'consumerSecret', 'shortcode', 'passkey', 'callbackUrl'] as const).filter((k) => !config[k])
+    const missing = (['consumerKey', 'consumerSecret', 'shortcode', 'passkey', 'callbackUrl', 'callbackSecret'] as const).filter((k) => !config[k])
     if (missing.length) throw new Error(`M-Pesa is not configured: missing ${missing.join(', ')}`)
     this.base = BASE[config.env]
   }

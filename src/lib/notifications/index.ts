@@ -73,13 +73,21 @@ export async function loadOrderEmailData(orderId: string): Promise<(OrderEmailDa
   }
 }
 
+/** Staff alert recipients: ADMIN_ALERT_EMAILS plus the addresses saved in Admin settings. */
+async function staffAlertRecipients(): Promise<string[]> {
+  const { data } = await createAdminClient().from('settings').select('value').eq('key', 'notifications').maybeSingle()
+  const saved = (data?.value as { admin_emails?: unknown } | null)?.admin_emails
+  const fromSettings = Array.isArray(saved) ? saved.filter((e): e is string => typeof e === 'string' && e.includes('@')) : []
+  return [...new Set([...serverEnv.email.adminAlerts, ...fromSettings].map((e) => e.trim().toLowerCase()))]
+}
+
 export async function notifyOrderPlaced(orderId: string) {
   const o = await loadOrderEmailData(orderId)
   if (!o) return
   await deliver('order_confirmation', o.email, orderConfirmationEmail(o), o.id)
   // Online payments alert staff once paid (notifyPaymentConfirmed); manual methods alert now.
   if (o.paymentMethod === 'bank_transfer' || o.paymentMethod === 'cash_on_delivery') {
-    await deliver('admin_new_order', serverEnv.email.adminAlerts, adminNewOrderEmail(o), o.id)
+    await deliver('admin_new_order', await staffAlertRecipients(), adminNewOrderEmail(o), o.id)
   }
 }
 
@@ -87,7 +95,7 @@ export async function notifyPaymentConfirmed(orderId: string) {
   const o = await loadOrderEmailData(orderId)
   if (!o) return
   await deliver('payment_confirmation', o.email, paymentConfirmationEmail(o), o.id)
-  await deliver('admin_new_order', serverEnv.email.adminAlerts, adminNewOrderEmail(o), o.id)
+  await deliver('admin_new_order', await staffAlertRecipients(), adminNewOrderEmail(o), o.id)
 }
 
 export async function notifyOrderStatus(orderId: string, status: OrderStatus) {
