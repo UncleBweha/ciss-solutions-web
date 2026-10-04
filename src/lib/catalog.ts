@@ -235,7 +235,7 @@ export const getProduct = cache(async (slug: string): Promise<ProductDetail | nu
         `*,
         brand:brands(id, name, slug),
         category:categories(id, name, slug, parent_id),
-        printer_model:printer_models(id, name, model_number),
+        printer_model:printer_models(id, name, model_number, slug),
         images:product_images(id, url, alt_text, sort_order, is_primary, variant_id),
         variants:product_variants(id, name, sku, option_values, price, compare_at_price, available_quantity, low_stock_threshold, image_url, sort_order, is_active),
         compatibility:product_compatibility(compatibility_notes, model:printer_models(id, name, model_number, slug, brand:brands(name)))`,
@@ -402,3 +402,20 @@ export const getDeliveryZones = cache(async (): Promise<DeliveryZoneRow[]> =>
     ),
   ),
 )
+
+/** Filter options for listing pages. */
+export async function getFacets(opts: { categories?: boolean; brands?: boolean } = {}) {
+  const [tree, brands] = await Promise.all([getCategoryTree(), getBrands()])
+  const flat: { slug: string; name: string; depth: number }[] = []
+  const walk = (nodes: CategoryNode[], depth: number) =>
+    nodes.forEach((n) => {
+      flat.push({ slug: n.slug, name: n.name, depth })
+      walk(n.children, depth + 1)
+    })
+  walk(tree, 0)
+  return {
+    categories: opts.categories === false ? undefined : flat,
+    brands: opts.brands === false ? undefined : brands.map((b) => ({ slug: b.slug, name: b.name })),
+    types: ['printer', 'spare_part', 'ink_toner', 'scanner', 'paper', 'accessory'],
+  }
+}
