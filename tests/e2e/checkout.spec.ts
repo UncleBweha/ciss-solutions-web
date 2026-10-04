@@ -1,0 +1,70 @@
+import { expect, test } from '@playwright/test'
+
+// Critical flow: home -> search -> product -> cart -> checkout -> delivery ->
+// M-Pesa payment (mock provider) -> confirmed order.
+test('customer can find a printer and buy it with M-Pesa', async ({ page, isMobile }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('CISS Solutions')
+
+  // Search
+  if (isMobile) await page.getByRole('banner').getByRole('button', { name: 'Search' }).click()
+  const scope = isMobile ? page.getByRole('dialog', { name: 'Search' }) : page.getByRole('banner')
+  const search = scope.getByRole('combobox', { name: 'Search products' })
+  await search.fill('L3250')
+  await expect(scope.getByRole('option').first()).toContainText('L3250')
+  await search.press('Enter')
+  await expect(page).toHaveURL(/\/search\?q=L3250/)
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('L3250')
+
+  // Product page
+  await page.getByRole('link', { name: 'Epson EcoTank L3250 All-in-One Wi-Fi Printer' }).first().click()
+  await expect(page).toHaveURL(/\/p\/epson-ecotank-l3250/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Epson EcoTank L3250 All-in-One Wi-Fi Printer')
+  await expect(page.getByText('KSh 32,999').first()).toBeVisible()
+
+  // Add to cart
+  await page.getByRole('button', { name: 'Add to Cart' }).first().click()
+  await expect(page.getByRole('link', { name: /Cart, 1 item/ })).toBeVisible()
+  await page.goto('/cart')
+  await expect(page.getByText('Epson EcoTank L3250 All-in-One Wi-Fi Printer').first()).toBeVisible()
+  await expect(page.getByRole('link', { name: /Proceed to Checkout/ })).toBeEnabled()
+  await page.getByRole('link', { name: /Proceed to Checkout/ }).click()
+
+  // Checkout: details
+  await expect(page).toHaveURL(/\/checkout/)
+  await page.getByLabel('Full name').fill('Test Customer')
+  await page.getByLabel('Phone number').fill('0712345678')
+  await page.getByLabel('Email').fill('e2e@example.com')
+  await page.getByRole('button', { name: 'Continue to delivery' }).click()
+
+  // Delivery
+  await page.getByLabel('County').selectOption('Nairobi')
+  await page.getByLabel('Town / City').fill('Westlands')
+  await page.getByLabel('Delivery address').fill('Mpaka Road, Office 4')
+  await page.getByRole('button', { name: 'Continue to payment' }).click()
+  // 32,999 + 200 Nairobi delivery, computed by the server quote
+  await expect(page.getByRole('button', { name: /Pay KSh 33,199 with M-Pesa/ })).toBeVisible()
+
+  // Payment (mock M-Pesa succeeds for numbers not ending in 1 or 2)
+  await page.getByRole('button', { name: /Pay KSh 33,199 with M-Pesa/ }).click()
+  await expect(page).toHaveURL(/\/order\/CISS-\d{8}-\d{4}\?t=/)
+  await expect(page.getByText('Check your phone')).toBeVisible()
+  await expect(page.getByText('Payment received. Thank you!')).toBeVisible({ timeout: 45_000 })
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Order Confirmed')
+  await expect(page.getByText('Payment confirmed')).toBeVisible()
+})
+
+test('server rejects a tampered price: totals come from the database', async ({ page }) => {
+  // Seed a cart with a fake client-side price; the checkout must show the real price.
+  await page.goto('/')
+  await page.evaluate(async () => {
+    const res = await fetch('/api/search?q=pickup%20roller')
+    const { items } = await res.json()
+    localStorage.setItem(
+      'ciss-cart-v1',
+      JSON.stringify([{ productId: items[0].id, variantId: null, quantity: 1, snapshot: { name: items[0].name, slug: items[0].slug, price: 1, imageUrl: null, variantName: null, sku: 'x' } }]),
+    )
+  })
+  await page.goto('/cart')
+  await expect(page.getByText('KSh 2,500').first()).toBeVisible()
+})
