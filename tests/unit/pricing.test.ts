@@ -30,9 +30,9 @@ const coupon = (over: Partial<Coupon> = {}): Coupon => ({
 
 describe('money', () => {
   it('formats KES without decimals for whole amounts', () => {
-    expect(formatKES(32999)).toBe('KSh 32,999')
-    expect(formatKES('1150.00')).toBe('KSh 1,150')
-    expect(formatKES(10.5)).toBe('KSh 10.50')
+    expect(formatKES(32999)).toBe('KSh\u00a032,999')
+    expect(formatKES('1150.00')).toBe('KSh\u00a01,150')
+    expect(formatKES(10.5)).toBe('KSh\u00a010.50')
   })
   it('computes discount percentage and savings', () => {
     expect(discountPercent(32999, 35000)).toBe(5)

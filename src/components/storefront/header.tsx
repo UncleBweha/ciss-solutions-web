@@ -81,12 +81,14 @@ export function Header({ nav }: { nav: NavData }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Close menus on navigation and on Escape.
-  useEffect(() => {
+  // Close menus when the route changes (state adjusted during render, per React docs).
+  const [lastPath, setLastPath] = useState(pathname)
+  if (pathname !== lastPath) {
+    setLastPath(pathname)
     setMenu(null)
     setMobileOpen(false)
     setSearchOpen(false)
-  }, [pathname])
+  }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenu(null)
     window.addEventListener('keydown', onKey)

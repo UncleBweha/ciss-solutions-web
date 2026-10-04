@@ -37,7 +37,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
   const router = useRouter()
   const firstAvailable = variants.find((v) => v.available_quantity > 0) ?? variants[0]
   const [variantId, setVariantId] = useState<string | null>(firstAvailable?.id ?? null)
-  const [quantity, setQuantity] = useState(1)
+  const [requestedQuantity, setQuantity] = useState(1)
   const variant = variants.find((v) => v.id === variantId) ?? null
 
   const price = variant ? variant.price : product.price
@@ -46,10 +46,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
   const lowThreshold = variant ? variant.low_stock_threshold : product.lowThreshold
   const max = Math.max(1, Math.min(available, maxPerItem))
   const soldOut = available <= 0
-
-  useEffect(() => {
-    setQuantity((q) => Math.min(q, max))
-  }, [max])
+  const quantity = Math.min(requestedQuantity, max)
 
   useEffect(() => {
     track('product_view', { value: product.price, items: [{ item_id: product.sku, item_name: product.name, item_brand: product.brand, price: product.price }] })
