@@ -1,1 +1,28 @@
 .claude/
+
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# env files (never commit secrets; .env.example is the template)
+.env
+.env*.local
+.env.production
+
+# testing
+coverage/
+playwright-report/
+test-results/
+
+# supabase
+supabase/.temp/
+supabase/.branches/
+
+# misc
+.DS_Store
+*.log
