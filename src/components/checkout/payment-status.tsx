@@ -58,7 +58,7 @@ export function MpesaPaymentStatus({
 
   if (view.state === 'paid') {
     return (
-      <div role="status" className="flex items-center gap-3 rounded-[var(--radius-card)] border border-success/40 bg-success/10 p-4 text-green-200">
+      <div role="status" className="flex items-center gap-3 rounded-[var(--radius-card)] border border-success/40 bg-success/10 p-4 text-success">
         <CheckCircle2 className="h-6 w-6 shrink-0" aria-hidden="true" />
         <p className="font-semibold">Payment received. Thank you!</p>
       </div>
@@ -66,7 +66,7 @@ export function MpesaPaymentStatus({
   }
   if (view.state === 'expired') {
     return (
-      <div role="alert" className="rounded-[var(--radius-card)] border border-danger/40 bg-danger/10 p-4 text-red-200">
+      <div role="alert" className="rounded-[var(--radius-card)] border border-danger/40 bg-danger/10 p-4 text-danger">
         {view.message}
       </div>
     )
@@ -84,7 +84,7 @@ export function MpesaPaymentStatus({
         </div>
       ) : view.state === 'failed' ? (
         <div className="flex items-start gap-3">
-          <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-300" aria-hidden="true" />
+          <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-danger" aria-hidden="true" />
           <div>
             <p className="font-semibold">Payment not completed</p>
             <p className="text-sm text-fg-secondary">{view.message} You can try again below.</p>

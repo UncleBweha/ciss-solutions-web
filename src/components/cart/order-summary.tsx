@@ -45,7 +45,7 @@ export function OrderSummary({
         {discount > 0 ? (
           <div className={row}>
             <dt className="text-fg-secondary">Discount{couponCode ? ` (${couponCode})` : ''}</dt>
-            <dd className="font-semibold text-green-300">-{formatKES(discount)}</dd>
+            <dd className="font-semibold text-success">-{formatKES(discount)}</dd>
           </div>
         ) : null}
         <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-border pt-4">

@@ -131,7 +131,7 @@ export function FilterSidebar({ facets, current, className }: { facets: Facets; 
               >
                 <span className="flex" aria-hidden="true">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className={cn('h-3.5 w-3.5', i <= r ? 'fill-amber-400 text-amber-400' : 'text-white/20')} />
+                    <Star key={i} className={cn('h-3.5 w-3.5', i <= r ? 'fill-amber-400 text-amber-400' : 'text-surface-strong')} />
                   ))}
                 </span>
                 {r} stars & up
@@ -176,7 +176,7 @@ export function SortSelect({ current, includeRelevance }: { current: SearchParam
   const value = param(current.sort) ?? (includeRelevance ? 'relevance' : 'featured')
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor="sort" className="sr-only whitespace-nowrap text-sm text-fg-muted sm:not-sr-only">
+      <label htmlFor="sort" className="sr-only shrink-0 text-sm text-fg-muted sm:not-sr-only sm:whitespace-nowrap">
         Sort by
       </label>
       <Select id="sort" value={value} onChange={(e) => go({ sort: e.target.value })} className="h-9 w-48">

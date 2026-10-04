@@ -1,8 +1,8 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Menu, Search, ShoppingCart, User } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ChevronDown, Menu, MessageCircle, Phone, ShoppingCart, Truck, User } from 'lucide-react'
 import { useCart } from '@/components/cart/cart-provider'
 import { Drawer } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
@@ -14,8 +14,9 @@ export type NavData = {
   categories: NavCategory[]
   brands: { name: string; slug: string }[]
 }
+export type HeaderContact = { phone: string; whatsappHref: string | null; location: string; hours: string }
 
-type MenuKey = 'shop' | 'printers' | 'spare-parts' | 'brands'
+type MenuKey = 'all' | 'printers' | 'spare-parts' | 'brands'
 
 function Dropdown({
   label,
@@ -24,15 +25,17 @@ function Dropdown({
   onClose,
   children,
   wide,
+  className,
 }: {
-  label: string
+  label: React.ReactNode
   open: boolean
   onOpen: () => void
   onClose: () => void
   children: React.ReactNode
   wide?: boolean
+  className?: string
 }) {
-  const panelId = `menu-${label.toLowerCase().replace(/\W+/g, '-')}`
+  const panelId = `menu-${String(typeof label === 'string' ? label : 'all').toLowerCase().replace(/\W+/g, '-')}`
   return (
     <div className="relative" onMouseEnter={onOpen} onMouseLeave={onClose}>
       <button
@@ -40,17 +43,13 @@ function Dropdown({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => (open ? onClose() : onOpen())}
-        className={cn('flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors', open ? 'text-fg' : 'text-fg-secondary hover:text-fg')}
+        className={cn('flex h-11 items-center gap-1 whitespace-nowrap px-3 text-sm font-semibold transition-colors', open ? 'text-primary-light' : 'text-fg hover:text-primary-light', className)}
       >
         {label}
         <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} aria-hidden="true" />
       </button>
-      <div
-        id={panelId}
-        hidden={!open}
-        className={cn('absolute left-0 top-full z-50 pt-2', wide ? 'w-[36rem]' : 'w-64')}
-      >
-        <div className="animate-fade-up rounded-[var(--radius-card)] border border-border bg-background-secondary/98 p-3 shadow-[var(--shadow-lift)] backdrop-blur-xl">{children}</div>
+      <div id={panelId} hidden={!open} className={cn('absolute left-0 top-full z-50', wide ? 'w-[40rem]' : 'w-64')}>
+        <div className="rounded-b-md border border-border bg-white p-2 shadow-[var(--shadow-lift)]">{children}</div>
       </div>
     </div>
   )
@@ -58,28 +57,18 @@ function Dropdown({
 
 function MenuLink({ href, children, count, onClick }: { href: string; children: React.ReactNode; count?: number; onClick?: () => void }) {
   return (
-    <Link href={href} onClick={onClick} className="flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-fg-secondary transition-colors hover:bg-surface hover:text-fg">
+    <Link href={href} onClick={onClick} className="flex items-center justify-between gap-3 rounded px-3 py-2 text-sm text-fg-secondary hover:bg-surface hover:text-fg">
       <span>{children}</span>
-      {count !== undefined ? <span className="text-xs text-fg-muted">{count}</span> : null}
+      {count !== undefined ? <span className="font-mono text-xs text-fg-muted">{count}</span> : null}
     </Link>
   )
 }
 
-export function Header({ nav }: { nav: NavData }) {
+export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact }) {
   const { count, bump, signedIn } = useCart()
   const pathname = usePathname()
-  const [scrolled, setScrolled] = useState(false)
   const [menu, setMenu] = useState<MenuKey | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const navRef = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   // Close menus when the route changes (state adjusted during render, per React docs).
   const [lastPath, setLastPath] = useState(pathname)
@@ -87,7 +76,6 @@ export function Header({ nav }: { nav: NavData }) {
     setLastPath(pathname)
     setMenu(null)
     setMobileOpen(false)
-    setSearchOpen(false)
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenu(null)
@@ -97,60 +85,121 @@ export function Header({ nav }: { nav: NavData }) {
 
   const printers = nav.categories.find((c) => c.href === '/c/printers')
   const parts = nav.categories.find((c) => c.href === '/c/spare-parts')
+  const others = nav.categories.filter((c) => c !== printers && c !== parts)
   const close = () => setMenu(null)
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
   const mobileLinks: [string, string][] = [
-    ['Home', '/'],
-    ['Shop', '/shop'],
-    ['Printers', '/c/printers'],
-    ['Spare Parts', '/c/spare-parts'],
-    ['Ink & Toner', '/c/ink-toner'],
-    ['Scanners', '/c/scanners'],
-    ['Paper & Media', '/c/paper-media'],
-    ['Accessories', '/c/accessories'],
+    ...nav.categories.map((c): [string, string] => [c.name, c.href]),
     ['Brands', '/brands'],
     ['Deals', '/deals'],
-    ['Find a Part', '/parts-finder'],
-    ['Track Order', '/track-order'],
+    ['Find a part', '/parts-finder'],
+    ['Track order', '/track-order'],
     ['About', '/about'],
     ['Contact', '/contact'],
-    [signedIn ? 'My Account' : 'Sign in', signedIn ? '/account' : '/login'],
+    [signedIn ? 'My account' : 'Sign in', signedIn ? '/account' : '/login'],
   ]
 
   return (
     <>
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-lg focus:bg-primary-strong focus:px-4 focus:py-2 focus:text-white">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded focus:bg-primary-strong focus:px-4 focus:py-2 focus:text-white">
         Skip to content
       </a>
-      <div className="ink-stripe h-1" aria-hidden="true" />
-      <header
-        className={cn(
-          'sticky top-0 z-40 transition-[background-color,box-shadow,border-color] duration-300',
-          scrolled ? 'glass border-x-0 border-t-0 bg-background/70' : 'border-b border-transparent bg-transparent',
-        )}
-      >
-        <div className="container-page flex h-[var(--header-height)] items-center gap-3 lg:gap-6">
+
+      {/* Info bar: who we are and how to reach us. Scrolls away. */}
+      <div className="hidden border-b border-border bg-surface text-xs text-fg-secondary md:block">
+        <div className="container-page flex h-9 items-center gap-5">
+          <span>{[contact.location, contact.hours].filter(Boolean).join(' · ')}</span>
+          <span className="ml-auto flex items-center gap-5">
+            {contact.phone ? (
+              <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} className="flex items-center gap-1.5 hover:text-fg">
+                <Phone className="h-3.5 w-3.5" aria-hidden="true" /> {contact.phone}
+              </a>
+            ) : null}
+            {contact.whatsappHref ? (
+              <a href={contact.whatsappHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-fg">
+                <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" /> WhatsApp us
+              </a>
+            ) : null}
+            <Link href="/track-order" className="flex items-center gap-1.5 hover:text-fg">
+              <Truck className="h-3.5 w-3.5" aria-hidden="true" /> Track order
+            </Link>
+            <Link href="/contact" className="hover:text-fg">
+              Help
+            </Link>
+          </span>
+        </div>
+      </div>
+
+      <header className="sticky top-0 z-40 border-b border-border bg-white">
+        <div className="container-page flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5 md:h-[var(--header-height)] md:flex-nowrap md:gap-6 md:py-0">
+          <button type="button" onClick={() => setMobileOpen(true)} className="-ml-2 rounded p-2 text-fg lg:hidden" aria-label="Open menu">
+            <Menu className="h-6 w-6" />
+          </button>
           <Logo priority />
 
-          <nav ref={navRef} aria-label="Main" className="hidden items-center lg:flex">
-            <Link href="/" className={cn('rounded-md px-3 py-2 text-sm font-semibold', pathname === '/' ? 'text-fg' : 'text-fg-secondary hover:text-fg')}>
-              Home
+          <SearchBar className="order-last w-full md:order-none md:max-w-3xl md:flex-1" />
+
+          <div className="ml-auto flex items-center gap-1">
+            <Link
+              href={signedIn ? '/account' : '/login'}
+              className="flex items-center gap-2 whitespace-nowrap rounded px-2 py-2 text-sm text-fg hover:text-primary-light"
+            >
+              <User className="h-6 w-6" aria-hidden="true" />
+              <span className="hidden leading-tight xl:block">
+                <span className="block text-xs text-fg-muted">{signedIn ? 'My' : 'Hello,'}</span>
+                <span className="block font-semibold">{signedIn ? 'Account' : 'Sign in'}</span>
+              </span>
+              <span className="sr-only xl:hidden">{signedIn ? 'Account' : 'Sign in'}</span>
             </Link>
-            <Dropdown label="Shop" open={menu === 'shop'} onOpen={() => setMenu('shop')} onClose={close} wide>
+            <Link
+              href="/cart"
+              className="relative flex items-center gap-2 rounded px-2 py-2 text-sm font-semibold text-fg hover:text-primary-light"
+              aria-label={`Cart, ${count} ${count === 1 ? 'item' : 'items'}`}
+            >
+              <ShoppingCart className="h-6 w-6" aria-hidden="true" />
+              <span className="hidden xl:inline">Cart</span>
+              {count > 0 ? (
+                <span key={bump} className="animate-cart-bump absolute left-6 top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-ink-magenta px-1 text-[11px] font-bold text-white">
+                  {count > 99 ? '99+' : count}
+                </span>
+              ) : null}
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile: scrollable category shortcuts */}
+        <nav aria-label="Categories" className="scrollbar-none flex gap-2 overflow-x-auto border-t border-border px-4 py-2 lg:hidden">
+          {[...nav.categories.map((c): [string, string] => [c.name, c.href]), ['Deals', '/deals'] as [string, string], ['Find a part', '/parts-finder'] as [string, string]].map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                'shrink-0 rounded-full border px-3 py-1 text-sm',
+                isActive(href) ? 'border-primary bg-primary/5 text-primary-light' : 'border-border-strong text-fg-secondary',
+              )}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Category bar */}
+        <nav aria-label="Main" className="hidden border-t border-border lg:block">
+          <div className="container-page flex items-center">
+            <Dropdown label="All categories" open={menu === 'all'} onOpen={() => setMenu('all')} onClose={close} wide className="-ml-3">
               <div className="grid grid-cols-2 gap-1">
                 {nav.categories.map((c) => (
                   <MenuLink key={c.href} href={c.href} count={c.count} onClick={close}>
                     {c.name}
                   </MenuLink>
                 ))}
-                <MenuLink href="/deals" onClick={close}>
-                  Deals
-                </MenuLink>
                 <MenuLink href="/shop" onClick={close}>
-                  <span className="font-semibold text-primary-light">All products →</span>
+                  <span className="font-semibold text-primary-light">All products</span>
                 </MenuLink>
               </div>
             </Dropdown>
+            <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
             {printers ? (
               <Dropdown label="Printers" open={menu === 'printers'} onOpen={() => setMenu('printers')} onClose={close}>
                 {printers.children.map((c) => (
@@ -159,7 +208,7 @@ export function Header({ nav }: { nav: NavData }) {
                   </MenuLink>
                 ))}
                 <MenuLink href={printers.href} onClick={close}>
-                  <span className="font-semibold text-primary-light">All printers →</span>
+                  <span className="font-semibold text-primary-light">All printers</span>
                 </MenuLink>
               </Dropdown>
             ) : null}
@@ -171,10 +220,19 @@ export function Header({ nav }: { nav: NavData }) {
                   </MenuLink>
                 ))}
                 <MenuLink href="/parts-finder" onClick={close}>
-                  <span className="font-semibold text-primary-light">Find the right part →</span>
+                  <span className="font-semibold text-primary-light">Find the right part</span>
                 </MenuLink>
               </Dropdown>
             ) : null}
+            {others.map((c) => (
+              <Link
+                key={c.href}
+                href={c.href}
+                className={cn('flex h-11 items-center whitespace-nowrap px-3 text-sm font-semibold hover:text-primary-light', isActive(c.href) ? 'text-primary-light' : 'text-fg')}
+              >
+                {c.name}
+              </Link>
+            ))}
             <Dropdown label="Brands" open={menu === 'brands'} onOpen={() => setMenu('brands')} onClose={close} wide>
               <div className="grid grid-cols-3 gap-1">
                 {nav.brands.map((b) => (
@@ -182,66 +240,51 @@ export function Header({ nav }: { nav: NavData }) {
                     {b.name}
                   </MenuLink>
                 ))}
+                <MenuLink href="/brands" onClick={close}>
+                  <span className="font-semibold text-primary-light">All brands</span>
+                </MenuLink>
               </div>
             </Dropdown>
-            <Link href="/about" className="rounded-md px-3 py-2 text-sm font-semibold text-fg-secondary hover:text-fg">
-              About
+            <Link href="/deals" className="flex h-11 items-center px-3 text-sm font-semibold text-danger hover:underline">
+              Deals
             </Link>
-            <Link href="/contact" className="rounded-md px-3 py-2 text-sm font-semibold text-fg-secondary hover:text-fg">
-              Contact
+            <Link href="/parts-finder" className="ml-auto flex h-11 items-center gap-2 whitespace-nowrap pl-3 text-sm font-semibold text-primary-light hover:underline">
+              <span className="reg-mark" aria-hidden="true" /> Find parts for your printer
             </Link>
-          </nav>
-
-          <SearchBar className="ml-auto hidden w-full max-w-sm md:block xl:max-w-md" />
-
-          <div className="ml-auto flex items-center gap-1 md:ml-0">
-            <button type="button" onClick={() => setSearchOpen(true)} className="rounded-md p-2.5 text-fg-secondary hover:bg-surface hover:text-fg md:hidden" aria-label="Search">
-              <Search className="h-5 w-5" />
-            </button>
-            <Link
-              href={signedIn ? '/account' : '/login'}
-              className="hidden items-center gap-2 whitespace-nowrap rounded-md px-3 py-2.5 text-sm font-semibold text-fg-secondary hover:bg-surface hover:text-fg sm:flex"
-            >
-              <User className="h-5 w-5" aria-hidden="true" />
-              <span className="hidden xl:inline">{signedIn ? 'Account' : 'Sign in'}</span>
-            </Link>
-            <Link href="/cart" className="relative flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-fg-secondary hover:bg-surface hover:text-fg" aria-label={`Cart, ${count} ${count === 1 ? 'item' : 'items'}`}>
-              <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-              <span className="hidden xl:inline">Cart</span>
-              {count > 0 ? (
-                <span key={bump} className="animate-cart-bump absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-primary-strong px-1 text-[11px] font-bold text-white xl:static">
-                  {count > 99 ? '99+' : count}
-                </span>
-              ) : null}
-            </Link>
-            <button type="button" onClick={() => setMobileOpen(true)} className="rounded-md p-2.5 text-fg-secondary hover:bg-surface hover:text-fg lg:hidden" aria-label="Open menu">
-              <Menu className="h-5 w-5" />
-            </button>
           </div>
-        </div>
+        </nav>
       </header>
 
       <Drawer open={mobileOpen} onClose={() => setMobileOpen(false)} title="Menu" side="left">
         <nav aria-label="Mobile">
-          <ul className="space-y-1">
+          <ul className="divide-y divide-border">
             {mobileLinks.map(([label, href]) => (
               <li key={href}>
                 <Link
                   href={href}
                   onClick={() => setMobileOpen(false)}
-                  className={cn('block rounded-md px-3 py-2.5 font-semibold', pathname === href ? 'bg-surface text-fg' : 'text-fg-secondary hover:bg-surface hover:text-fg')}
+                  className={cn('block px-1 py-3 font-semibold', isActive(href) ? 'text-primary-light' : 'text-fg')}
                 >
                   {label}
                 </Link>
               </li>
             ))}
           </ul>
+          {contact.phone || contact.whatsappHref ? (
+            <div className="mt-6 space-y-2 text-sm text-fg-secondary">
+              {contact.phone ? (
+                <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" aria-hidden="true" /> {contact.phone}
+                </a>
+              ) : null}
+              {contact.whatsappHref ? (
+                <a href={contact.whatsappHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" /> WhatsApp us
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </nav>
-      </Drawer>
-
-      <Drawer open={searchOpen} onClose={() => setSearchOpen(false)} title="Search" side="bottom">
-        <SearchBar autoFocus onNavigate={() => setSearchOpen(false)} />
-        <p className="mt-4 text-sm text-fg-muted">Search by product name, model number (e.g. L3250), part number or brand.</p>
       </Drawer>
     </>
   )

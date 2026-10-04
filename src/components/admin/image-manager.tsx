@@ -100,9 +100,9 @@ export function ImageManager({ productId, productName, initial }: { productId: s
                 <div className="flex">
                   <Button size="icon" variant="ghost" className="h-8 w-8" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move earlier"><ArrowUp className="h-3.5 w-3.5" /></Button>
                   <Button size="icon" variant="ghost" className="h-8 w-8" disabled={i === images.length - 1} onClick={() => move(i, 1)} aria-label="Move later"><ArrowDown className="h-3.5 w-3.5" /></Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setImages(images.map((x) => ({ ...x, isPrimary: x.id === img.id }))); setDirty(true) }} aria-label="Make main image"><Star className={cn('h-3.5 w-3.5', img.isPrimary && 'fill-current text-amber-300')} /></Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setImages(images.map((x) => ({ ...x, isPrimary: x.id === img.id }))); setDirty(true) }} aria-label="Make main image"><Star className={cn('h-3.5 w-3.5', img.isPrimary && 'fill-current text-warning')} /></Button>
                 </div>
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-red-300" aria-label="Delete image" onClick={() => start(async () => {
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-danger" aria-label="Delete image" onClick={() => start(async () => {
                   if (!confirm('Delete this image?')) return
                   const r = await deleteProductImageAction(img.id)
                   toast(r.ok ? 'Image removed' : r.message, r.ok ? 'success' : 'error')

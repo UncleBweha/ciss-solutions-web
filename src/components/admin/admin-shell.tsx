@@ -68,7 +68,7 @@ export function AdminShell({ nav, user, unread, children }: { nav: AdminNavItem[
 
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Admin menu">
-          <button className="absolute inset-0 bg-black/60" aria-label="Close menu" onClick={() => setOpen(false)} />
+          <button className="absolute inset-0 bg-black/40" aria-label="Close menu" onClick={() => setOpen(false)} />
           <div className="absolute inset-y-0 left-0 w-64 overflow-y-auto bg-admin-panel p-3">
             <button onClick={() => setOpen(false)} className="mb-3 ml-auto block rounded-lg p-2 hover:bg-surface" aria-label="Close menu">
               <X className="h-5 w-5" />

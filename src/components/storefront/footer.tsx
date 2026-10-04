@@ -60,16 +60,15 @@ export function Footer({ business }: { business: BusinessSettings }) {
   const socials = Object.entries(business.socials ?? {}).filter(([, url]) => url)
   const year = new Date().getFullYear()
   return (
-    <footer className="mt-24 border-t border-border bg-background/60">
-      <div className="ink-stripe h-1 opacity-80" aria-hidden="true" />
-      <div className="container-page grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    <footer className="mt-12 border-t border-border bg-white">
+      <div className="container-page grid gap-8 py-10 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div className="space-y-5">
           <Logo />
-          <p className="max-w-sm text-sm text-fg-secondary">{business.tagline}. Genuine products, expert support and delivery across Kenya.</p>
+          <p className="max-w-sm text-sm text-fg-secondary">{business.tagline}.</p>
           <ul className="space-y-2.5 text-sm text-fg-secondary">
             {business.phone ? (
               <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 text-primary-light" aria-hidden="true" />
+                <Phone className="h-4 w-4 text-fg-muted" aria-hidden="true" />
                 <a href={`tel:${business.phone.replace(/\s/g, '')}`} className="hover:text-fg">
                   {business.phone}
                 </a>
@@ -77,19 +76,19 @@ export function Footer({ business }: { business: BusinessSettings }) {
             ) : null}
             {business.email ? (
               <li className="flex items-center gap-2.5">
-                <Mail className="h-4 w-4 text-primary-light" aria-hidden="true" />
+                <Mail className="h-4 w-4 text-fg-muted" aria-hidden="true" />
                 <a href={`mailto:${business.email}`} className="hover:text-fg">
                   {business.email}
                 </a>
               </li>
             ) : null}
             <li className="flex items-center gap-2.5">
-              <MapPin className="h-4 w-4 text-primary-light" aria-hidden="true" />
+              <MapPin className="h-4 w-4 text-fg-muted" aria-hidden="true" />
               {business.address || business.location}
             </li>
             {business.business_hours ? (
               <li className="flex items-center gap-2.5">
-                <Clock className="h-4 w-4 text-primary-light" aria-hidden="true" />
+                <Clock className="h-4 w-4 text-fg-muted" aria-hidden="true" />
                 {business.business_hours}
               </li>
             ) : null}
@@ -99,7 +98,7 @@ export function Footer({ business }: { business: BusinessSettings }) {
               href={whatsappLink(business.whatsapp, 'Hello CISS Solutions, I have a question.')!}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-[#25D366]/15 px-4 py-2 text-sm font-semibold text-[#5be38f] ring-1 ring-[#25D366]/30 hover:bg-[#25D366]/25"
+              className="inline-flex items-center gap-2 rounded-md border border-border-strong px-4 py-2 text-sm font-semibold text-success hover:border-success"
             >
               Chat on WhatsApp
             </a>
@@ -107,8 +106,8 @@ export function Footer({ business }: { business: BusinessSettings }) {
         </div>
         {columns.map((col) => (
           <nav key={col.title} aria-label={col.title}>
-            <h2 className="label-mono mb-4 text-fg-muted">{col.title}</h2>
-            <ul className="space-y-2.5">
+            <h2 className="mb-3 text-sm font-bold">{col.title}</h2>
+            <ul className="space-y-2">
               {col.links.map(([label, href]) => (
                 <li key={label}>
                   <Link href={href} className="text-sm text-fg-secondary hover:text-fg">
@@ -120,8 +119,8 @@ export function Footer({ business }: { business: BusinessSettings }) {
           </nav>
         ))}
       </div>
-      <div className="border-t border-border">
-        <div className="container-page flex flex-col items-center justify-between gap-4 py-6 text-sm text-fg-muted sm:flex-row">
+      <div className="border-t border-border bg-surface">
+        <div className="container-page flex flex-col items-center justify-between gap-4 py-5 text-sm text-fg-muted sm:flex-row">
           <p>
             © {year} {business.name}. All rights reserved.
           </p>
@@ -129,7 +128,7 @@ export function Footer({ business }: { business: BusinessSettings }) {
             <div className="flex items-center gap-2">
               <span className="mr-1">Follow us</span>
               {socials.map(([name, url]) => (
-                <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name} className="grid h-9 w-9 place-items-center rounded-full bg-surface text-fg-secondary hover:bg-surface-hover hover:text-fg">
+                <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name} className="grid h-9 w-9 place-items-center rounded-full border border-border bg-white text-fg-secondary hover:text-fg">
                   <SocialIcon name={name} />
                 </a>
               ))}

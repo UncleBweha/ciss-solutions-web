@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 const control =
-  'w-full rounded-md border border-border bg-white/[0.06] px-3.5 text-sm text-fg placeholder:text-fg-muted transition-colors hover:border-border-strong focus:border-primary-light focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60 aria-[invalid=true]:border-danger'
+  'w-full rounded-md border border-border-strong bg-white px-3.5 text-sm text-fg placeholder:text-fg-muted transition-colors hover:border-border-strong focus:border-primary-light focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60 aria-[invalid=true]:border-danger'
 
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cn(control, 'h-11', className)} {...props} />
@@ -10,7 +10,7 @@ export function Input({ className, ...props }: ComponentProps<'input'>) {
 
 export function Select({ className, children, ...props }: ComponentProps<'select'>) {
   return (
-    <select className={cn(control, 'h-11 appearance-none bg-[url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 fill=%27none%27 stroke=%27%23b9c7df%27 stroke-width=%272%27%3E%3Cpath d=%27m4 6 4 4 4-4%27/%3E%3C/svg%3E")] bg-[position:right_0.75rem_center] bg-no-repeat pr-9', className)} {...props}>
+    <select className={cn(control, 'h-11 appearance-none bg-[url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 fill=%27none%27 stroke=%27%235b6472%27 stroke-width=%272%27%3E%3Cpath d=%27m4 6 4 4 4-4%27/%3E%3C/svg%3E")] bg-[position:right_0.75rem_center] bg-no-repeat pr-9', className)} {...props}>
       {children}
     </select>
   )
@@ -44,7 +44,7 @@ export function Field({ label, htmlFor, error, hint, required, className, childr
       </label>
       {children}
       {error ? (
-        <p id={`${htmlFor}-error`} role="alert" className="text-xs font-medium text-red-300">
+        <p id={`${htmlFor}-error`} role="alert" className="text-xs font-medium text-danger">
           {error}
         </p>
       ) : hint ? (
@@ -59,9 +59,9 @@ export function Field({ label, htmlFor, error, hint, required, className, childr
 export function FormMessage({ tone = 'error', children }: { tone?: 'error' | 'success' | 'info'; children: ReactNode }) {
   if (!children) return null
   const styles = {
-    error: 'border-danger/40 bg-danger/10 text-red-200',
-    success: 'border-success/40 bg-success/10 text-green-200',
-    info: 'border-primary/40 bg-primary/10 text-sky-200',
+    error: 'border-danger/40 bg-danger/10 text-danger',
+    success: 'border-success/40 bg-success/10 text-success',
+    info: 'border-primary/40 bg-primary/10 text-primary-light',
   }
   return (
     <div role={tone === 'error' ? 'alert' : 'status'} className={cn('rounded-md border px-4 py-3 text-sm', styles[tone])}>

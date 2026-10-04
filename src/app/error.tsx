@@ -21,7 +21,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   const Icon = offline ? WifiOff : ServerCrash
   return (
     <div className="container-page flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">
-      <span className="mb-6 grid h-20 w-20 place-items-center rounded-[var(--radius-card)] bg-danger/15 text-red-300">
+      <span className="mb-6 grid h-20 w-20 place-items-center rounded-[var(--radius-card)] bg-danger/15 text-danger">
         <Icon className="h-10 w-10" aria-hidden="true" />
       </span>
       <h1 className="text-3xl font-bold">{offline ? 'You appear to be offline' : 'Something went wrong'}</h1>

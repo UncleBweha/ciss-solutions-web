@@ -86,7 +86,7 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
         <label htmlFor={`${id}-input`} className="sr-only">
           Search products
         </label>
-        <div className="relative">
+        <div className="relative flex">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" aria-hidden="true" />
           <input
             id={`${id}-input`}
@@ -116,14 +116,17 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
                 setOpen(false)
               }
             }}
-            className="h-11 w-full rounded-full border border-border bg-white/[0.07] pl-10 pr-10 text-sm text-fg placeholder:text-fg-muted transition-colors hover:border-border-strong focus:border-primary-light focus:bg-white/[0.1] focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="h-11 w-full min-w-0 rounded-l-md border border-r-0 border-border-strong bg-white pl-10 pr-9 text-sm text-fg placeholder:text-fg-muted transition-colors focus:border-primary focus:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
-          {loading ? <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-fg-muted" aria-hidden="true" /> : null}
+          {loading ? <Loader2 className="absolute right-[5.5rem] top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-fg-muted" aria-hidden="true" /> : null}
+          <button type="submit" className="h-11 shrink-0 rounded-r-md bg-primary-strong px-4 text-sm font-semibold text-white hover:bg-primary-strong-hover">
+            Search
+          </button>
         </div>
       </form>
 
       {open && visible ? (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[var(--radius-card)] border border-border bg-background-secondary/98 shadow-[var(--shadow-lift)] backdrop-blur-xl">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[var(--radius-card)] border border-border bg-white shadow-[var(--shadow-lift)]">
           {items.length === 0 ? (
             <p className="px-4 py-5 text-sm text-fg-secondary">
               No products match “{query.trim()}”. Try a model number like <span className="font-semibold">L3250</span> or a part number.
