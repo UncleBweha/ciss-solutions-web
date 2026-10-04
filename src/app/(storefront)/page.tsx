@@ -20,6 +20,8 @@ import {
 import { organizationSchema, websiteSchema } from '@/lib/seo/schema'
 import type { HomepageSection } from '@/types/catalog'
 
+export const metadata = { alternates: { canonical: '/' } }
+
 // Homepage dynamic sections refresh hourly (and immediately when staff edit them).
 export const revalidate = 3600
 

@@ -32,7 +32,7 @@ type Props = {
 }
 
 export function ProductPurchase({ product, variants, maxPerItem }: Props) {
-  const { add } = useCart()
+  const { add, ready } = useCart()
   const toast = useToast()
   const router = useRouter()
   const firstAvailable = variants.find((v) => v.available_quantity > 0) ?? variants[0]
@@ -46,6 +46,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
   const lowThreshold = variant ? variant.low_stock_threshold : product.lowThreshold
   const max = Math.max(1, Math.min(available, maxPerItem))
   const soldOut = available <= 0
+  const canBuy = ready && !soldOut
   const quantity = Math.min(requestedQuantity, max)
 
   useEffect(() => {
@@ -121,7 +122,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
       <div className="grid gap-3 sm:grid-cols-2">
         <Button
           size="lg"
-          disabled={soldOut}
+          disabled={!canBuy}
           onClick={() => {
             addToCart()
             toast(
@@ -140,7 +141,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
         <Button
           size="lg"
           variant="secondary"
-          disabled={soldOut}
+          disabled={!canBuy}
           onClick={() => {
             addToCart()
             router.push('/checkout')
@@ -172,7 +173,7 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
           <p className="text-lg font-extrabold">{formatKES(price)}</p>
         </div>
         <Button
-          disabled={soldOut}
+          disabled={!canBuy}
           onClick={() => {
             addToCart()
             toast('Added to cart.')

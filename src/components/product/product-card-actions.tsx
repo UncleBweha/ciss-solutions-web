@@ -8,7 +8,7 @@ import type { ProductCardData } from '@/types/catalog'
 import { cn } from '@/lib/utils'
 
 export function AddToCartButton({ product }: { product: ProductCardData }) {
-  const { add } = useCart()
+  const { add, ready } = useCart()
   const toast = useToast()
   const soldOut = product.available_quantity <= 0
 
@@ -25,6 +25,8 @@ export function AddToCartButton({ product }: { product: ProductCardData }) {
   return (
     <button
       type="button"
+      // Disabled until hydrated so an early tap is never silently lost.
+      disabled={!ready}
       className={buttonClass('primary', 'sm', 'relative z-10 w-full')}
       onClick={() => {
         add({

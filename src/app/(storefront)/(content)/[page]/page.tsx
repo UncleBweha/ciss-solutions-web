@@ -8,8 +8,8 @@ import { deliveryEstimate } from '@/lib/ecommerce/delivery'
 import { formatKES } from '@/lib/ecommerce/money'
 
 // /about, /faqs, /privacy, /terms, /refund-policy, /shipping-policy, /warranty
+// Unknown slugs render notFound() (a clean 404).
 export const revalidate = 86400
-export const dynamicParams = false
 
 export function generateStaticParams() {
   return CONTENT_PAGES.map((page) => ({ page }))

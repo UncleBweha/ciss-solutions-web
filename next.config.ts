@@ -33,6 +33,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
+  async rewrites() {
+    // Browsers request /favicon.ico directly; serve the generated icon.
+    return [{ source: '/favicon.ico', destination: '/icon' }]
+  },
   async redirects() {
     // www.example.com -> example.com (canonical host from NEXT_PUBLIC_SITE_URL)
     if (!canonicalHost || canonicalHost.startsWith('www.') || canonicalHost.startsWith('localhost')) return []
