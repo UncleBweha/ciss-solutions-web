@@ -28,9 +28,20 @@ export function ImageManager({ productId, productName, initial }: { productId: s
   const toast = useToast()
   const router = useRouter()
 
+  // After an upload the page re-fetches and passes a longer list; show it (state
+  // adjusted during render, per React docs). Unsaved order/alt edits are kept.
+  const [lastInitial, setLastInitial] = useState(initial)
+  if (initial !== lastInitial) {
+    setLastInitial(initial)
+    const known = new Set(images.map((x) => x.id))
+    const added = initial.filter((x) => !known.has(x.id))
+    if (added.length) setImages([...images, ...added])
+  }
+
   const upload = async (files: FileList | null) => {
     if (!files?.length) return
     setUploading(true)
+    let uploaded = 0
     const supabase = createClient()
     for (const file of Array.from(files)) {
       if (!['image/jpeg', 'image/png', 'image/webp', 'image/avif'].includes(file.type)) {
@@ -50,12 +61,14 @@ export function ImageManager({ productId, productName, initial }: { productId: s
       }
       const { data } = supabase.storage.from('product-images').getPublicUrl(path)
       const result = await addProductImageAction(productId, { url: data.publicUrl, storagePath: path, alt: productName })
-      if (!result.ok) toast(result.message, 'error')
+      if (result.ok) uploaded++
+      else toast(result.message, 'error')
     }
     setUploading(false)
     if (input.current) input.current.value = ''
+    if (!uploaded) return
     router.refresh()
-    toast('Images uploaded')
+    toast(uploaded === 1 ? 'Image uploaded' : `${uploaded} images uploaded`)
   }
 
   const move = (i: number, d: number) => {
