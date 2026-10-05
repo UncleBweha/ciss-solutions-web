@@ -216,6 +216,44 @@ export async function getProductCards(
   })
 }
 
+/** How often the homepage hero picks a new random set of products. */
+export const HERO_ROTATION_SECONDS = 1800
+
+/**
+ * A random handful of in-stock products for the homepage hero. The shuffle is
+ * seeded by the current 30-minute window, so every render inside a window shows
+ * the same set and the set changes when the window rolls over.
+ */
+export async function getHeroProducts(limit = 6): Promise<ProductCardData[]> {
+  const pool = await read('cards:hero', [] as ProductCardData[], async () =>
+    must(
+      await publicClient([tags.catalog], HERO_ROTATION_SECONDS)
+        .from('product_cards')
+        .select('*')
+        .eq('status', 'active')
+        .gt('available_quantity', 0)
+        .not('image_url', 'is', null)
+        .order('id')
+        .limit(300),
+      'hero',
+    ).map((r) => toCard(r as Record<string, unknown>)),
+  )
+  let seed = Math.floor(Date.now() / (HERO_ROTATION_SECONDS * 1000))
+  const random = () => {
+    // mulberry32
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+  const shuffled = [...pool]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled.slice(0, limit)
+}
+
 export async function getCardsByIds(ids: string[]): Promise<ProductCardData[]> {
   if (!ids.length) return []
   return read('cards:ids', [], async () =>

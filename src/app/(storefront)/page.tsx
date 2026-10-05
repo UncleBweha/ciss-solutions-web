@@ -13,6 +13,7 @@ import {
   categoryHref,
   getBrands,
   getCategoryTree,
+  getHeroProducts,
   getHomepage,
   getPrinterModels,
   getProductCards,
@@ -23,8 +24,9 @@ import type { HomepageSection } from '@/types/catalog'
 
 export const metadata = { alternates: { canonical: '/' } }
 
-// Homepage dynamic sections refresh hourly (and immediately when staff edit them).
-export const revalidate = 3600
+// The homepage is rebuilt every 30 minutes so the hero picks new products
+// (HERO_ROTATION_SECONDS in lib/catalog), and immediately when staff edit it.
+export const revalidate = 1800
 
 function limitOf(section: HomepageSection, fallback: number) {
   const n = Number((section.config as Record<string, unknown>)?.limit)
@@ -66,7 +68,25 @@ export default async function HomePage() {
 async function renderSection(section: HomepageSection, banners: Awaited<ReturnType<typeof getHomepage>>['banners'], heroShown: boolean) {
   switch (section.key) {
     case 'hero': {
-      const slides: HeroSlide[] = banners.map((b) => ({
+      // Random products, re-picked every 30 minutes; staff banners only fill in
+      // while there are no products to show.
+      const heroProducts = await getHeroProducts()
+      const productSlides: HeroSlide[] = heroProducts.map((p) => ({
+        id: p.id,
+        eyebrow: p.brand_name ?? p.category_name,
+        title: p.name,
+        highlight: null,
+        subtitle: p.short_description,
+        imageUrl: p.image_url,
+        imageAlt: p.image_alt ?? p.name,
+        ctaText: 'Shop now',
+        ctaUrl: `/p/${p.slug}`,
+        secondaryCtaText: p.category_slug ? `More ${p.category_name}` : 'See all products',
+        secondaryCtaUrl: p.category_slug ? `/shop?category=${p.category_slug}` : '/shop',
+        background: null,
+        product: { name: p.name, slug: p.slug, price: p.price, short: p.short_description },
+      }))
+      const bannerSlides: HeroSlide[] = banners.map((b) => ({
         id: b.id,
         eyebrow: b.eyebrow,
         title: b.title,
@@ -81,6 +101,7 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
         background: b.background,
         product: b.product ? { name: b.product.name, slug: b.product.slug, price: b.product.price, short: b.product.short_description } : null,
       }))
+      const slides = productSlides.length ? productSlides : bannerSlides
       const models = await getPrinterModels()
       const finderModels = models.map((m) => ({ id: m.id, slug: m.slug, name: m.name, model_number: m.model_number, brand_slug: m.brand_slug, brand_name: m.brand_name }))
       return (
