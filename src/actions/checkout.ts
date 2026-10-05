@@ -25,9 +25,8 @@ const stockMessage = (sqlMessage: string) => {
 
 export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrderResult> {
   const ip = await clientIp()
-  if (!(await rateLimit(`checkout:${ip}`, 10, 600))) {
-    return { ok: false, message: 'Too many checkout attempts. Please wait a few minutes and try again.' }
-  }
+  const tooMany = { ok: false as const, message: 'Too many checkout attempts. Please wait a few minutes and try again.' }
+  if (!(await rateLimit(`checkout:${ip}`, 200, 600))) return tooMany
 
   const parsed = checkoutSchema.safeParse(input)
   if (!parsed.success) {
@@ -37,6 +36,8 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   }
   const data = parsed.data
   const [settings, user] = await Promise.all([getSettings(), getSessionUser()])
+  if (user && user.role !== 'customer') return { ok: false, message: 'Staff accounts cannot place orders. Sign in with a customer account to buy.' }
+  if (!(await rateLimit(`checkout-phone:${data.phone}`, 10, 600))) return tooMany
 
   // Payment method must be enabled (and COD only where offered).
   const method = settings.payment_methods[data.paymentMethod]
@@ -160,7 +161,8 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
 /** Re-sends the STK push for an unpaid M-Pesa order (from the order page). */
 export async function retryMpesaPaymentAction(orderNumber: string, token: string | null, phoneInput: string) {
   const ip = await clientIp()
-  if (!(await rateLimit(`retry:${ip}`, 10, 600))) return { ok: false, message: 'Too many attempts. Please wait a few minutes.' }
+  // Loose per-address ceiling; initiateMpesaPayment limits prompts per order.
+  if (!(await rateLimit(`retry:${ip}`, 200, 600))) return { ok: false, message: 'Too many attempts. Please wait a few minutes.' }
   const order = await getOrderForViewer(orderNumber, token)
   if (!order) return { ok: false, message: 'Order not found.' }
   const phone = kenyanPhone.safeParse(phoneInput)

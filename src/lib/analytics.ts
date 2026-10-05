@@ -11,6 +11,7 @@ export type AnalyticsEvent =
   | 'add_payment_info'
   | 'purchase'
   | 'wishlist_add'
+  | 'whatsapp_order'
 
 const metaNames: Partial<Record<AnalyticsEvent, string>> = {
   product_view: 'ViewContent',

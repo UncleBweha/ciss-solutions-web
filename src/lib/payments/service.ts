@@ -159,6 +159,9 @@ async function confirm(
   return status
 }
 
+const EXPIRY_SWEEP_MS = 30_000
+let lastExpirySweep = 0
+
 export type PaymentView = {
   orderStatus: string
   paymentStatus: string
@@ -173,7 +176,12 @@ export type PaymentView = {
  */
 export async function refreshPaymentStatus(orderId: string): Promise<PaymentView> {
   const db = createAdminClient()
-  await db.rpc('expire_stale_orders')
+  // Every open order page polls this; sweep expired orders at most once per interval
+  // per server instead of once per poll (cron does the same sweep regardless).
+  if (Date.now() - lastExpirySweep > EXPIRY_SWEEP_MS) {
+    lastExpirySweep = Date.now()
+    await db.rpc('expire_stale_orders')
+  }
   const { data: order } = await db.from('orders').select('order_status, payment_status, total').eq('id', orderId).maybeSingle()
   if (!order) return { orderStatus: 'UNKNOWN', paymentStatus: 'UNKNOWN', state: 'none', message: null }
 

@@ -83,6 +83,7 @@ export default async function ProductPage({ params }: PageProps<'/p/[slug]'>) {
               }}
               variants={product.variants}
               maxPerItem={settings.checkout.max_quantity_per_item}
+              whatsappNumber={settings.business.whatsapp}
             />
           </div>
 

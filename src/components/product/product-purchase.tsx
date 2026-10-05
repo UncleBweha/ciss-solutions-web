@@ -2,13 +2,15 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { ShieldCheck, ShoppingCart, Truck, Zap } from 'lucide-react'
+import { MessageCircle, ShieldCheck, ShoppingCart, Truck, Zap } from 'lucide-react'
 import { useCart } from '@/components/cart/cart-provider'
-import { Button } from '@/components/ui/button'
+import { Button, buttonClass } from '@/components/ui/button'
 import { PriceDisplay, StockBadge } from '@/components/ui/commerce'
 import { QuantitySelector } from '@/components/ui/quantity-selector'
 import { useToast } from '@/components/ui/toast'
 import { track } from '@/lib/analytics'
+import { whatsappLink } from '@/lib/contact'
+import { siteUrl } from '@/lib/env'
 import { formatKES } from '@/lib/ecommerce/money'
 import type { ProductVariant } from '@/types/catalog'
 import { cn } from '@/lib/utils'
@@ -29,9 +31,10 @@ type Props = {
   }
   variants: ProductVariant[]
   maxPerItem: number
+  whatsappNumber?: string
 }
 
-export function ProductPurchase({ product, variants, maxPerItem }: Props) {
+export function ProductPurchase({ product, variants, maxPerItem, whatsappNumber }: Props) {
   const { add, ready } = useCart()
   const toast = useToast()
   const router = useRouter()
@@ -73,6 +76,19 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
       },
     })
   }
+
+  // Pre-filled chat so staff know exactly which item, option and quantity is wanted.
+  const whatsappHref = whatsappLink(
+    whatsappNumber,
+    [
+      'Hello CISS Solutions, I would like to order:',
+      `${product.name}${variant ? ` (${variant.name})` : ''}`,
+      `SKU: ${variant?.sku ?? product.sku}`,
+      `Quantity: ${quantity}`,
+      `Price: ${formatKES(price)} each`,
+      `${siteUrl}/p/${product.slug}`,
+    ].join('\n'),
+  )
 
   // Group options by attribute name (e.g. Colour, Size).
   const optionKeys = [...new Set(variants.flatMap((v) => Object.keys(v.option_values)))]
@@ -150,6 +166,18 @@ export function ProductPurchase({ product, variants, maxPerItem }: Props) {
           <Zap className="h-5 w-5" aria-hidden="true" />
           Buy Now
         </Button>
+        {whatsappHref ? (
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('whatsapp_order', { items: [{ item_id: variant?.sku ?? product.sku, item_name: product.name, quantity }] })}
+            className={buttonClass('success', 'lg', 'sm:col-span-2')}
+          >
+            <MessageCircle className="h-5 w-5" aria-hidden="true" />
+            Order via WhatsApp
+          </a>
+        ) : null}
       </div>
 
       <ul className="space-y-2.5 text-sm text-fg-secondary">
