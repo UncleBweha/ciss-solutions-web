@@ -60,6 +60,7 @@ describe('M-Pesa callback parsing', () => {
 describe('payment and order status', () => {
   it('only allows manual "paid" for bank transfer and cash on delivery', () => {
     expect(allowedTransitions('PENDING', 'cash_on_delivery')).toContain('PAID')
+    expect(allowedTransitions('PENDING', 'mpesa_paybill')).toContain('PAID')
     expect(allowedTransitions('PENDING', 'mpesa')).not.toContain('PAID')
     expect(allowedTransitions('PAYMENT_PENDING', 'mpesa')).toEqual(['CANCELLED'])
     expect(allowedTransitions('DELIVERED', 'mpesa')).toEqual(['REFUNDED'])

@@ -34,6 +34,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
   const failed = isTerminalFailure(order.order_status)
   const paid = order.payment_status === 'PAID'
   const bank = settings.payment_methods.bank_transfer
+  const paybill = settings.payment_methods.mpesa_paybill
   const tokenQs = token ? `?t=${token}` : ''
 
   return (
@@ -84,6 +85,32 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
               </dl>
               {!bank.account_number ? <p className="mt-3 text-sm text-warning">Our team will contact you with bank details.</p> : null}
               <p className="mt-3 text-sm text-fg-secondary">{bank.instructions}</p>
+            </section>
+          ) : null}
+
+          {order.payment_method === 'mpesa_paybill' && !paid && !failed ? (
+            <section className="glass-flat rounded-[var(--radius-card)] p-5">
+              <h2 className="mb-3 font-bold">Pay with M-Pesa Paybill</h2>
+              {paybill.paybill_number ? (
+                <>
+                  <ol className="mb-4 list-decimal space-y-1 pl-5 text-sm text-fg-secondary">
+                    <li>On your phone, open M-Pesa and choose Lipa na M-Pesa, then Pay Bill.</li>
+                    <li>Enter the business number, account number and amount below.</li>
+                    <li>Enter your M-Pesa PIN and confirm.</li>
+                  </ol>
+                  <dl className="grid grid-cols-[8rem_1fr] gap-y-1.5 text-sm">
+                    <dt className="text-fg-muted">Business no.</dt>
+                    <dd className="font-mono font-bold">{paybill.paybill_number}</dd>
+                    <dt className="text-fg-muted">Account no.</dt>
+                    <dd className="font-mono font-bold">{order.order_number}</dd>
+                    <dt className="text-fg-muted">Amount</dt>
+                    <dd className="font-bold">{formatKES(order.total)}</dd>
+                  </dl>
+                </>
+              ) : (
+                <p className="text-sm text-warning">Our team will contact you with payment details.</p>
+              )}
+              <p className="mt-3 text-sm text-fg-secondary">{paybill.instructions}</p>
             </section>
           ) : null}
 

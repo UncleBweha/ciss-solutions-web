@@ -52,10 +52,13 @@ export async function saveBusinessAction(_prev: ActionResult | null, formData: F
 }
 
 export async function savePaymentsAction(_prev: ActionResult | null, formData: FormData) {
-  const raw = formObject(formData, ['mpesa', 'bank_transfer', 'cash_on_delivery'])
+  const raw = formObject(formData, ['mpesa', 'mpesa_paybill', 'bank_transfer', 'cash_on_delivery'])
   const d = z
     .object({
       mpesa: z.boolean(),
+      mpesa_paybill: z.boolean(),
+      paybill_number: z.string().trim().regex(/^\d{0,10}$/, 'The Paybill number is digits only'),
+      paybill_instructions: text(500),
       bank_transfer: z.boolean(),
       cash_on_delivery: z.boolean(),
       bank_name: text(80),
@@ -67,7 +70,8 @@ export async function savePaymentsAction(_prev: ActionResult | null, formData: F
     })
     .safeParse({ ...raw, cod_counties: list(raw.cod_counties) })
   if (!d.success) return { ok: false as const, message: d.error.issues[0].message }
-  if (!d.data.mpesa && !d.data.bank_transfer && !d.data.cash_on_delivery) return { ok: false as const, message: 'Keep at least one payment method enabled.' }
+  if (d.data.mpesa_paybill && !d.data.paybill_number) return { ok: false as const, message: 'Enter the Paybill number, or untick M-Pesa Paybill.' }
+  if (!d.data.mpesa && !d.data.mpesa_paybill && !d.data.bank_transfer && !d.data.cash_on_delivery) return { ok: false as const, message: 'Keep at least one payment method enabled.' }
   return saveSetting(
     'payment_methods',
     {
@@ -83,6 +87,7 @@ export async function savePaymentsAction(_prev: ActionResult | null, formData: F
         instructions: d.data.instructions,
       },
       cash_on_delivery: { enabled: d.data.cash_on_delivery, label: 'Cash on delivery', counties: d.data.cod_counties },
+      mpesa_paybill: { enabled: d.data.mpesa_paybill, label: 'M-Pesa Paybill', paybill_number: d.data.paybill_number, instructions: d.data.paybill_instructions },
     },
     'payments.settings',
   )
