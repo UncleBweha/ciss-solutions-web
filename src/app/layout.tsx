@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#07152f',
+  themeColor: '#ffffff',
   colorScheme: 'dark',
 }
 
@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-KE" className={`${plexSans.variable} ${plexMono.variable}`}>
       <body>
-        <div className="ambient" aria-hidden="true" />
+        <div className="site-backdrop" aria-hidden="true" />
         <ToastProvider>
           <CartProvider>{children}</CartProvider>
         </ToastProvider>

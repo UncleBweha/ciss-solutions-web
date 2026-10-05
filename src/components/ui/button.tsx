@@ -8,7 +8,7 @@ type Size = 'sm' | 'md' | 'lg' | 'icon'
 const variants: Record<Variant, string> = {
   primary:
     'bg-primary-strong text-white hover:bg-primary-strong-hover disabled:bg-primary-strong/50',
-  secondary: 'bg-white text-background hover:bg-white/90 disabled:bg-white/50',
+  secondary: 'bg-ink-key text-white hover:bg-black disabled:opacity-60',
   glass: 'border border-border-strong bg-transparent text-fg hover:bg-surface',
   ghost: 'text-fg-secondary hover:text-fg hover:bg-surface',
   danger: 'bg-danger-strong text-white hover:bg-red-700',
@@ -16,10 +16,10 @@ const variants: Record<Variant, string> = {
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-9 px-3 text-sm gap-1.5 rounded-md',
-  md: 'h-11 px-5 text-sm gap-2 rounded-md',
-  lg: 'h-12 px-6 text-base gap-2.5 rounded-md',
-  icon: 'h-10 w-10 rounded-md',
+  sm: 'h-9 px-3.5 text-sm gap-1.5 rounded-full',
+  md: 'h-11 px-5 text-sm gap-2 rounded-full',
+  lg: 'h-12 px-7 text-base gap-2.5 rounded-full',
+  icon: 'h-10 w-10 rounded-full',
 }
 
 export function buttonClass(variant: Variant = 'primary', size: Size = 'md', className?: string) {

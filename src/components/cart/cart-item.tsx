@@ -41,7 +41,7 @@ export function CartItem({
           {variantName ? <p className="text-sm text-fg-muted">{variantName}</p> : null}
           <p className="mt-1 text-sm text-fg-secondary">{formatKES(unitPrice)} each</p>
           {issue ? (
-            <p role="alert" className="mt-1 text-xs font-semibold text-amber-300">
+            <p role="alert" className="mt-1 text-xs font-semibold text-warning">
               {issue}
             </p>
           ) : null}

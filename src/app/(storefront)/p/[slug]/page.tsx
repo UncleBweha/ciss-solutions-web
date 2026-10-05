@@ -49,7 +49,7 @@ export default async function ProductPage({ params }: PageProps<'/p/[slug]'>) {
       <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12">
         <VariantAwareGallery images={images} name={product.name} />
 
-        <div>
+        <div className="glass-flat h-fit rounded-[var(--radius-card)] p-5 sm:p-7 lg:sticky lg:top-[calc(var(--header-height)+4rem)]">
           {product.brand ? (
             <Link href={`/b/${product.brand.slug}`} className="label-mono text-primary-light hover:underline">
               {product.brand.name}

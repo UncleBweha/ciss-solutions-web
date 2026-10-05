@@ -1,8 +1,7 @@
 'use client'
 import Link from 'next/link'
-import { ArrowRight, Heart, ShoppingCart } from 'lucide-react'
+import { Heart, ShoppingCart } from 'lucide-react'
 import { useCart } from '@/components/cart/cart-provider'
-import { buttonClass } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
 import type { ProductCardData } from '@/types/catalog'
 import { cn } from '@/lib/utils'
@@ -15,9 +14,11 @@ export function AddToCartButton({ product }: { product: ProductCardData }) {
   // Products with options are added from the product page, where the option is chosen.
   if (product.has_variants || soldOut) {
     return (
-      <Link href={`/p/${product.slug}`} className={buttonClass('glass', 'sm', 'relative z-10 w-full')}>
-        {soldOut ? 'View details' : 'Choose options'}
-        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      <Link
+        href={`/p/${product.slug}`}
+        className="relative z-10 shrink-0 rounded-full border border-border-strong bg-white/70 px-3 py-1.5 text-xs font-semibold text-fg hover:border-primary hover:text-primary-light"
+      >
+        {soldOut ? 'Details' : 'Options'}
       </Link>
     )
   }
@@ -27,7 +28,9 @@ export function AddToCartButton({ product }: { product: ProductCardData }) {
       type="button"
       // Disabled until hydrated so an early tap is never silently lost.
       disabled={!ready}
-      className={buttonClass('primary', 'sm', 'relative z-10 w-full')}
+      aria-label={`Add ${product.name} to cart`}
+      title="Add to cart"
+      className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-strong text-white shadow-[0_6px_16px_rgba(11,111,216,0.35)] transition-colors hover:bg-primary-strong-hover disabled:opacity-60"
       onClick={() => {
         add({
           productId: product.id,
@@ -46,7 +49,6 @@ export function AddToCartButton({ product }: { product: ProductCardData }) {
       }}
     >
       <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-      Add to Cart
     </button>
   )
 }
@@ -76,8 +78,8 @@ export function WishlistButton({ productId, name, className }: { productId: stri
         }
       }}
       className={cn(
-        'z-10 grid h-9 w-9 place-items-center rounded-md border border-black/10 bg-white transition-colors hover:border-black/25',
-        saved ? 'text-ink-magenta' : 'text-slate-500 hover:text-slate-900',
+        'z-10 grid h-9 w-9 place-items-center rounded-full border border-white bg-white/85 shadow-sm transition-colors',
+        saved ? 'text-ink-magenta' : 'text-fg-muted hover:text-ink-magenta',
         className,
       )}
     >

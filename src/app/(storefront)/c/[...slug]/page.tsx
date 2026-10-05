@@ -51,7 +51,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps<'
       {node.children.length ? (
         <nav aria-label={`${node.name} subcategories`} className="scrollbar-none -mx-4 mb-8 flex gap-2 overflow-x-auto px-4">
           {node.children.map((child) => (
-            <Link key={child.id} href={categoryHref(child)} className="glass-flat shrink-0 rounded-md px-3.5 py-2 text-sm font-semibold text-fg-secondary transition-colors hover:border-primary/50 hover:text-fg">
+            <Link key={child.id} href={categoryHref(child)} className="glass-card shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold text-fg-secondary transition-colors hover:border-primary/50 hover:text-fg">
               {child.name} <span className="text-fg-muted">({child.product_count})</span>
             </Link>
           ))}

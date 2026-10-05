@@ -27,7 +27,7 @@ export function OrderSummary({
 }) {
   const row = 'flex items-baseline justify-between gap-4 py-1.5 text-sm'
   return (
-    <section aria-labelledby="summary-title" className={cn('glass rounded-[var(--radius-card)] p-5 sm:p-6', className)} aria-busy={loading}>
+    <section aria-labelledby="summary-title" className={cn('glass-flat rounded-[var(--radius-card)] p-5 sm:p-6', className)} aria-busy={loading}>
       <h2 id="summary-title" className="mb-4 text-lg font-bold">
         {title}
       </h2>
@@ -45,7 +45,7 @@ export function OrderSummary({
         {discount > 0 ? (
           <div className={row}>
             <dt className="text-fg-secondary">Discount{couponCode ? ` (${couponCode})` : ''}</dt>
-            <dd className="font-semibold text-green-300">-{formatKES(discount)}</dd>
+            <dd className="font-semibold text-success">-{formatKES(discount)}</dd>
           </div>
         ) : null}
         <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-border pt-4">

@@ -78,7 +78,7 @@ export function CartView() {
           loading={loading || !quote}
         >
           {unavailable.length ? (
-            <p role="alert" className="text-sm text-amber-300">
+            <p role="alert" className="text-sm text-warning">
               Remove unavailable items to continue.
             </p>
           ) : null}

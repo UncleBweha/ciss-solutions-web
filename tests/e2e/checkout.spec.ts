@@ -2,16 +2,14 @@ import { expect, test } from '@playwright/test'
 
 // Critical flow: home -> search -> product -> cart -> checkout -> delivery ->
 // M-Pesa payment (mock provider) -> confirmed order.
-test('customer can find a printer and buy it with M-Pesa', async ({ page, isMobile }) => {
+test('customer can find a printer and buy it with M-Pesa', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('CISS Solutions')
 
   // Search
-  if (isMobile) await page.getByRole('banner').getByRole('button', { name: 'Search' }).click()
-  const scope = isMobile ? page.getByRole('dialog', { name: 'Search' }) : page.getByRole('banner')
-  const search = scope.getByRole('combobox', { name: 'Search products' })
+  const search = page.getByRole('banner').getByRole('combobox', { name: 'Search products' })
   await search.fill('L3250')
-  await expect(scope.getByRole('option').first()).toContainText('L3250')
+  await expect(page.getByRole('banner').getByRole('option').first()).toContainText('L3250')
   await search.press('Enter')
   await expect(page).toHaveURL(/\/search\?q=L3250/)
   await expect(page.getByRole('heading', { level: 1 })).toContainText('L3250')

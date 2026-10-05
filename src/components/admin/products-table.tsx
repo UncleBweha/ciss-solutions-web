@@ -112,7 +112,7 @@ export function ProductsTable({ rows, categories, brands }: { rows: AdminProduct
               <Td><Badge tone={p.status === 'active' ? 'success' : p.status === 'draft' ? 'warning' : 'neutral'}>{p.status}</Badge></Td>
               <Td className="text-right tabular-nums">{formatKES(p.price)}</Td>
               <Td className="text-right tabular-nums">
-                <span className={p.available <= 0 ? 'text-red-300' : p.available <= p.lowThreshold ? 'text-amber-300' : ''}>{p.available}</span>
+                <span className={p.available <= 0 ? 'text-danger' : p.available <= p.lowThreshold ? 'text-warning' : ''}>{p.available}</span>
                 {p.stock !== p.available ? <span className="block text-xs text-fg-muted">{p.stock} on hand</span> : null}
               </Td>
             </tr>
@@ -137,7 +137,7 @@ export function ProductsTable({ rows, categories, brands }: { rows: AdminProduct
           ) : null}
           {op === 'delete' ? (
             <div className="space-y-2 text-sm">
-              <p className="text-red-200">This permanently deletes the selected products and their images. Past orders keep their item details. Consider deactivating instead.</p>
+              <p className="text-danger">This permanently deletes the selected products and their images. Past orders keep their item details. Consider deactivating instead.</p>
               <label className="block">Type DELETE to confirm<Input className="mt-1" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} /></label>
             </div>
           ) : null}

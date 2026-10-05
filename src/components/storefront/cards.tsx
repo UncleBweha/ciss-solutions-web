@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
 import { ProductImage } from '@/components/product/product-image'
 import { cn } from '@/lib/utils'
 
@@ -19,18 +18,15 @@ export function CategoryCard({
   return (
     <Link
       href={href}
-      className={cn(
-        'glass-flat group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] transition-colors duration-200 hover:border-border-strong',
-        className,
-      )}
+      className={cn('glass-card group flex flex-col items-center rounded-[var(--radius-card)] px-2 pb-3 pt-2 text-center', className)}
     >
-      <div className="product-stage relative aspect-[4/3]">
-        <ProductImage src={imageUrl} alt="" fill sizes="(min-width: 1024px) 16vw, 45vw" className="object-contain p-6 transition-transform duration-300 group-hover:scale-[1.04]" />
-      </div>
-      <div className="flex items-baseline justify-between gap-2 px-4 py-3">
-        <h3 className="font-semibold group-hover:underline">{name}</h3>
-        <p className="label-mono text-[11px] text-fg-muted">{count}</p>
-      </div>
+      <span className="relative block h-20 w-full sm:h-24">
+        <ProductImage src={imageUrl} alt="" fill sizes="(min-width: 1024px) 12vw, 30vw" className="object-contain p-2" />
+      </span>
+      <span className="text-sm font-semibold leading-tight group-hover:text-primary-light">{name}</span>
+      <span className="mt-0.5 text-xs text-fg-muted">
+        {count} {count === 1 ? 'product' : 'products'}
+      </span>
     </Link>
   )
 }
@@ -39,19 +35,16 @@ export function BrandCard({ name, slug, logoUrl, description }: { name: string; 
   return (
     <Link
       href={`/b/${slug}`}
-      className="glass-flat group flex h-full flex-col justify-between gap-3 rounded-[var(--radius-card)] p-5 transition-colors duration-200 hover:border-border-strong"
+      className="glass-card group flex h-full flex-col justify-center gap-1.5 rounded-[var(--radius-card)] px-4 py-4"
     >
-      <div className="flex h-12 items-center">
+      <span className="flex h-9 items-center">
         {logoUrl ? (
-          <ProductImage src={logoUrl} alt={`${name} logo`} width={120} height={48} className="h-10 w-auto object-contain" />
+          <ProductImage src={logoUrl} alt={`${name} logo`} width={120} height={36} className="h-8 w-auto object-contain" />
         ) : (
-          <span className="text-xl font-semibold tracking-tight text-fg">{name}</span>
+          <span className="text-lg font-bold tracking-tight text-fg group-hover:text-primary-light">{name}</span>
         )}
-      </div>
-      {description ? <p className="line-clamp-2 text-sm text-fg-secondary">{description}</p> : null}
-      <span className="flex items-center gap-1 text-sm font-semibold text-primary-light">
-        Shop {name} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
       </span>
+      {description ? <span className="line-clamp-2 text-sm text-fg-secondary">{description}</span> : null}
     </Link>
   )
 }

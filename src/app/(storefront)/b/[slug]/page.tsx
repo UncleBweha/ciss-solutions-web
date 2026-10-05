@@ -43,7 +43,7 @@ export default async function BrandPage({ params, searchParams }: PageProps<'/b/
     <div className="container-page py-8">
       <JsonLd data={[breadcrumbSchema(crumbs), collectionSchema(brand.name, `/b/${brand.slug}`, brand.description)]} />
       <Breadcrumbs items={crumbs} />
-      <header className="glass mb-10 mt-4 flex flex-col gap-5 rounded-[var(--radius-card)] p-6 sm:flex-row sm:items-center sm:p-8">
+      <header className="glass-flat mb-10 mt-4 flex flex-col gap-5 rounded-[var(--radius-card)] p-6 sm:flex-row sm:items-center sm:p-8">
         {brand.logo_url ? (
           <div className="grid h-20 w-40 shrink-0 place-items-center rounded-[var(--radius-card)] bg-white p-3">
             <ProductImage src={brand.logo_url} alt={`${brand.name} logo`} width={140} height={60} className="h-full w-auto object-contain" />

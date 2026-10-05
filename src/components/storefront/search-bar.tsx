@@ -86,8 +86,8 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
         <label htmlFor={`${id}-input`} className="sr-only">
           Search products
         </label>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" aria-hidden="true" />
+        <div className="relative flex">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" aria-hidden="true" />
           <input
             id={`${id}-input`}
             type="search"
@@ -116,14 +116,17 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
                 setOpen(false)
               }
             }}
-            className="h-11 w-full rounded-full border border-border bg-white/[0.07] pl-10 pr-10 text-sm text-fg placeholder:text-fg-muted transition-colors hover:border-border-strong focus:border-primary-light focus:bg-white/[0.1] focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="h-11 w-full min-w-0 rounded-l-full border border-r-0 border-white bg-white/75 pl-11 pr-9 shadow-[inset_0_1px_2px_rgba(15,23,42,0.06)] text-sm text-fg placeholder:text-fg-muted transition-colors focus:border-primary focus:bg-white focus:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
-          {loading ? <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-fg-muted" aria-hidden="true" /> : null}
+          {loading ? <Loader2 className="absolute right-[5.5rem] top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-fg-muted" aria-hidden="true" /> : null}
+          <button type="submit" className="h-11 shrink-0 rounded-r-full bg-primary-strong px-5 text-sm font-semibold text-white hover:bg-primary-strong-hover">
+            Search
+          </button>
         </div>
       </form>
 
       {open && visible ? (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-[var(--radius-card)] border border-border bg-background-secondary/98 shadow-[var(--shadow-lift)] backdrop-blur-xl">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 glass-strong overflow-hidden rounded-[var(--radius-card)] bg-white/95!">
           {items.length === 0 ? (
             <p className="px-4 py-5 text-sm text-fg-secondary">
               No products match “{query.trim()}”. Try a model number like <span className="font-semibold">L3250</span> or a part number.
@@ -156,7 +159,7 @@ export function SearchBar({ className, autoFocus, onNavigate }: { className?: st
               {visible.categories.length ? (
                 <div className="flex flex-wrap gap-2 border-t border-border px-4 py-3">
                   {visible.categories.map((c) => (
-                    <Link key={c.href} href={c.href} onClick={() => setOpen(false)} className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-fg-secondary hover:text-fg">
+                    <Link key={c.href} href={c.href} onClick={() => setOpen(false)} className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-fg-secondary hover:text-fg">
                       {c.name}
                     </Link>
                   ))}

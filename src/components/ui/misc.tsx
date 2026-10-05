@@ -60,30 +60,56 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
   )
 }
 
-export function RatingStars({ rating, count, size = 'sm', showValue }: { rating: number; count?: number; size?: 'sm' | 'md'; showValue?: boolean }) {
+export function RatingStars({
+  rating,
+  count,
+  size = 'sm',
+  showValue,
+  compact,
+  className,
+}: {
+  rating: number
+  count?: number
+  size?: 'sm' | 'md'
+  showValue?: boolean
+  /** "(3)" instead of "(3 reviews)", for product cards. */
+  compact?: boolean
+  className?: string
+}) {
   const px = size === 'sm' ? 'h-3.5 w-3.5' : 'h-5 w-5'
   return (
-    <div className="flex items-center gap-1.5">
+    <div className={cn('flex items-center gap-1.5', className)}>
       <div className="flex" role="img" aria-label={`Rated ${rating.toFixed(1)} out of 5`}>
         {[1, 2, 3, 4, 5].map((i) => (
           <Star
             key={i}
-            className={cn(px, i <= Math.round(rating) ? 'fill-amber-400 text-amber-400' : 'fill-white/10 text-white/20')}
+            className={cn(px, i <= Math.round(rating) ? 'fill-amber-400 text-amber-400' : 'fill-surface-strong text-surface-strong')}
             aria-hidden="true"
           />
         ))}
       </div>
       {showValue ? <span className="text-sm font-semibold">{rating.toFixed(1)}</span> : null}
-      {count !== undefined ? <span className="text-xs text-fg-muted">({count} {count === 1 ? 'review' : 'reviews'})</span> : null}
+      {count !== undefined ? (
+        <span className="text-xs text-fg-muted">
+          {compact ? (
+            <>
+              ({count}
+              <span className="sr-only"> {count === 1 ? 'review' : 'reviews'}</span>)
+            </>
+          ) : (
+            `(${count} ${count === 1 ? 'review' : 'reviews'})`
+          )}
+        </span>
+      ) : null}
     </div>
   )
 }
 
 export function SectionHeading({ title, subtitle, action, id }: { title: string; subtitle?: string | null; action?: ReactNode; id?: string }) {
   return (
-    <div className="mb-5 flex items-end justify-between gap-4 border-b border-border pb-3">
+    <div className="mb-3 flex items-end justify-between gap-4">
       <div>
-        <h2 id={id} className="text-xl font-semibold sm:text-2xl">
+        <h2 id={id} className="text-lg font-bold sm:text-xl">
           {title}
         </h2>
         {subtitle ? <p className="mt-0.5 text-sm text-fg-muted">{subtitle}</p> : null}

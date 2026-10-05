@@ -34,7 +34,7 @@ export function Panel({ title, actions, children, className, padded = true }: { 
 }
 
 export function StatCard({ label, value, hint, tone = 'neutral', href }: { label: string; value: ReactNode; hint?: ReactNode; tone?: 'neutral' | 'warning' | 'danger' | 'success'; href?: string }) {
-  const accent = { neutral: 'text-fg', warning: 'text-amber-300', danger: 'text-red-300', success: 'text-green-300' }[tone]
+  const accent = { neutral: 'text-fg', warning: 'text-warning', danger: 'text-danger', success: 'text-success' }[tone]
   const body = (
     <>
       <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">{label}</p>

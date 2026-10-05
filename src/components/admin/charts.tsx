@@ -52,7 +52,7 @@ export function ColumnChart({
         {ticks.map((t) => (
           <div key={t} className="absolute inset-x-0 flex items-center gap-2" style={{ bottom: `${(t / max) * 100}%` }} aria-hidden="true">
             <span className="w-10 -translate-y-1/2 text-right text-[10px] tabular-nums text-fg-muted">{compact.format(t)}</span>
-            <span className="h-px flex-1 -translate-y-1/2 bg-white/[0.06]" />
+            <span className="h-px flex-1 -translate-y-1/2 bg-border" />
           </div>
         ))}
         <div className="absolute inset-y-0 left-12 right-0 flex items-end" role="img" aria-label={title}>
@@ -110,7 +110,7 @@ export function BarList({ title, data, unit = 'count' }: { title: string; data: 
               <span className="truncate text-fg-secondary">{d.label}</span>
               <span className="font-semibold tabular-nums text-fg">{format(d.value)}</span>
             </div>
-            <div className="h-2 rounded-full bg-white/[0.05]">
+            <div className="h-2 rounded-full bg-surface">
               <div className="h-2 rounded-full" style={{ width: `${(d.value / max) * 100}%`, background: 'var(--primary)' }} />
             </div>
           </li>

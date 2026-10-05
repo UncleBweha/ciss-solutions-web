@@ -195,7 +195,7 @@ export function ProductForm({
                     <Button size="icon" variant="ghost" onClick={() => variants.remove(i)} aria-label="Remove variant"><Trash2 className="h-4 w-4" /></Button>
                   </div>
                   <Input aria-label="Variant image URL" placeholder="Image URL (optional)" {...register(`variants.${i}.imageUrl`)} className="h-10 sm:col-span-6" />
-                  {err(`variants.${i}.sku`) ? <p className="text-xs text-red-300 sm:col-span-6">{err(`variants.${i}.sku`)}</p> : null}
+                  {err(`variants.${i}.sku`) ? <p className="text-xs text-danger sm:col-span-6">{err(`variants.${i}.sku`)}</p> : null}
                 </div>
               ))}
             </div>
@@ -249,7 +249,7 @@ export function ProductForm({
                 <Button size="sm" variant="ghost" onClick={() => start(async () => void (await duplicateProductAction(initial.id!)))}>
                   <Copy className="h-4 w-4" aria-hidden="true" /> Duplicate
                 </Button>
-                <Button size="sm" variant="ghost" className="text-red-300" onClick={() => setConfirmDelete(true)}>
+                <Button size="sm" variant="ghost" className="text-danger" onClick={() => setConfirmDelete(true)}>
                   <Trash2 className="h-4 w-4" aria-hidden="true" /> Delete
                 </Button>
               </div>
