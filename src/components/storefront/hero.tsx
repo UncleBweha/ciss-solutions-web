@@ -32,7 +32,7 @@ export function Hero({ slides, className }: { slides: HeroSlide[]; className?: s
   useEffect(() => {
     if (count < 2 || paused) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const t = setInterval(() => setIndex((i) => (i + 1) % count), 7000)
+    const t = setInterval(() => setIndex((i) => (i + 1) % count), 5000)
     return () => clearInterval(t)
   }, [count, paused])
 
