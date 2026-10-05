@@ -42,6 +42,9 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   const method = settings.payment_methods[data.paymentMethod]
   if (!method?.enabled) return { ok: false, message: 'That payment method is not available. Please choose another.' }
   if (data.paymentMethod === 'card') return { ok: false, message: 'Card payments are not available yet. Please choose M-Pesa.' }
+  if (data.paymentMethod === 'mpesa_paybill' && !settings.payment_methods.mpesa_paybill.paybill_number) {
+    return { ok: false, message: 'That payment method is not available. Please choose another.' }
+  }
   if (data.paymentMethod === 'cash_on_delivery') {
     const counties = settings.payment_methods.cash_on_delivery.counties ?? []
     if (counties.length && !counties.includes(data.county)) {
@@ -67,7 +70,7 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   const reservationMinutes =
     data.paymentMethod === 'mpesa'
       ? settings.checkout.mpesa_reservation_minutes
-      : data.paymentMethod === 'bank_transfer'
+      : data.paymentMethod === 'bank_transfer' || data.paymentMethod === 'mpesa_paybill'
         ? settings.checkout.bank_transfer_reservation_minutes
         : null
 

@@ -11,7 +11,7 @@ import {
   paymentConfirmationEmail,
   type OrderEmailData,
 } from './templates'
-import type { OrderStatus } from '@/lib/ecommerce/orders'
+import { isManualPayment, type OrderStatus } from '@/lib/ecommerce/orders'
 
 /**
  * Notification dispatch. Every message is recorded in the notifications table
@@ -86,7 +86,7 @@ export async function notifyOrderPlaced(orderId: string) {
   if (!o) return
   await deliver('order_confirmation', o.email, orderConfirmationEmail(o), o.id)
   // Online payments alert staff once paid (notifyPaymentConfirmed); manual methods alert now.
-  if (o.paymentMethod === 'bank_transfer' || o.paymentMethod === 'cash_on_delivery') {
+  if (isManualPayment(o.paymentMethod)) {
     await deliver('admin_new_order', await staffAlertRecipients(), adminNewOrderEmail(o), o.id)
   }
 }
