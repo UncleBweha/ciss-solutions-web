@@ -5,6 +5,7 @@ Supported methods (each can be switched on or off in Admin, Settings, Payments):
 | Method | How it is confirmed |
 | --- | --- |
 | M-Pesa (STK Push via Safaricom Daraja) | Automatically, by Safaricom's callback or a server-side status query |
+| M-Pesa Paybill (manual, no Daraja) | By staff, after checking the Paybill statement (order status → Paid). The customer pays to the Paybill themselves with the order number as the account. Only offered once a Paybill number is saved |
 | Bank transfer | By staff, after checking the bank account (order status → Paid) |
 | Cash on delivery (chosen counties only) | By staff, on delivery |
 | Card | Not implemented; the toggle exists but stays off until a card provider is integrated |

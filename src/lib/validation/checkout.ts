@@ -12,7 +12,7 @@ export const checkoutFormSchema = z.object({
   town: z.string().trim().min(2, 'Enter your town or city').max(80),
   address: z.string().trim().min(5, 'Enter a delivery address (building, street, landmark)').max(300),
   instructions: z.string().trim().max(500).optional(),
-  paymentMethod: z.enum(['mpesa', 'card', 'bank_transfer', 'cash_on_delivery'], { message: 'Choose a payment method' }),
+  paymentMethod: z.enum(['mpesa', 'card', 'bank_transfer', 'cash_on_delivery', 'mpesa_paybill'], { message: 'Choose a payment method' }),
   mpesaPhone: z.string().trim().optional(),
   couponCode: z.string().trim().max(40).optional(),
   notes: z.string().trim().max(500).optional(),

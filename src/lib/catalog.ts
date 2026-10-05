@@ -44,6 +44,7 @@ const DEFAULT_SETTINGS: PublicSettings = {
     card: { enabled: false, label: 'Card' },
     bank_transfer: { enabled: false, label: 'Bank transfer', bank_name: '', account_name: '', account_number: '', branch: '', instructions: '' },
     cash_on_delivery: { enabled: false, label: 'Cash on delivery', counties: [] },
+    mpesa_paybill: { enabled: false, label: 'M-Pesa Paybill', paybill_number: '', instructions: '' },
   },
   checkout: { mpesa_reservation_minutes: 30, bank_transfer_reservation_minutes: 2880, max_quantity_per_item: 20 },
   seo: {
