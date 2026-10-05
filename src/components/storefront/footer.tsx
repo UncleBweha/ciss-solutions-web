@@ -142,8 +142,8 @@ export function Footer({ business }: { business: BusinessSettings }) {
         ))}
       </div>
       <div className="border-t border-border">
-        <div className="container-page flex flex-col items-center justify-between gap-3 py-4 text-sm text-fg-muted sm:flex-row lg:py-5">
-          <div className="text-center sm:text-left">
+        <div className="container-page flex flex-col items-center gap-3 py-4 text-sm text-fg-muted lg:py-5">
+          <div className="text-center">
             <p>
               © {year} {business.name}. All rights reserved.
             </p>
