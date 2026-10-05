@@ -57,7 +57,7 @@ export function Hero({ slides, className }: { slides: HeroSlide[]; className?: s
           aria-hidden={i !== index}
           inert={i !== index}
           className={cn(
-            'grid h-full grid-cols-[minmax(0,1fr)] items-center transition-opacity duration-500 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]',
+            'grid h-full grid-cols-[minmax(0,1fr)] items-center transition-opacity duration-500 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]',
             i === index ? 'relative opacity-100' : 'pointer-events-none absolute inset-0 opacity-0',
           )}
           style={slide.background ? { background: slide.background } : undefined}
@@ -89,14 +89,16 @@ export function Hero({ slides, className }: { slides: HeroSlide[]; className?: s
               ) : null}
             </div>
           </div>
-          <div className="relative order-1 aspect-[16/9] sm:order-2 sm:aspect-auto sm:h-full sm:min-h-[18rem]">
+          {/* Same white stage as the product cards, so wide photos, square photos and
+              photos with a white background all sit the same way in the banner. */}
+          <div className="relative order-1 m-2 aspect-[16/10] rounded-[calc(var(--radius-card)-6px)] bg-white sm:order-2 sm:m-3 sm:aspect-auto sm:min-h-[17rem] sm:self-stretch">
             <ProductImage
               src={slide.imageUrl}
               alt={slide.imageAlt ?? ''}
               fill
               priority={i === 0}
-              sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
-              className="object-contain p-6 sm:p-8"
+              sizes="(min-width: 1024px) 34vw, (min-width: 640px) 48vw, 100vw"
+              className="object-contain p-4 sm:p-5"
             />
           </div>
         </div>
