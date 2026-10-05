@@ -79,8 +79,9 @@ export async function quoteCart(items: CartItemInput[], opts: QuoteOptions = {})
   }
   const byId = new Map(((products ?? []) as unknown as Row[]).map((p) => [p.id, p]))
 
-  // Category ancestry so category-restricted coupons match subcategories.
-  const { data: categories } = await db.from('categories').select('id, parent_id')
+  // Category ancestry so category-restricted coupons match subcategories (only
+  // coupons use it, so carts without a code skip the read).
+  const { data: categories } = opts.couponCode?.trim() ? await db.from('categories').select('id, parent_id') : { data: [] }
   const parentOf = new Map((categories ?? []).map((c) => [c.id, c.parent_id]))
   const ancestry = (id: string | null) => {
     const out: string[] = []

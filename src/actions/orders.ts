@@ -14,11 +14,13 @@ const trackSchema = z.object({
 /** Order lookup by number + phone (guest tracking). Rate limited against guessing. */
 export async function trackOrderAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
-  if (!(await rateLimit(`track:${ip}`, 15, 900))) return { message: 'Too many attempts. Please try again in 15 minutes.' }
+  if (!(await rateLimit(`track:${ip}`, 150, 900))) return { message: 'Too many attempts. Please try again in 15 minutes.' }
   const parsed = trackSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { message: parsed.error.issues[0].message }
 
   const orderNumber = parsed.data.orderNumber.startsWith('CISS-') ? parsed.data.orderNumber : `CISS-${parsed.data.orderNumber}`
+  // Guessing the phone for one order is what needs the tight limit.
+  if (!(await rateLimit(`track-order:${orderNumber}`, 10, 900))) return { message: 'Too many attempts. Please try again in 15 minutes.' }
   const phone = normalizeKenyanPhone(parsed.data.phone)
   const { data } = await createAdminClient()
     .from('orders')

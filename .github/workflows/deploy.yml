@@ -1,10 +1,9 @@
-# Deploys the site to the VPS on every push to main (or manually from the Actions tab).
+# Deploys the static coming-soon page to the VPS. Manual only (Actions tab): the
+# store is the live site now and deploys on push to main through deploy-app.yml.
 # Needs repository secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_KNOWN_HOSTS.
-name: Deploy to VPS
+name: Deploy coming-soon page to VPS
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
