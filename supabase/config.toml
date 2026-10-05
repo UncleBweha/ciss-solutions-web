@@ -320,6 +320,15 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
+# "Continue with Google" (see docs/DEPLOYMENT.md). For local testing set enabled = true and
+# export SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID / _SECRET before `supabase start`;
+# also set NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true in .env.local.
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+
 [auth.external.apple]
 enabled = false
 client_id = ""

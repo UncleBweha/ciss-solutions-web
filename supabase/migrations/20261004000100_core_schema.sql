@@ -672,7 +672,7 @@ begin
   values (
     new.id,
     new.email,
-    nullif(new.raw_user_meta_data ->> 'full_name', ''),
+    coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), nullif(new.raw_user_meta_data ->> 'name', '')),
     nullif(new.raw_user_meta_data ->> 'phone', '')
   )
   on conflict (id) do nothing;

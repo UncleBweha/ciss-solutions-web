@@ -6,6 +6,9 @@ export const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
+/** Show "Continue with Google" (enable the Google provider in Supabase first). */
+export const googleAuthEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === 'true'
+
 export const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '').replace(/\D/g, '')
 
 export const analytics = {
