@@ -194,8 +194,8 @@ export function ProductPurchase({ product, variants, maxPerItem, whatsappNumber 
         </li>
       </ul>
 
-      {/* Sticky purchase bar on mobile */}
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 border-t border-black/[0.07] bg-white/80 px-4 py-3 backdrop-blur-md backdrop-saturate-150 lg:hidden">
+      {/* Sticky purchase bar on mobile, sitting on top of the bottom navigation */}
+      <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))] z-30 flex items-center justify-between gap-3 border-t border-black/[0.07] bg-white/80 px-4 py-3 backdrop-blur-md backdrop-saturate-150 lg:hidden">
         <div>
           <p className="text-xs text-fg-muted">{variant ? variant.name : 'Price'}</p>
           <p className="text-lg font-bold">{formatKES(price)}</p>
