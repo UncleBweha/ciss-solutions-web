@@ -43,8 +43,8 @@ export function CartView() {
   const canCheckout = Boolean(quote && quote.lines.length && !unavailable.length)
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[1fr_24rem]">
-      <section aria-label="Cart items" className="glass-flat rounded-[var(--radius-card)] px-5 sm:px-6">
+    <div className="grid items-start gap-5 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
+      <section aria-label="Cart items" className="glass-flat min-w-0 rounded-[var(--radius-card)] px-3.5 sm:px-6">
         <ul className="divide-y divide-border">
           {items.map((item) => {
             const line = quote?.lines.find((l) => l.productId === item.productId && l.variantId === item.variantId)
