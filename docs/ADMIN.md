@@ -36,8 +36,8 @@ enter their email and pick a role. To remove access, set them back to customer.
 The dashboard shows today's sales and orders, open orders, low-stock and pending-payment counts,
 and for the last 30 days: sales and orders per day, top products and top categories. The bell
 (Notifications) lists new orders, payment problems (for example an underpayment), low stock and new
-support requests. Staff are also emailed about new orders at the addresses in Settings → Checkout,
-SEO & alerts (plus any in the server's `ADMIN_ALERT_EMAILS`).
+support requests. New orders are also emailed to `orders@cisssolutions.co.ke` and to the addresses
+in Settings → Checkout, SEO & alerts (plus any in the server's `ADMIN_ALERT_EMAILS`).
 
 ## Products
 

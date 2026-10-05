@@ -21,6 +21,10 @@ you can stage it on the server first.
    `https://cisssolutions.co.ke/auth/callback`.
 4. **Authentication → Emails**: configure custom SMTP (for example Resend) so sign-up and
    password-reset emails come from your domain and aren't subject to Supabase's low default limit.
+   **Authentication → Rate limits**: raise "token refreshes" to 3000 and "sign-ups and sign-ins"
+   to 600 per 5 minutes. Auth is called from the store's server, so Supabase sees every customer
+   as one IP address; the defaults (150 and 30) lock customers out once a few hundred are signed
+   in. The store applies its own per-customer limits.
 5. **Project settings → API**: copy the URL, the anon key and the service role key into the env
    file (next section). The service role key is a server secret.
 6. Create the first staff account: register on the live site (or **Authentication → Users → Add
@@ -42,7 +46,7 @@ Every variable is described in [`.env.example`](../.env.example). Production nee
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | From the Supabase project |
 | `SUPABASE_SERVICE_ROLE_KEY` | From the Supabase project (secret) |
 | `MPESA_*` | See [PAYMENTS.md](PAYMENTS.md). `MPESA_ENV=production`, never `mock` |
-| `EMAIL_PROVIDER=resend`, `EMAIL_API_KEY`, `EMAIL_FROM`, `ADMIN_ALERT_EMAILS` | Transactional email |
+| `EMAIL_PROVIDER=resend`, `EMAIL_API_KEY`, `EMAIL_FROM`, `ADMIN_ALERT_EMAILS` | Transactional email. Order emails are sent from, and new-order alerts always go to, `orders@cisssolutions.co.ke` (`ORDERS_EMAIL` overrides it) |
 | `CRON_SECRET` | Long random string (`openssl rand -hex 32`) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | e.g. `2547XXXXXXXX` |
 | `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_META_PIXEL_ID` | Optional |
@@ -139,8 +143,8 @@ Run it every 5–10 minutes. Without it, abandoned M-Pesa orders hold stock unti
 | Workflow | Trigger | Does |
 | --- | --- | --- |
 | `ci.yml` | every push and pull request | Starts a throwaway local Supabase, then lint, typecheck, unit + integration tests, SQL tests, production build, and the Playwright E2E suite. Needs no secrets. |
-| `deploy-app.yml` | manual | Deploys the store to the VPS (section 3), optionally switches the domain |
-| `deploy.yml` | push to `main` | Deploys the static coming-soon page (unchanged) |
+| `deploy-app.yml` | push to `main`, or manual | Deploys the store to the VPS (section 3). A manual run can also switch the domain |
+| `deploy.yml` | manual | Deploys the static coming-soon page |
 
 The deploy workflows use repository secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` and
 `VPS_KNOWN_HOSTS` (`deploy/setup-github-secrets.sh` sets them). Production app secrets stay on
@@ -148,7 +152,7 @@ the server in `/opt/ciss-store/.env` and are never stored in GitHub.
 
 ## Launch checklist
 
-- [ ] Migrations pushed, first super admin created, SMTP configured
+- [ ] Migrations pushed, first super admin created, SMTP configured, Auth rate limits raised
 - [ ] Business details, payment methods, delivery zones and fees set in Admin, Settings
 - [ ] Legal pages written or reviewed and marked "Reviewed"
 - [ ] Real products, prices, stock and photos loaded (Admin, Products, or CSV import)

@@ -19,22 +19,27 @@ const password = z.string().min(8, 'Use at least 8 characters').max(72)
 
 export async function signInAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
-  if (!(await rateLimit(`login:${ip}`, 10, 600))) return { message: 'Too many sign-in attempts. Please wait 10 minutes.' }
+  if (!(await rateLimit(`login:${ip}`, 300, 600))) return { message: 'Too many sign-in attempts. Please wait 10 minutes.' }
   const parsed = z.object({ email: z.string().trim().email('Enter your email'), password: z.string().min(1, 'Enter your password') }).safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
+  if (!(await rateLimit(`login-email:${parsed.data.email.toLowerCase()}`, 10, 600))) return { message: 'Too many sign-in attempts. Please wait 10 minutes.' }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword(parsed.data)
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data)
   if (error) {
     logger.warn('auth.sign_in_failed', { reason: error.code ?? error.message })
     return { message: error.code === 'email_not_confirmed' ? 'Please confirm your email address first (check your inbox).' : 'Incorrect email or password.' }
   }
-  redirect(safeNext(formData.get('next')))
+  // Staff land on the admin dashboard; customers on their account (or the page they came from).
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+  const next = safeNext(formData.get('next'))
+  if (profile && profile.role !== 'customer') redirect(next.startsWith('/admin') ? next : '/admin')
+  redirect(next)
 }
 
 export async function signUpAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
-  if (!(await rateLimit(`signup:${ip}`, 5, 3600))) return { message: 'Too many sign-up attempts. Please try again later.' }
+  if (!(await rateLimit(`signup:${ip}`, 60, 3600))) return { message: 'Too many sign-up attempts. Please try again later.' }
   const parsed = z
     .object({
       fullName: z.string().trim().min(2, 'Enter your name').max(100),
@@ -73,9 +78,10 @@ export async function signOutAction() {
 
 export async function requestPasswordResetAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
-  if (!(await rateLimit(`reset:${ip}`, 5, 3600))) return { message: 'Too many requests. Please try again later.' }
+  if (!(await rateLimit(`reset:${ip}`, 60, 3600))) return { message: 'Too many requests. Please try again later.' }
   const email = z.string().trim().email().safeParse(formData.get('email'))
   if (!email.success) return { errors: { email: 'Enter a valid email' } }
+  if (!(await rateLimit(`reset-email:${email.data.toLowerCase()}`, 3, 3600))) return { message: 'Too many requests. Please try again later.' }
   const supabase = await createClient()
   await supabase.auth.resetPasswordForEmail(email.data, { redirectTo: `${siteUrl}/auth/callback?next=/auth/reset-password` })
   // Same answer whether or not the account exists.

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Heart, MapPin, Package } from 'lucide-react'
 import { OrderList, type AccountOrder } from '@/components/account/order-list'
 import { requireUser } from '@/lib/auth'
@@ -9,6 +10,8 @@ export const metadata: Metadata = { title: 'My account', robots: { index: false 
 
 export default async function AccountPage() {
   const user = await requireUser()
+  // Staff have no orders of their own; their home is the admin dashboard.
+  if (user && user.role !== 'customer') redirect('/admin')
   const supabase = await createClient()
   const [{ data: orders, count }, { count: wishCount }, { count: addressCount }] = await Promise.all([
     supabase

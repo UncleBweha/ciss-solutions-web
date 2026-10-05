@@ -10,7 +10,7 @@ const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/p
 
 async function guard(kind: string): Promise<string | null> {
   const ip = await clientIp()
-  return (await rateLimit(`${kind}:${ip}`, 5, 3600)) ? null : 'You have sent several messages already. Please try again later or contact us on WhatsApp.'
+  return (await rateLimit(`${kind}:${ip}`, 40, 3600)) ? null : 'You have sent several messages already. Please try again later or contact us on WhatsApp.'
 }
 
 export async function submitContactAction(_prev: FormState, formData: FormData): Promise<FormState> {

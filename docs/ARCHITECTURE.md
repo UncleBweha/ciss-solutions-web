@@ -97,7 +97,11 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
   and cron secrets are read in `server-env.ts`, which is `server-only`.
 - Rate limits (database-backed `check_rate_limit()`): sign-in, registration, password reset,
   checkout, payment retries, order tracking, status polling, contact and part-request forms.
-  Reviews require a signed-in account.
+  Reviews require a signed-in account. Mobile networks share one address between thousands of
+  customers, so the per-IP limits are loose flood ceilings; the tight limits are keyed on the
+  email, phone or order number being tried.
+- Staff accounts manage the store and cannot buy from it: sign-in and `/account` send them to
+  `/admin`, and checkout refuses them (page and `placeOrderAction`).
 - The logger (`lib/logger.ts`) redacts values under keys that look like passwords, PINs, tokens,
   secrets, API keys, cookies and authorisation headers.
 - Security headers in `next.config.ts`: `X-Frame-Options: SAMEORIGIN`, `nosniff`,

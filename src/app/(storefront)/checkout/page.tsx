@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { CheckoutForm } from '@/components/checkout/checkout-form'
+import { LinkButton } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/misc'
 import { getSessionUser } from '@/lib/auth'
 import { getDeliveryZones, getSettings } from '@/lib/catalog'
 import { deliveryEstimate } from '@/lib/ecommerce/delivery'
@@ -10,6 +12,18 @@ export const metadata: Metadata = { title: 'Checkout', robots: { index: false } 
 
 export default async function CheckoutPage() {
   const [settings, zones, user] = await Promise.all([getSettings(), getDeliveryZones(), getSessionUser()])
+
+  if (user && user.role !== 'customer') {
+    return (
+      <div className="container-page py-8">
+        <EmptyState
+          title="Staff accounts cannot place orders."
+          description="Sign out and use a customer account to buy from the store."
+          action={<LinkButton href="/admin">Go to the admin dashboard</LinkButton>}
+        />
+      </div>
+    )
+  }
 
   let addresses: { id: string; full_name: string; phone: string; county: string; town: string; address_line: string; instructions: string | null }[] = []
   if (user) {
