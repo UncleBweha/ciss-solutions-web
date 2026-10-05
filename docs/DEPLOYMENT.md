@@ -32,6 +32,27 @@ you can stage it on the server first.
    Add further staff from Admin, Settings, Staff & roles.
 7. Turn on Point-in-Time Recovery or at least daily backups (Pro plan) before taking real orders.
 
+### Google sign-in (optional)
+
+Customers can sign in with Google once this is set up; it creates the same customer account
+as email sign-up.
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create a project, configure the
+   **OAuth consent screen** (app name "CISS Solutions", support email `info@cisssolutions.co.ke`,
+   authorised domain `cisssolutions.co.ke`), then publish it.
+2. **APIs & Services → Credentials → Create credentials → OAuth client ID**, type
+   **Web application**:
+   - Authorised JavaScript origins: `https://cisssolutions.co.ke`
+   - Authorised redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+     (Supabase shows the exact value on its Google provider page).
+3. In Supabase, **Authentication → Sign In / Providers → Google**: enable it and paste the
+   client ID and client secret.
+4. Set `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` in `/opt/ciss-store/.env` and redeploy (it is
+   compiled into the page, so it needs a rebuild).
+
+If Google is enabled in the env file but not in Supabase, the button returns the customer to
+the sign-in page with a message to use email instead.
+
 ## 2. Environment variables
 
 Every variable is described in [`.env.example`](../.env.example). Production needs:
