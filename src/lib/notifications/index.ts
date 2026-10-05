@@ -73,12 +73,12 @@ export async function loadOrderEmailData(orderId: string): Promise<(OrderEmailDa
   }
 }
 
-/** Staff alert recipients: ADMIN_ALERT_EMAILS plus the addresses saved in Admin settings. */
+/** Staff alert recipients: the orders mailbox, ADMIN_ALERT_EMAILS and the addresses saved in Admin settings. */
 async function staffAlertRecipients(): Promise<string[]> {
   const { data } = await createAdminClient().from('settings').select('value').eq('key', 'notifications').maybeSingle()
   const saved = (data?.value as { admin_emails?: unknown } | null)?.admin_emails
   const fromSettings = Array.isArray(saved) ? saved.filter((e): e is string => typeof e === 'string' && e.includes('@')) : []
-  return [...new Set([...serverEnv.email.adminAlerts, ...fromSettings].map((e) => e.trim().toLowerCase()))]
+  return [...new Set([serverEnv.email.orders, ...serverEnv.email.adminAlerts, ...fromSettings].map((e) => e.trim().toLowerCase()))]
 }
 
 export async function notifyOrderPlaced(orderId: string) {
