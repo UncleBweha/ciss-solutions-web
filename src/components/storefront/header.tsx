@@ -118,8 +118,8 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
       {/* Info bar: who we are and how to reach us. Scrolls away. */}
       <div className="hidden text-xs text-fg-secondary md:block">
         <div className="container-page flex h-9 items-center gap-5">
-          <span>{[contact.location, contact.hours].filter(Boolean).join(' · ')}</span>
-          <span className="ml-auto flex items-center gap-5">
+          <span className="min-w-0 truncate">{[contact.location, contact.hours].filter(Boolean).join(' · ')}</span>
+          <span className="ml-auto flex shrink-0 items-center gap-5 whitespace-nowrap">
             {contact.phone ? (
               <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} className="flex items-center gap-1.5 hover:text-fg">
                 <Phone className="h-3.5 w-3.5" aria-hidden="true" /> {contact.phone}

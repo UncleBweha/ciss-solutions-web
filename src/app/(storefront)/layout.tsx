@@ -1,3 +1,4 @@
+import { BottomNav } from '@/components/storefront/bottom-nav'
 import { Footer } from '@/components/storefront/footer'
 import { Header, type NavData } from '@/components/storefront/header'
 import { WhatsAppButton } from '@/components/storefront/whatsapp-button'
@@ -30,6 +31,9 @@ export default async function StorefrontLayout({ children }: { children: React.R
         {children}
       </main>
       <Footer business={settings.business} />
+      {/* Room for the fixed bottom navigation on phones and tablets. */}
+      <div aria-hidden="true" className="h-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))] lg:hidden" />
+      <BottomNav categories={nav.categories} />
       <WhatsAppButton number={settings.business.whatsapp} />
     </>
   )
