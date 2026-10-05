@@ -143,8 +143,8 @@ Run it every 5–10 minutes. Without it, abandoned M-Pesa orders hold stock unti
 | Workflow | Trigger | Does |
 | --- | --- | --- |
 | `ci.yml` | every push and pull request | Starts a throwaway local Supabase, then lint, typecheck, unit + integration tests, SQL tests, production build, and the Playwright E2E suite. Needs no secrets. |
-| `deploy-app.yml` | manual | Deploys the store to the VPS (section 3), optionally switches the domain |
-| `deploy.yml` | push to `main` | Deploys the static coming-soon page (unchanged) |
+| `deploy-app.yml` | push to `main`, or manual | Deploys the store to the VPS (section 3). A manual run can also switch the domain |
+| `deploy.yml` | manual | Deploys the static coming-soon page |
 
 The deploy workflows use repository secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` and
 `VPS_KNOWN_HOSTS` (`deploy/setup-github-secrets.sh` sets them). Production app secrets stay on
