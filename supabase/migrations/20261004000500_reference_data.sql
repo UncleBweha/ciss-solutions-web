@@ -32,7 +32,7 @@ insert into public.settings (key, value, is_public) values
      'tagline', 'Printers, spare parts, ink & toner in Kenya',
      'phone', '',
      'whatsapp', '',
-     'email', '',
+     'email', 'info@cisssolutions.co.ke',
      'location', 'Nairobi, Kenya',
      'address', '',
      'business_hours', 'Mon – Fri 8:00 – 18:00, Sat 9:00 – 15:00',
@@ -58,7 +58,7 @@ insert into public.settings (key, value, is_public) values
      'default_title', 'CISS Solutions | Printers, Spare Parts, Ink & Toner in Kenya',
      'default_description', 'Shop genuine printers, printer spare parts, ink, toner, scanners and accessories from top brands with nationwide delivery across Kenya.'
    ), true),
-  ('notifications', jsonb_build_object('admin_emails', jsonb_build_array(), 'from_email', ''), false)
+  ('notifications', jsonb_build_object('admin_emails', jsonb_build_array('info@cisssolutions.co.ke'), 'from_email', ''), false)
 on conflict (key) do nothing;
 
 -- Homepage sections --------------------------------------------------------------

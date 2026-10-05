@@ -24,7 +24,7 @@ export const serverEnv = {
   email: {
     provider: (optional('EMAIL_PROVIDER') ?? 'log') as 'log' | 'resend',
     apiKey: optional('EMAIL_API_KEY'),
-    from: optional('EMAIL_FROM') ?? 'CISS Solutions <orders@cisssolutions.co.ke>',
+    from: optional('EMAIL_FROM') ?? 'CISS Solutions <info@cisssolutions.co.ke>',
     adminAlerts: (optional('ADMIN_ALERT_EMAILS') ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   },
   cronSecret: optional('CRON_SECRET'),

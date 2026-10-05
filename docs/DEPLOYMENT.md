@@ -63,7 +63,7 @@ sudo nano /opt/ciss-store/.env        # production values, KEY=value per line
 sudo chmod 600 /opt/ciss-store/.env
 ```
 
-Write values without surrounding quotes (`EMAIL_FROM=CISS Solutions <orders@cisssolutions.co.ke>`):
+Write values without surrounding quotes (`EMAIL_FROM=CISS Solutions <info@cisssolutions.co.ke>`):
 Docker's `--env-file` keeps quotes literally.
 
 **Deploy** (from your machine, or GitHub Actions → "Deploy store to VPS" → Run workflow):
