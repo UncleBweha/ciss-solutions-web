@@ -150,6 +150,8 @@ export type PaymentMethodsSettings = {
     instructions: string
   }
   cash_on_delivery: { enabled: boolean; label: string; counties: string[] }
+  /** Manual Paybill: the customer pays themselves, staff mark the order paid. */
+  mpesa_paybill: { enabled: boolean; label: string; paybill_number: string; instructions: string }
 }
 
 export type CheckoutSettings = {

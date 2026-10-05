@@ -31,6 +31,7 @@ export const paymentMethodLabels: Record<PaymentMethod, string> = {
   card: 'Card',
   bank_transfer: 'Bank transfer',
   cash_on_delivery: 'Cash on delivery',
+  mpesa_paybill: 'M-Pesa Paybill',
 }
 
 export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
@@ -60,9 +61,14 @@ export function paymentStatusTone(status: PaymentStatus): Tone {
   return 'danger'
 }
 
+/** Methods staff confirm by hand; mpesa (STK) and card are confirmed by the provider. */
+export function isManualPayment(method: PaymentMethod) {
+  return method === 'bank_transfer' || method === 'cash_on_delivery' || method === 'mpesa_paybill'
+}
+
 /** Next statuses staff may choose (mirrors update_order_status() in the database). */
 export function allowedTransitions(status: OrderStatus, method: PaymentMethod): OrderStatus[] {
-  const manual = method === 'bank_transfer' || method === 'cash_on_delivery'
+  const manual = isManualPayment(method)
   switch (status) {
     case 'PENDING':
       return manual ? ['PAID', 'PROCESSING', 'CANCELLED'] : ['PROCESSING', 'CANCELLED']

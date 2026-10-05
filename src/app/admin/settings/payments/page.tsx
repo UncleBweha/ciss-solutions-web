@@ -22,9 +22,15 @@ export default async function PaymentSettings() {
           <fieldset className="space-y-2">
             <legend className="mb-1 text-sm font-semibold">Enabled at checkout</legend>
             <label className="flex items-center gap-2 text-sm"><Checkbox name="mpesa" defaultChecked={pm?.mpesa?.enabled} /> M-Pesa (STK push)</label>
+            <label className="flex items-center gap-2 text-sm"><Checkbox name="mpesa_paybill" defaultChecked={pm?.mpesa_paybill?.enabled} /> M-Pesa Paybill (customer pays manually, staff mark the order paid)</label>
             <label className="flex items-center gap-2 text-sm"><Checkbox name="bank_transfer" defaultChecked={pm?.bank_transfer?.enabled} /> Bank transfer</label>
             <label className="flex items-center gap-2 text-sm"><Checkbox name="cash_on_delivery" defaultChecked={pm?.cash_on_delivery?.enabled} /> Cash on delivery</label>
             <p className="text-xs text-fg-muted">Card payments need a card gateway integration (e.g. Pesapal, Flutterwave) and are not enabled.</p>
+          </fieldset>
+          <fieldset className="grid gap-3 sm:grid-cols-2">
+            <legend className="mb-1 text-sm font-semibold">M-Pesa Paybill details (shown at checkout and after ordering)</legend>
+            <Field label="Paybill number" htmlFor="paybill_number" hint="Customers use their order number as the account number"><Input id="paybill_number" name="paybill_number" inputMode="numeric" defaultValue={pm?.mpesa_paybill?.paybill_number} /></Field>
+            <Field label="Instructions" htmlFor="paybill_instructions" className="sm:col-span-2"><Textarea id="paybill_instructions" name="paybill_instructions" rows={2} className="min-h-0" defaultValue={pm?.mpesa_paybill?.instructions} /></Field>
           </fieldset>
           <fieldset className="grid gap-3 sm:grid-cols-2">
             <legend className="mb-1 text-sm font-semibold">Bank transfer details (shown after ordering)</legend>
