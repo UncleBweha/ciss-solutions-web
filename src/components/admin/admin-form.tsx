@@ -91,7 +91,7 @@ export function ConfirmAction({
   const router = useRouter()
   return (
     <>
-      <Button variant={variant === 'danger' ? 'ghost' : variant} size={size} className={variant === 'danger' ? 'text-red-300' : undefined} onClick={() => setOpen(true)}>
+      <Button variant={variant === 'danger' ? 'ghost' : variant} size={size} className={variant === 'danger' ? 'text-danger' : undefined} onClick={() => setOpen(true)}>
         {label}
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} title={title}>

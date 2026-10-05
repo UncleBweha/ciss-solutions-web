@@ -22,7 +22,7 @@ export function QuantitySelector({
   const h = size === 'sm' ? 'h-9' : 'h-11'
   const btn = cn('grid place-items-center text-fg-secondary transition-colors hover:text-fg disabled:opacity-40', size === 'sm' ? 'w-8' : 'w-10')
   return (
-    <div className={cn('inline-flex items-center rounded-md border border-border bg-white/[0.05]', h)} role="group" aria-label={label}>
+    <div className={cn('inline-flex items-center rounded-full border border-border-strong bg-white/80', h)} role="group" aria-label={label}>
       <button type="button" className={btn} onClick={() => onChange(Math.max(min, value - 1))} disabled={disabled || value <= min} aria-label="Decrease quantity">
         <Minus className="h-4 w-4" />
       </button>

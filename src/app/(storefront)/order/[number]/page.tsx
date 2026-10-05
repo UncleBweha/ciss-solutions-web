@@ -40,7 +40,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
     <div className="container-page max-w-5xl py-10">
       <header className="mb-8 text-center">
         {failed ? (
-          <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-danger/15 text-red-300">
+          <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-danger/15 text-danger">
             <Clock className="h-8 w-8" aria-hidden="true" />
           </span>
         ) : (
@@ -82,7 +82,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
                 <dt className="text-fg-muted">Amount</dt>
                 <dd className="font-bold">{formatKES(order.total)}</dd>
               </dl>
-              {!bank.account_number ? <p className="mt-3 text-sm text-amber-300">Our team will contact you with bank details.</p> : null}
+              {!bank.account_number ? <p className="mt-3 text-sm text-warning">Our team will contact you with bank details.</p> : null}
               <p className="mt-3 text-sm text-fg-secondary">{bank.instructions}</p>
             </section>
           ) : null}
@@ -150,7 +150,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
           </OrderSummary>
           <div className="grid gap-2">
             {paid ? (
-              <Link href={`/api/orders/${encodeURIComponent(order.order_number)}/invoice${tokenQs}`} className="flex items-center justify-center gap-2 rounded-md border border-border py-2.5 text-sm font-semibold hover:bg-surface">
+              <Link href={`/api/orders/${encodeURIComponent(order.order_number)}/invoice${tokenQs}`} className="flex items-center justify-center gap-2 rounded-full border border-white bg-white/70 py-2.5 text-sm font-semibold hover:bg-white">
                 <FileText className="h-4 w-4" aria-hidden="true" /> Download invoice
               </Link>
             ) : null}

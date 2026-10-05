@@ -33,7 +33,7 @@ export function PriceDisplay({
             {formatKES(compareAt)}
           </span>
           {showSavings ? (
-            <span className="text-sm font-semibold text-green-300">Save {formatKES(savings(Number(price), Number(compareAt)))}</span>
+            <span className="text-sm font-semibold text-success">Save {formatKES(savings(Number(price), Number(compareAt)))}</span>
           ) : null}
         </>
       ) : null}
@@ -51,7 +51,7 @@ export function DiscountBadge({ price, compareAt, className }: { price: number; 
 export function StockBadge({ available, lowThreshold = 5, className }: { available: number; lowThreshold?: number; className?: string }) {
   const status = stockStatus(available, lowThreshold)
   const Icon = status === 'in_stock' ? CircleCheck : status === 'low_stock' ? CircleAlert : CircleX
-  const color = status === 'in_stock' ? 'text-green-300' : status === 'low_stock' ? 'text-amber-300' : 'text-red-300'
+  const color = status === 'in_stock' ? 'text-success' : status === 'low_stock' ? 'text-warning' : 'text-danger'
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-xs font-semibold', color, className)}>
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />

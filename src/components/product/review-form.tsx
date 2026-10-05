@@ -35,11 +35,11 @@ export function ReviewForm({ productId, slug }: { productId: string; slug: strin
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((i) => (
             <button key={i} type="button" onClick={() => setRating(i)} aria-label={`${i} star${i > 1 ? 's' : ''}`} aria-pressed={rating === i} className="p-0.5">
-              <Star className={cn('h-7 w-7', i <= rating ? 'fill-amber-400 text-amber-400' : 'text-white/25 hover:text-amber-300')} />
+              <Star className={cn('h-7 w-7', i <= rating ? 'fill-amber-400 text-amber-400' : 'text-surface-strong hover:text-warning')} />
             </button>
           ))}
         </div>
-        {state.errors?.rating ? <p className="mt-1 text-xs text-red-300">{state.errors.rating}</p> : null}
+        {state.errors?.rating ? <p className="mt-1 text-xs text-danger">{state.errors.rating}</p> : null}
       </fieldset>
       <Field label="Title" htmlFor="review-title" error={state.errors?.title}>
         <Input id="review-title" name="title" maxLength={120} />

@@ -129,3 +129,94 @@ export function PartFinder({
     </div>
   )
 }
+
+/** Compact "parts for your printer" box for the homepage hero column. */
+export function PartFinderPanel({ models, className }: { models: FinderModel[]; className?: string }) {
+  const router = useRouter()
+  const brands = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const m of models) map.set(m.brand_slug, m.brand_name)
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [models])
+  const [brand, setBrand] = useState('')
+  const [model, setModel] = useState('')
+  const [partNumber, setPartNumber] = useState('')
+  const brandModels = models.filter((m) => !brand || m.brand_slug === brand)
+
+  return (
+    <div className={cn('glass flex flex-col overflow-hidden rounded-[var(--radius-card)]', className)}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          const params = new URLSearchParams()
+          if (model) params.set('model', model)
+          else if (brand) params.set('brand', brand)
+          router.push(`/parts-finder?${params.toString()}`)
+        }}
+        className="p-4 sm:p-5"
+        aria-labelledby="panel-finder-title"
+      >
+        <h2 id="panel-finder-title" className="flex items-center gap-2 text-base font-bold">
+          <span className="reg-mark text-ink-magenta" aria-hidden="true" />
+          Parts &amp; ink for your printer
+        </h2>
+        <p className="mt-1 text-sm text-fg-muted">Pick your printer to see only what fits it.</p>
+        <div className="mt-4 space-y-3">
+          <div>
+            <label htmlFor="panel-brand" className="mb-1 block text-xs font-semibold text-fg-secondary">
+              Printer brand
+            </label>
+            <Select
+              id="panel-brand"
+              value={brand}
+              onChange={(e) => {
+                setBrand(e.target.value)
+                setModel('')
+              }}
+            >
+              <option value="">Choose brand</option>
+              {brands.map(([slug, name]) => (
+                <option key={slug} value={slug}>
+                  {name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="panel-model" className="mb-1 block text-xs font-semibold text-fg-secondary">
+              Printer model
+            </label>
+            <Select id="panel-model" value={model} onChange={(e) => setModel(e.target.value)}>
+              <option value="">{brand ? 'Choose model' : 'Choose a brand first'}</option>
+              {brandModels.map((m) => (
+                <option key={m.id} value={m.slug}>
+                  {brand ? m.model_number : m.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+        <Button type="submit" className="mt-4 w-full" disabled={!brand && !model}>
+          Show compatible parts
+        </Button>
+      </form>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (partNumber.trim()) router.push(`/search?q=${encodeURIComponent(partNumber.trim())}`)
+        }}
+        className="mt-auto border-t border-white/70 bg-white/45 p-4 sm:px-5"
+      >
+        <label htmlFor="panel-part-number" className="mb-1 block text-xs font-semibold text-fg-secondary">
+          Know the part number?
+        </label>
+        <div className="flex gap-2">
+          <Input id="panel-part-number" placeholder="e.g. RM2-5452" value={partNumber} onChange={(e) => setPartNumber(e.target.value)} className="h-10" />
+          <Button type="submit" variant="glass" className="h-10 shrink-0" disabled={!partNumber.trim()}>
+            Go
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}

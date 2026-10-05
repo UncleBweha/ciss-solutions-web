@@ -65,7 +65,7 @@ export function CsvImport() {
           <div className="mt-4">
             <p className="mb-2 text-sm">
               {rows.length} rows · {rows.filter((r) => r.action === 'create').length} new · {rows.filter((r) => r.action === 'update').length} updates ·{' '}
-              <span className={errors ? 'text-red-300' : 'text-green-300'}>{errors} with errors</span>
+              <span className={errors ? 'text-danger' : 'text-success'}>{errors} with errors</span>
             </p>
             <div className="max-h-96 overflow-y-auto rounded-lg border border-border">
               <Table>
@@ -75,7 +75,7 @@ export function CsvImport() {
                     <tr key={r.line}>
                       <Td>{r.line}</Td><Td className="font-mono text-xs">{r.sku}</Td><Td className="max-w-xs truncate">{r.name}</Td>
                       <Td>{r.price ?? '—'}</Td><Td>{r.action}</Td>
-                      <Td>{r.errors.length ? <span className="flex items-start gap-1 text-red-300"><XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />{r.errors.join('; ')}</span> : <span className="flex items-center gap-1 text-green-300"><CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> OK</span>}</Td>
+                      <Td>{r.errors.length ? <span className="flex items-start gap-1 text-danger"><XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />{r.errors.join('; ')}</span> : <span className="flex items-center gap-1 text-success"><CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> OK</span>}</Td>
                     </tr>
                   ))}
                 </tbody>

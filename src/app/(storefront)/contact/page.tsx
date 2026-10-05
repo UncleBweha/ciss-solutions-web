@@ -53,7 +53,7 @@ export default async function ContactPage() {
             )
           })}
           {wa ? (
-            <a href={wa} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-md bg-[#25D366] font-semibold text-[#06290f] hover:brightness-110">
+            <a href={wa} target="_blank" rel="noopener noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#25D366] font-semibold text-[#06290f] hover:brightness-110">
               <MessageCircle className="h-5 w-5" aria-hidden="true" /> Chat on WhatsApp
             </a>
           ) : null}

@@ -69,7 +69,7 @@ export default async function PartsFinderPage({ searchParams }: PageProps<'/part
           <ul className="flex flex-wrap gap-2">
             {brandModels.map((m) => (
               <li key={m.id}>
-                <Link href={`/parts-finder?model=${m.slug}`} className="glass-flat block rounded-md px-3.5 py-2 font-mono text-sm font-semibold text-fg-secondary hover:border-primary/50 hover:text-fg">
+                <Link href={`/parts-finder?model=${m.slug}`} className="glass-card block rounded-xl px-3.5 py-2 font-mono text-sm font-semibold text-fg-secondary hover:border-primary/50 hover:text-fg">
                   {m.model_number}
                 </Link>
               </li>

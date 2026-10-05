@@ -44,7 +44,7 @@ export default async function AdminOrderPage({ params }: PageProps<'/admin/order
           <Panel title="Status" actions={<div className="flex gap-2"><Badge tone={paymentStatusTone(order.payment_status)}>Payment: {paymentStatusLabels[order.payment_status]}</Badge><Badge tone={orderStatusTone(order.order_status)}>Order: {orderStatusLabels[order.order_status]}</Badge></div>}>
             <OrderStatusActions orderId={order.id} allowed={allowed} />
             {order.stock_state === 'shortage' ? (
-              <p role="alert" className="mt-3 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-amber-200">
+              <p role="alert" className="mt-3 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
                 This order was paid after its stock reservation lapsed and some items are out of stock. Restock or contact the customer.
               </p>
             ) : null}

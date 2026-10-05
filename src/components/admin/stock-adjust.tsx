@@ -53,7 +53,7 @@ export function StockAdjustButton({ productId, variantId, name, stock, reserved 
             </Select>
           </Field>
           <Field label="Note" htmlFor="adj-note" hint="e.g. supplier invoice number"><Input id="adj-note" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-          <p className={next < reserved ? 'text-sm text-red-300' : 'text-sm text-fg-secondary'}>
+          <p className={next < reserved ? 'text-sm text-danger' : 'text-sm text-fg-secondary'}>
             New stock: <strong>{next}</strong>{next < reserved ? ' (below reserved; not allowed)' : ''}
           </p>
           <div className="flex justify-end gap-2">
