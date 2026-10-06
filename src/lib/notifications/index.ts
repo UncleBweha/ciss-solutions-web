@@ -64,7 +64,7 @@ export async function loadOrderEmailData(orderId: string): Promise<(OrderEmailDa
   const db = createAdminClient()
   const { data } = await db
     .from('orders')
-    .select('id, order_number, access_token, customer_name, customer_email, customer_phone, total, subtotal, discount, delivery_fee, payment_method, delivery_zone_name, delivery_address, delivery_town, delivery_county, order_status, items:order_items(product_name, variant_name, quantity, total_price), payments(transaction_reference, status)')
+    .select('id, order_number, access_token, customer_name, customer_email, customer_phone, total, subtotal, discount, delivery_fee, payment_method, delivery_zone_name, delivery_address, delivery_town, delivery_county, order_status, items:order_items(product_name, variant_name, sku, quantity, total_price), payments(transaction_reference, status)')
     .eq('id', orderId)
     .maybeSingle()
   if (!data) return null
@@ -83,7 +83,7 @@ export async function loadOrderEmailData(orderId: string): Promise<(OrderEmailDa
     paymentMethod: data.payment_method,
     deliveryZone: data.delivery_zone_name,
     deliveryAddress: [data.delivery_address, data.delivery_town, data.delivery_county].filter(Boolean).join(', '),
-    items: data.items.map((i) => ({ name: i.variant_name ? `${i.product_name} (${i.variant_name})` : i.product_name, quantity: i.quantity, total: Number(i.total_price) })),
+    items: data.items.map((i) => ({ name: i.variant_name ? `${i.product_name} (${i.variant_name})` : i.product_name, sku: i.sku, quantity: i.quantity, total: Number(i.total_price) })),
     status: data.order_status,
     receipt: data.payments.find((p) => p.status === 'PAID')?.transaction_reference ?? null,
   }
