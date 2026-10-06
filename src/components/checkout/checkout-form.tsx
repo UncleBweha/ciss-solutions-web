@@ -53,8 +53,6 @@ export function CheckoutForm({
   const router = useRouter()
   const { items, ready, clear } = useCart()
   const [step, setStep] = useState(0)
-  const [couponInput, setCouponInput] = useState('')
-  const [coupon, setCoupon] = useState<string | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [placing, startPlacing] = useTransition()
   // Set once the order exists: the cart is emptied before the order page has loaded.
@@ -87,7 +85,7 @@ export function CheckoutForm({
   // Cash is always accepted over the counter; for deliveries only in the listed counties.
   const codAllowed = methods.cash_on_delivery && (pickup || !codCounties.length || codCounties.includes(county))
 
-  const { quote, loading } = useQuote({ couponCode: coupon })
+  const { quote, loading } = useQuote()
 
   useEffect(() => {
     if (ready && items.length) track('begin_checkout', { value: quote?.subtotal })
@@ -135,7 +133,6 @@ export function CheckoutForm({
     startPlacing(async () => {
       const result = await placeOrderAction({
         ...values,
-        couponCode: coupon ?? undefined,
         items: items.map(({ productId, variantId, quantity }) => ({ productId, variantId, quantity })),
       })
       if (result.ok) {
@@ -146,8 +143,7 @@ export function CheckoutForm({
       }
       setServerError(result.message)
       for (const [field, message] of Object.entries(result.errors ?? {})) {
-        if (field === 'couponCode') setCoupon(null)
-        else setError(field as FieldPath<CheckoutFormValues>, { message })
+        if (field !== 'couponCode') setError(field as FieldPath<CheckoutFormValues>, { message })
       }
       const firstFieldStep = STEPS.findIndex((s) => s.fields.some((f) => result.errors?.[f]))
       if (firstFieldStep >= 0) setStep(firstFieldStep)
@@ -385,31 +381,6 @@ export function CheckoutForm({
               </li>
             ))}
           </ul>
-
-          <div>
-            <label htmlFor="coupon" className="mb-1.5 block text-sm font-medium text-fg-secondary">
-              Coupon code
-            </label>
-            <div className="flex gap-2">
-              <Input id="coupon" value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} placeholder="e.g. CISS10" className="h-10" />
-              <Button variant="glass" size="sm" className="h-10" onClick={() => setCoupon(couponInput.trim() || null)} disabled={!couponInput.trim()}>
-                Apply
-              </Button>
-            </div>
-            {coupon && quote?.couponMessage ? (
-              <p role="alert" className="mt-1.5 text-xs text-warning">
-                {quote.couponMessage}
-              </p>
-            ) : null}
-            {quote?.coupon ? (
-              <p className="mt-1.5 flex items-center justify-between text-xs text-success">
-                {quote.coupon.code} applied
-                <button type="button" className="underline" onClick={() => { setCoupon(null); setCouponInput('') }}>
-                  Remove
-                </button>
-              </p>
-            ) : null}
-          </div>
 
           {quote?.issues.length ? (
             <FormMessage>

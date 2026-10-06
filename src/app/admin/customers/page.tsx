@@ -26,7 +26,7 @@ export default async function CustomersPage({ searchParams }: PageProps<'/admin/
     <div>
       <AdminPageHeader title="Customers" description={`${count ?? 0} registered customers. Guest checkouts appear on their orders.`} />
       <FilterBar>
-        <Input name="q" defaultValue={q} placeholder="Name, email or phone" className="h-10 w-64!" aria-label="Search customers" />
+        <Input name="q" defaultValue={q} placeholder="Name, email or phone" className="h-10 w-full! sm:w-64!" aria-label="Search customers" />
         <Button type="submit" size="sm" className="h-10">Search</Button>
       </FilterBar>
       <Panel padded={false}>

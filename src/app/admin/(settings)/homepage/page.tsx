@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { deleteBannerAction, moveBannerAction, moveSectionAction, saveBannerAction, saveSectionAction } from '@/actions/admin/content'
 import { AdminForm, ConfirmAction } from '@/components/admin/admin-form'
-import { AdminPageHeader, Panel } from '@/components/admin/admin-ui'
+import { Panel } from '@/components/admin/admin-ui'
 import { MoveButtons } from '@/components/admin/small-actions'
 import { ProductImage } from '@/components/product/product-image'
 import { Badge } from '@/components/ui/badge'
@@ -34,7 +34,10 @@ export default async function HomepageAdmin({ searchParams }: PageProps<'/admin/
 
   return (
     <div className="space-y-4">
-      <AdminPageHeader title="Homepage" description="Turn sections on or off, reorder them and manage hero slides. Changes go live immediately." actions={<Link href="/" target="_blank" className="text-sm text-primary-light">Preview homepage →</Link>} />
+      <p className="flex flex-wrap items-center justify-between gap-2 text-sm text-fg-secondary">
+        Turn sections on or off, reorder them and manage hero slides. Changes go live immediately.
+        <Link href="/" target="_blank" className="font-semibold text-primary-light">Preview homepage →</Link>
+      </p>
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Sections (top to bottom)">
           <ul className="divide-y divide-border">

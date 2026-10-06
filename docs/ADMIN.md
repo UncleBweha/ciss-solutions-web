@@ -72,9 +72,24 @@ compare_at_price, stock, description, short_description, product_type, weight, s
 (a stock difference is recorded as a correction), new SKUs are created. You see a preview with
 errors per row before anything is saved. Brands and categories are matched by name or slug.
 
-## Inventory
+## Menu
 
-The Inventory page lists stock, reserved (held by unpaid orders) and available quantities, with a
+The sidebar has one entry per area; related pages are tabs inside it:
+
+- **Dashboard:** Overview, Reports
+- **Orders**
+- **Products:** Products, Stock
+- **Catalog:** Categories, Brands, Printer models
+- **Customers**
+- **Support requests**
+- **Settings:** Business, Payments, Checkout/SEO/alerts, Homepage, Content pages, Staff & roles
+
+**Log out** is at the bottom of the sidebar and in the top bar. Coupons, product reviews and delivery
+zones are switched off: they have no admin page and customers do not see them.
+
+## Stock
+
+The Stock tab (under Products) lists stock, reserved (held by unpaid orders) and available quantities, with a
 low-stock filter. **Adjust stock** needs a quantity change and a reason: purchase (new stock in),
 return, damage, correction or manual adjustment, plus an optional note. Every movement, including
 sales and cancellations, appears in the product's stock history. Stock cannot be reduced below what
@@ -116,9 +131,9 @@ history, not in the email).
 Customer list with order count and total spent; open one to see their order history and totals. Staff
 cannot see passwords or payment PINs (the system never stores them).
 
-## Coupons
+## Coupons (switched off)
 
-Code, percentage or fixed amount, optional minimum order and maximum discount, start/end dates,
+There is no coupon page in the admin and no coupon box at checkout. When it was on: Code, percentage or fixed amount, optional minimum order and maximum discount, start/end dates,
 total and per-customer usage limits, and optional limits to specific products or categories. The
 discount is always calculated on the server, at checkout, from the current cart.
 
@@ -133,7 +148,7 @@ discount is always calculated on the server, at checkout, from the current cart.
 
 ## Reviews and support
 
-- **Reviews:** customers' reviews wait as Pending; approve or reject them. Only approved reviews are
+- **Reviews (switched off):** no review form or reviews tab on product pages. When it was on, reviews waited as Pending; approve or reject them. Only approved reviews are
   shown and count toward the rating.
 - **Support requests:** messages from the contact form and "help me find a part" requests (with
   printer model and problem). Set them In progress / Resolved / Closed and keep notes.
@@ -150,7 +165,6 @@ accounting and reconciliation (see [PAYMENTS.md](PAYMENTS.md#reconciliation)).
 | --- | --- |
 | Business | Name, tagline, phone, WhatsApp, email, address, hours, social links, M-Pesa Paybill shown to customers |
 | Payments | Turn methods on/off; bank account details and instructions; cash-on-delivery counties |
-| Delivery zones | Zones by county with fee and delivery estimate; one default zone for everywhere else |
 | Checkout, SEO & alerts | M-Pesa and bank-transfer reservation windows, maximum quantity per item, default SEO title/description, staff alert emails |
 | Content pages | Page text and the Reviewed flag |
 | Staff & roles | Add staff, change roles |

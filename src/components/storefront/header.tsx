@@ -67,6 +67,8 @@ function MenuLink({ href, children, count, onClick }: { href: string; children: 
 
 export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact }) {
   const { count, bump, signedIn, account } = useCart()
+  // Staff have no customer account pages: their profile opens the admin dashboard.
+  const accountHref = !signedIn ? '/login' : account?.staff ? '/admin' : '/account'
   const pathname = usePathname()
   const [menu, setMenu] = useState<MenuKey | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -107,7 +109,7 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
     ['Track order', '/track-order'],
     ['About', '/about'],
     ['Contact', '/contact'],
-    [signedIn ? 'My account' : 'Sign in', signedIn ? '/account' : '/login'],
+    [!signedIn ? 'Sign in' : account?.staff ? 'Admin dashboard' : 'My account', accountHref],
   ]
 
   return (
@@ -162,7 +164,7 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
           <div className="ml-auto flex items-center gap-1">
             {/* Phones and tablets reach the account from the bottom bar instead. */}
             <Link
-              href={signedIn ? '/account' : '/login'}
+              href={accountHref}
               className="hidden items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm text-fg hover:bg-white/70 lg:flex"
             >
               {signedIn ? <Avatar src={account?.avatarUrl} name={account?.name} className="h-7 w-7" /> : <User className="h-6 w-6" aria-hidden="true" />}

@@ -4,14 +4,14 @@ import { cn } from '@/lib/utils'
 
 export function AdminPageHeader({ title, description, actions, back }: { title: string; description?: ReactNode; actions?: ReactNode; back?: { href: string; label: string } }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
+    <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 sm:mb-6">
+      <div className="min-w-0">
         {back ? (
           <Link href={back.href} className="mb-1 inline-block text-sm text-fg-muted hover:text-fg">
             ← {back.label}
           </Link>
         ) : null}
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
         {description ? <p className="mt-1 text-sm text-fg-secondary">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
@@ -21,9 +21,9 @@ export function AdminPageHeader({ title, description, actions, back }: { title: 
 
 export function Panel({ title, actions, children, className, padded = true }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; padded?: boolean }) {
   return (
-    <section className={cn('rounded-xl border border-border bg-admin-panel', className)}>
+    <section className={cn('min-w-0 rounded-xl border border-border bg-admin-panel', className)}>
       {title || actions ? (
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border px-4 py-3">
           {title ? <h2 className="text-sm font-semibold">{title}</h2> : <span />}
           {actions}
         </div>
@@ -38,16 +38,16 @@ export function StatCard({ label, value, hint, tone = 'neutral', href }: { label
   const body = (
     <>
       <p className="text-xs font-medium uppercase tracking-wide text-fg-muted">{label}</p>
-      <p className={cn('mt-1.5 text-2xl font-bold tabular-nums', accent)}>{value}</p>
+      <p className={cn('mt-1.5 break-words text-xl font-bold tabular-nums sm:text-2xl', accent)}>{value}</p>
       {hint ? <p className="mt-1 text-xs text-fg-muted">{hint}</p> : null}
     </>
   )
   return href ? (
-    <Link href={href} className="rounded-xl border border-border bg-admin-panel p-4 transition-colors hover:border-border-strong">
+    <Link href={href} className="min-w-0 rounded-xl border border-border bg-admin-panel p-4 transition-colors hover:border-border-strong">
       {body}
     </Link>
   ) : (
-    <div className="rounded-xl border border-border bg-admin-panel p-4">{body}</div>
+    <div className="min-w-0 rounded-xl border border-border bg-admin-panel p-4">{body}</div>
   )
 }
 

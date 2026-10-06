@@ -50,8 +50,8 @@ export default async function ReportsPage({ searchParams }: PageProps<'/admin/re
         }
       />
       <FilterBar>
-        <label className="text-sm">From<Input type="date" name="from" defaultValue={from} className="h-10 w-44!" /></label>
-        <label className="text-sm">To<Input type="date" name="to" defaultValue={to} className="h-10 w-44!" /></label>
+        <label className="w-full text-sm sm:w-auto">From<Input type="date" name="from" defaultValue={from} className="h-10 w-full! sm:w-44!" /></label>
+        <label className="w-full text-sm sm:w-auto">To<Input type="date" name="to" defaultValue={to} className="h-10 w-full! sm:w-44!" /></label>
         <Button type="submit" size="sm" className="h-10">Apply</Button>
       </FilterBar>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
