@@ -6,8 +6,8 @@ import { z } from 'zod'
 import { siteUrl } from '@/lib/env'
 import { GOOGLE_OAUTH_COOKIE, GOOGLE_OAUTH_COOKIE_PATH, googleRedirectUri } from '@/lib/google-oauth'
 import { logger } from '@/lib/logger'
-import { getEmailProvider, sendNoReplyEmail } from '@/lib/notifications/email'
-import { passwordResetEmail, RESET_CODE_MINUTES, welcomeEmail } from '@/lib/notifications/templates'
+import { getEmailProvider } from '@/lib/notifications/email'
+import { RESET_CODE_MINUTES, welcomeEmail } from '@/lib/notifications/templates'
 import { clientIp, rateLimit } from '@/lib/security'
 import { serverEnv } from '@/lib/server-env'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -129,12 +129,10 @@ export async function requestPasswordResetAction(_prev: FormState, formData: For
   if (!email.success) return { errors: { email: 'Enter a valid email' } }
   if (!(await rateLimit(`reset-email:${email.data}`, 3, 3600))) return { message: 'Too many requests. Please try again later.' }
 
-  // The code is created here and emailed from our own no-reply address (not by Supabase).
-  const { data, error } = await createAdminClient().auth.admin.generateLink({ type: 'recovery', email: email.data })
-  const code = data?.properties?.email_otp
-  if (!error && code) {
-    await sendNoReplyEmail({ to: email.data, ...passwordResetEmail(code) }).catch((e) => logger.error('auth.reset_email_failed', { error: e }))
-  }
+  // Supabase creates the code and emails it with the project's "Reset password" template and
+  // SMTP settings (sender, {{ .Token }} in the body). See docs/DEPLOYMENT.md, "Password reset codes".
+  const { error } = await createAdminClient().auth.resetPasswordForEmail(email.data)
+  if (error) logger.error('auth.reset_email_failed', { error: error.message })
   return { ok: true, message: `If an account exists for ${email.data}, we have emailed it a code. It is valid for ${RESET_CODE_MINUTES} minutes.` }
 }
 
