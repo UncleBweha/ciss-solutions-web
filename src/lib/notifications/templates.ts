@@ -65,12 +65,15 @@ ${orderTable(o)}${button(orderLink(o), 'View or track your order')}`,
   return { subject: title, html, text: `${title}\n\n${textSummary(o)}\n\nTrack: ${orderLink(o)}` }
 }
 
+/** The customer's one email for an M-Pesa order: order received and payment cleared. */
 export function paymentConfirmationEmail(o: OrderEmailData) {
-  const title = `Payment received for ${o.orderNumber}`
+  const title = `Order ${o.orderNumber} confirmed`
   const html = layout(
     title,
-    `<p>We have received your payment of <strong>${formatKES(o.total)}</strong>${o.receipt ? ` (M-Pesa ref ${esc(o.receipt)})` : ''}. We are now preparing your order.</p>
-${orderTable(o)}${button(orderLink(o), 'Track your order')}`,
+    `<p>Hi ${esc(o.customerName.split(' ')[0])}, thank you for your order. We have received your payment of <strong>${formatKES(o.total)}</strong>${o.receipt ? ` (M-Pesa ref ${esc(o.receipt)})` : ''} and are now preparing it.</p>
+<p>${isStorePickup(o.deliveryZone) ? 'Collect from' : 'Delivery'}: ${esc(o.deliveryZone ?? '')} – ${esc(o.deliveryAddress)}</p>
+${isStorePickup(o.deliveryZone) || o.deliveryFee ? '' : `<p style="color:#475569;font-size:13px">${esc(DELIVERY_TBC_NOTE)}</p>`}
+${orderTable(o)}${button(orderLink(o), 'View or track your order')}`,
   )
   return { subject: title, html, text: `${title}\n\n${textSummary(o)}\n\nTrack: ${orderLink(o)}` }
 }
@@ -89,18 +92,14 @@ export function orderStatusEmail(o: OrderEmailData & { status: OrderStatus }) {
   return { subject: title, html, text: `${title}\n\n${messages[o.status] ?? ''}\n\n${orderLink(o)}` }
 }
 
-/** Staff alert. 'placed' goes out with every new order; 'paid' follows once an M-Pesa payment is confirmed. */
+/** Staff alert, one per order: 'placed' as soon as a non-M-Pesa order comes in, 'paid' once an M-Pesa payment clears. */
 export function adminNewOrderEmail(o: OrderEmailData, stage: 'placed' | 'paid' = 'placed') {
   const method = paymentMethodLabels[o.paymentMethod]
-  const awaiting = stage === 'placed' && o.paymentMethod === 'mpesa'
-  const title =
-    stage === 'paid' ? `Payment received: order ${o.orderNumber} – ${formatKES(o.total)}` : `New order ${o.orderNumber} – ${formatKES(o.total)}${awaiting ? ' (awaiting payment)' : ''}`
+  const title = `New order ${o.orderNumber} – ${formatKES(o.total)}${stage === 'paid' ? ' (paid)' : ''}`
   const intro =
     stage === 'paid'
-      ? `${esc(o.customerName)} has paid for this order by ${method}${o.receipt ? ` (ref ${esc(o.receipt)})` : ''}.`
-      : awaiting
-        ? `${esc(o.customerName)} placed an order and is paying by ${method}. You will get another email when the payment is confirmed.`
-        : `${esc(o.customerName)} placed an order paid by ${method}.`
+      ? `${esc(o.customerName)} placed an order and has paid by ${method}${o.receipt ? ` (ref ${esc(o.receipt)})` : ''}.`
+      : `${esc(o.customerName)} placed an order paid by ${method}.`
   const pickup = isStorePickup(o.deliveryZone)
   const contact = [o.customerPhone ? `Phone: ${formatKenyanPhone(o.customerPhone)}` : null, o.customerEmail ? `Email: ${o.customerEmail}` : null].filter((l): l is string => Boolean(l))
   const delivery = pickup ? `${o.deliveryZone}: the customer will collect from the shop.` : `${o.deliveryZone ?? 'Delivery'}: ${o.deliveryAddress}. Call the customer to agree the courier and delivery cost.`

@@ -87,11 +87,13 @@ export async function notifyOrderPlaced(orderId: string) {
   const o = await loadOrderEmailData(orderId)
   if (!o) return
   await deliver('order_confirmation', o.email, orderConfirmationEmail(o), o.id)
-  // Staff hear about every order as soon as it is placed; M-Pesa orders get a second
-  // alert once the payment is confirmed (notifyPaymentConfirmed).
   await deliver('admin_new_order', await staffAlertRecipients(), adminNewOrderEmail(o, 'placed'), o.id)
 }
 
+/**
+ * The only emails an M-Pesa order sends: one to the customer (order and payment
+ * together) and one to staff, both once the payment has cleared.
+ */
 export async function notifyPaymentConfirmed(orderId: string) {
   const o = await loadOrderEmailData(orderId)
   if (!o) return
