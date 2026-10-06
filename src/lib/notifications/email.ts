@@ -40,6 +40,9 @@ class SmtpEmailProvider implements EmailProvider {
       host: smtp.host,
       port: smtp.port,
       secure: smtp.port === 465,
+      // Greet the mail server with the shop's domain. The default is the container's random
+      // hostname, which spam filters count against the message.
+      name: from.match(/@([^>\s]+)/)?.[1],
       auth: { user: smtp.user, pass: smtp.password },
       connectionTimeout: 15_000,
       socketTimeout: 20_000,

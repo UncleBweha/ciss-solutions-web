@@ -8,6 +8,7 @@ import { GOOGLE_OAUTH_COOKIE, GOOGLE_OAUTH_COOKIE_PATH, googleRedirectUri } from
 import { logger } from '@/lib/logger'
 import { getEmailProvider } from '@/lib/notifications/email'
 import { passwordResetEmail, RESET_CODE_MINUTES, welcomeEmail } from '@/lib/notifications/templates'
+import { clearResetFlow, readResetFlow, writeResetFlow } from '@/lib/reset-flow'
 import { clientIp, rateLimit } from '@/lib/security'
 import { serverEnv } from '@/lib/server-env'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -125,40 +126,35 @@ async function resetCodeIssuedAt(email: string): Promise<number | null> {
 export async function requestPasswordResetAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
   if (!(await rateLimit(`reset:${ip}`, 60, 3600))) return { message: 'Too many requests. Please try again later.' }
-  const email = z.string().trim().toLowerCase().email().safeParse(formData.get('email'))
+  // "Send a new code" on the code step has no email field: it reuses the one being reset.
+  const email = z.string().trim().toLowerCase().email().safeParse(formData.get('email') ?? (await readResetFlow())?.email)
   if (!email.success) return { errors: { email: 'Enter a valid email' } }
   if (!(await rateLimit(`reset-email:${email.data}`, 6, 3600))) return { message: 'Too many requests. Please try again later.' }
 
-  // Supabase creates the code and emails it with the project's "Reset password" template and
-  // SMTP settings (sender, {{ .Token }} in the body). See docs/DEPLOYMENT.md, "Password reset codes".
-  const admin = createAdminClient()
-  const { error } = await admin.auth.resetPasswordForEmail(email.data)
-  if (error) {
-    // Supabase could not send (its SMTP settings, or its hourly limit). So that nobody is locked
-    // out, make the code here and send it through the store's own mailbox instead.
-    logger.error('auth.reset_email_failed', { via: 'supabase', error: error.message })
-    const { data } = await admin.auth.admin.generateLink({ type: 'recovery', email: email.data })
-    const code = data?.properties?.email_otp
-    if (code) {
-      await getEmailProvider()
-        .send({ to: email.data, from: serverEnv.email.noReplyFrom, ...passwordResetEmail(code) })
-        .catch((e) => logger.error('auth.reset_email_failed', { via: 'store', error: e }))
-    }
+  // Supabase makes the code; the store emails it from its own no-reply address. (Supabase can
+  // also send it, with auth.resetPasswordForEmail and the project's SMTP settings, but that was
+  // failing with "Error sending recovery email" after an 11 second wait.)
+  const { data, error } = await createAdminClient().auth.admin.generateLink({ type: 'recovery', email: email.data })
+  const code = data?.properties?.email_otp
+  if (!error && code) {
+    await getEmailProvider()
+      .send({ to: email.data, from: serverEnv.email.noReplyFrom, ...passwordResetEmail(code) })
+      .catch((e) => logger.error('auth.reset_email_failed', { error: e }))
   }
-  return { ok: true, message: `If an account exists for ${email.data}, we have emailed it a code. It is valid for ${RESET_CODE_MINUTES} minutes.` }
+  await writeResetFlow({ email: email.data, stage: 'code' })
+  redirect('/forgot-password?sent=1')
 }
 
 /** Step 2: check the emailed code. A valid code signs the customer in, ready to choose a password. */
 export async function verifyResetCodeAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
   if (!(await rateLimit(`reset-code:${ip}`, 30, 900))) return { message: 'Too many attempts. Please try again later.' }
-  const parsed = z
-    .object({
-      email: z.string().trim().toLowerCase().email(),
-      code: z.string().trim().regex(/^\d{6,10}$/, 'Enter the code from the email'),
-    })
-    .safeParse(Object.fromEntries(formData))
-  if (!parsed.success) return { errors: fieldErrors(parsed.error) }
+  const flow = await readResetFlow()
+  if (!flow) return { message: 'Your reset session has ended. Start again.' }
+  // People paste codes with spaces or a trailing line break.
+  const code = String(formData.get('code') ?? '').replace(/\s+/g, '')
+  if (!/^\d{6,10}$/.test(code)) return { errors: { code: 'Enter the code from the email' } }
+  const parsed = { data: { email: flow.email, code } }
   // A handful of guesses per code, so it cannot be brute-forced inside its 15 minutes.
   if (!(await rateLimit(`reset-code-email:${parsed.data.email}`, 6, 900))) return { message: 'Too many attempts. Request a new code.' }
 
@@ -169,7 +165,8 @@ export async function verifyResetCodeAction(_prev: FormState, formData: FormData
   const supabase = await createClient()
   const { error } = await supabase.auth.verifyOtp({ email: parsed.data.email, token: parsed.data.code, type: 'recovery' })
   if (error) return expired
-  return { ok: true }
+  await writeResetFlow({ email: flow.email, stage: 'password' })
+  redirect('/forgot-password')
 }
 
 /** Step 3: the new password, for the session the code just opened. */
@@ -182,7 +179,14 @@ export async function completePasswordResetAction(_prev: FormState, formData: Fo
   const supabase = await createClient()
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
   if (error) return { message: 'We could not save that password. Request a new code and try again.' }
+  await clearResetFlow()
   redirect('/account')
+}
+
+/** Leaves the reset and goes back to the email step. */
+export async function restartPasswordResetAction() {
+  await clearResetFlow()
+  redirect('/forgot-password')
 }
 
 export async function updatePasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
