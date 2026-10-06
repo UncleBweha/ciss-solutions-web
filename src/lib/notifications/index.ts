@@ -23,6 +23,18 @@ async function deliver(kind: string, to: string | string[], message: { subject: 
   const db = createAdminClient()
   const recipients = Array.isArray(to) ? to : [to]
   if (!recipients.length) return
+  // Idempotent per order: outbox tasks can be retried, so never send the same email twice.
+  if (orderId) {
+    const { data: sent } = await db
+      .from('notifications')
+      .select('id')
+      .eq('channel', 'email')
+      .eq('kind', kind)
+      .eq('order_id', orderId)
+      .eq('status', 'sent')
+      .limit(1)
+    if (sent?.length) return
+  }
   let status: 'sent' | 'failed' = 'sent'
   let error: string | null = null
   try {
@@ -43,6 +55,8 @@ async function deliver(kind: string, to: string | string[], message: { subject: 
     order_id: orderId ?? null,
     sent_at: status === 'sent' ? new Date().toISOString() : null,
   })
+  // Surface the failure so the outbox task is retried with back-off.
+  if (status === 'failed') throw new Error(`email ${kind} failed: ${error}`)
 }
 
 /** Loads what an order email needs. */
@@ -50,7 +64,7 @@ export async function loadOrderEmailData(orderId: string): Promise<(OrderEmailDa
   const db = createAdminClient()
   const { data } = await db
     .from('orders')
-    .select('id, order_number, access_token, customer_name, customer_email, customer_phone, total, subtotal, discount, delivery_fee, payment_method, delivery_zone_name, delivery_address, delivery_town, delivery_county, order_status, items:order_items(product_name, variant_name, quantity, total_price), payments(transaction_reference, status)')
+    .select('id, order_number, access_token, customer_name, customer_email, customer_phone, total, subtotal, discount, delivery_fee, payment_method, delivery_zone_name, delivery_address, delivery_town, delivery_county, order_status, items:order_items(product_name, variant_name, sku, quantity, total_price), payments(transaction_reference, status)')
     .eq('id', orderId)
     .maybeSingle()
   if (!data) return null
@@ -69,7 +83,7 @@ export async function loadOrderEmailData(orderId: string): Promise<(OrderEmailDa
     paymentMethod: data.payment_method,
     deliveryZone: data.delivery_zone_name,
     deliveryAddress: [data.delivery_address, data.delivery_town, data.delivery_county].filter(Boolean).join(', '),
-    items: data.items.map((i) => ({ name: i.variant_name ? `${i.product_name} (${i.variant_name})` : i.product_name, quantity: i.quantity, total: Number(i.total_price) })),
+    items: data.items.map((i) => ({ name: i.variant_name ? `${i.product_name} (${i.variant_name})` : i.product_name, sku: i.sku, quantity: i.quantity, total: Number(i.total_price) })),
     status: data.order_status,
     receipt: data.payments.find((p) => p.status === 'PAID')?.transaction_reference ?? null,
   }
@@ -86,6 +100,8 @@ async function staffAlertRecipients(): Promise<string[]> {
 export async function notifyOrderPlaced(orderId: string) {
   const o = await loadOrderEmailData(orderId)
   if (!o) return
+  // M-Pesa orders are emailed once, when the payment clears (notifyPaymentConfirmed).
+  if (o.paymentMethod === 'mpesa') return
   await deliver('order_confirmation', o.email, orderConfirmationEmail(o), o.id)
   await deliver('admin_new_order', await staffAlertRecipients(), adminNewOrderEmail(o, 'placed'), o.id)
 }

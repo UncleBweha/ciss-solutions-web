@@ -244,11 +244,16 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
                 </MenuLink>
               </Dropdown>
             ) : null}
-            {others.map((c) => (
+            {others.map((c, i) => (
               <Link
                 key={c.href}
                 href={c.href}
-                className={cn('flex h-11 items-center whitespace-nowrap px-3 text-sm font-semibold hover:text-primary-light', isActive(c.href) ? 'text-primary-light' : 'text-fg')}
+                // Narrow desktops (lg) show the first two; the rest stay reachable via "All categories".
+                className={cn(
+                  'h-11 items-center whitespace-nowrap px-3 text-sm font-semibold hover:text-primary-light',
+                  i < 2 ? 'flex' : 'hidden xl:flex',
+                  isActive(c.href) ? 'text-primary-light' : 'text-fg',
+                )}
               >
                 {c.name}
               </Link>
@@ -268,8 +273,8 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
             <Link href="/deals" className="flex h-11 items-center px-3 text-sm font-semibold text-danger hover:underline">
               Deals
             </Link>
-            <Link href="/parts-finder" className="ml-auto flex h-11 items-center gap-2 whitespace-nowrap pl-3 text-sm font-semibold text-primary-light hover:underline">
-              <span className="reg-mark" aria-hidden="true" /> Find parts for your printer
+            <Link href="/parts-finder" className="ml-auto hidden h-11 items-center gap-2 whitespace-nowrap pl-3 xl:flex text-sm font-semibold text-primary-light hover:underline">
+              <span className="reg-mark" aria-hidden="true" /> <span className="hidden 2xl:inline">Find parts for your printer</span><span className="2xl:hidden">Find a part</span>
             </Link>
           </div>
         </nav>
