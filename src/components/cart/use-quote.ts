@@ -35,11 +35,13 @@ export function useQuote(options: { couponCode?: string | null } = {}) {
               snapshot: { name: line.name, slug: line.slug, price: line.unitPrice, imageUrl: line.imageUrl, variantName: line.variantName, sku: line.sku },
             }
           })
-        if (corrected.some((c, i) => c.quantity !== items[i].quantity)) replace(corrected)
+        // Also when a line had no snapshot yet (it came from the account), so the next visit renders at once.
+        if (corrected.some((c, i) => c.quantity !== items[i].quantity || (c.snapshot && !items[i].snapshot))) replace(corrected)
       } finally {
         if (id === seq.current) setLoading(false)
       }
-    }, 250)
+      // The first quote goes out at once; later ones wait for quantity taps to settle.
+    }, quote ? 250 : 0)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, ready])
