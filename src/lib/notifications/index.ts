@@ -11,7 +11,7 @@ import {
   paymentConfirmationEmail,
   type OrderEmailData,
 } from './templates'
-import { isManualPayment, type OrderStatus } from '@/lib/ecommerce/orders'
+import type { OrderStatus } from '@/lib/ecommerce/orders'
 
 /**
  * Notification dispatch. Every message is recorded in the notifications table
@@ -50,7 +50,7 @@ export async function loadOrderEmailData(orderId: string): Promise<(OrderEmailDa
   const db = createAdminClient()
   const { data } = await db
     .from('orders')
-    .select('id, order_number, access_token, customer_name, customer_email, total, subtotal, discount, delivery_fee, payment_method, delivery_zone_name, delivery_address, delivery_town, delivery_county, order_status, items:order_items(product_name, variant_name, quantity, total_price), payments(transaction_reference, status)')
+    .select('id, order_number, access_token, customer_name, customer_email, customer_phone, total, subtotal, discount, delivery_fee, payment_method, delivery_zone_name, delivery_address, delivery_town, delivery_county, order_status, items:order_items(product_name, variant_name, quantity, total_price), payments(transaction_reference, status)')
     .eq('id', orderId)
     .maybeSingle()
   if (!data) return null
@@ -60,6 +60,8 @@ export async function loadOrderEmailData(orderId: string): Promise<(OrderEmailDa
     orderNumber: data.order_number,
     accessToken: data.access_token,
     customerName: data.customer_name,
+    customerPhone: data.customer_phone,
+    customerEmail: data.customer_email,
     total: Number(data.total),
     subtotal: Number(data.subtotal),
     discount: Number(data.discount),
@@ -85,17 +87,16 @@ export async function notifyOrderPlaced(orderId: string) {
   const o = await loadOrderEmailData(orderId)
   if (!o) return
   await deliver('order_confirmation', o.email, orderConfirmationEmail(o), o.id)
-  // Online payments alert staff once paid (notifyPaymentConfirmed); manual methods alert now.
-  if (isManualPayment(o.paymentMethod)) {
-    await deliver('admin_new_order', await staffAlertRecipients(), adminNewOrderEmail(o), o.id)
-  }
+  // Staff hear about every order as soon as it is placed; M-Pesa orders get a second
+  // alert once the payment is confirmed (notifyPaymentConfirmed).
+  await deliver('admin_new_order', await staffAlertRecipients(), adminNewOrderEmail(o, 'placed'), o.id)
 }
 
 export async function notifyPaymentConfirmed(orderId: string) {
   const o = await loadOrderEmailData(orderId)
   if (!o) return
   await deliver('payment_confirmation', o.email, paymentConfirmationEmail(o), o.id)
-  await deliver('admin_new_order', await staffAlertRecipients(), adminNewOrderEmail(o), o.id)
+  await deliver('admin_payment_received', await staffAlertRecipients(), adminNewOrderEmail(o, 'paid'), o.id)
 }
 
 export async function notifyOrderStatus(orderId: string, status: OrderStatus) {
