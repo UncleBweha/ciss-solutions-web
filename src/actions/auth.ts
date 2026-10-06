@@ -1,11 +1,15 @@
 'use server'
+import { createHash, randomBytes } from 'node:crypto'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { siteUrl, supabaseAnonKey, supabaseUrl } from '@/lib/env'
+import { siteUrl } from '@/lib/env'
+import { GOOGLE_OAUTH_COOKIE, GOOGLE_OAUTH_COOKIE_PATH, googleRedirectUri } from '@/lib/google-oauth'
 import { logger } from '@/lib/logger'
 import { getEmailProvider } from '@/lib/notifications/email'
 import { welcomeEmail } from '@/lib/notifications/templates'
 import { clientIp, rateLimit } from '@/lib/security'
+import { serverEnv } from '@/lib/server-env'
 import { createClient } from '@/lib/supabase/server'
 import { fieldErrors, optionalKenyanPhone, type FormState } from '@/lib/validation/forms'
 
@@ -19,22 +23,56 @@ const password = z.string().min(8, 'Use at least 8 characters').max(72)
 
 export async function signInAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
-  if (!(await rateLimit(`login:${ip}`, 10, 600))) return { message: 'Too many sign-in attempts. Please wait 10 minutes.' }
+  if (!(await rateLimit(`login:${ip}`, 300, 600))) return { message: 'Too many sign-in attempts. Please wait 10 minutes.' }
   const parsed = z.object({ email: z.string().trim().email('Enter your email'), password: z.string().min(1, 'Enter your password') }).safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
+  if (!(await rateLimit(`login-email:${parsed.data.email.toLowerCase()}`, 10, 600))) return { message: 'Too many sign-in attempts. Please wait 10 minutes.' }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword(parsed.data)
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data)
   if (error) {
     logger.warn('auth.sign_in_failed', { reason: error.code ?? error.message })
     return { message: error.code === 'email_not_confirmed' ? 'Please confirm your email address first (check your inbox).' : 'Incorrect email or password.' }
   }
-  redirect(safeNext(formData.get('next')))
+  // Staff land on the admin dashboard; customers on their account (or the page they came from).
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+  const next = safeNext(formData.get('next'))
+  if (profile && profile.role !== 'customer') redirect(next.startsWith('/admin') ? next : '/admin')
+  redirect(next)
+}
+
+/** Starts the Google sign-in: sends the browser to Google, which returns to /auth/google/callback. */
+export async function signInWithGoogleAction(formData: FormData) {
+  const ip = await clientIp()
+  const clientId = serverEnv.google.clientId
+  if (!clientId || !(await rateLimit(`login:${ip}`, 300, 600))) redirect('/login?error=google')
+
+  const state = randomBytes(16).toString('hex')
+  const nonce = randomBytes(16).toString('hex')
+  const cookieStore = await cookies()
+  cookieStore.set(GOOGLE_OAUTH_COOKIE, JSON.stringify({ state, nonce, next: safeNext(formData.get('next')) }), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: siteUrl.startsWith('https://'),
+    path: GOOGLE_OAUTH_COOKIE_PATH,
+    maxAge: 600,
+  })
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: googleRedirectUri,
+    response_type: 'code',
+    scope: 'openid email profile',
+    state,
+    // Supabase checks the ID token against the SHA-256 of the nonce it is given.
+    nonce: createHash('sha256').update(nonce).digest('hex'),
+    prompt: 'select_account',
+  })
+  redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
 }
 
 export async function signUpAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
-  if (!(await rateLimit(`signup:${ip}`, 5, 3600))) return { message: 'Too many sign-up attempts. Please try again later.' }
+  if (!(await rateLimit(`signup:${ip}`, 60, 3600))) return { message: 'Too many sign-up attempts. Please try again later.' }
   const parsed = z
     .object({
       fullName: z.string().trim().min(2, 'Enter your name').max(100),
@@ -73,9 +111,10 @@ export async function signOutAction() {
 
 export async function requestPasswordResetAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
-  if (!(await rateLimit(`reset:${ip}`, 5, 3600))) return { message: 'Too many requests. Please try again later.' }
+  if (!(await rateLimit(`reset:${ip}`, 60, 3600))) return { message: 'Too many requests. Please try again later.' }
   const email = z.string().trim().email().safeParse(formData.get('email'))
   if (!email.success) return { errors: { email: 'Enter a valid email' } }
+  if (!(await rateLimit(`reset-email:${email.data.toLowerCase()}`, 3, 3600))) return { message: 'Too many requests. Please try again later.' }
   const supabase = await createClient()
   await supabase.auth.resetPasswordForEmail(email.data, { redirectTo: `${siteUrl}/auth/callback?next=/auth/reset-password` })
   // Same answer whether or not the account exists.
@@ -92,49 +131,4 @@ export async function updatePasswordAction(_prev: FormState, formData: FormData)
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
   if (error) return { message: 'Your reset link has expired. Request a new one.' }
   return { ok: true, message: 'Your password has been updated.' }
-}
-
-/**
- * Google sign-in through Supabase OAuth (PKCE). The provider sends the user back
- * to /auth/callback, which exchanges the code for a session. New Google users get
- * a profile from the same handle_new_user trigger as email sign-ups.
- */
-export async function signInWithGoogleAction(formData: FormData): Promise<void> {
-  const next = safeNext(formData.get('next'))
-  const ip = await clientIp()
-  if (!(await rateLimit(`login:${ip}`, 10, 600))) redirect('/login?error=rate')
-  // signInWithOAuth only builds a URL; check the provider is really on so customers
-  // never land on Supabase's raw "provider is not enabled" error.
-  if (!(await googleProviderEnabled())) {
-    logger.warn('auth.google_disabled')
-    redirect(`/login?error=google${next !== '/account' ? `&next=${encodeURIComponent(next)}` : ''}`)
-  }
-  const supabase = await createClient()
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}`,
-      queryParams: { prompt: 'select_account' },
-    },
-  })
-  if (error || !data.url) {
-    logger.warn('auth.google_start_failed', { reason: error?.code ?? error?.message ?? 'no_url' })
-    redirect(`/login?error=google${next !== '/account' ? `&next=${encodeURIComponent(next)}` : ''}`)
-  }
-  redirect(data.url)
-}
-
-async function googleProviderEnabled(): Promise<boolean> {
-  try {
-    const res = await fetch(`${supabaseUrl}/auth/v1/settings`, {
-      headers: { apikey: supabaseAnonKey },
-      next: { revalidate: 300 },
-      signal: AbortSignal.timeout(3000),
-    })
-    if (!res.ok) return false
-    const settings = (await res.json()) as { external?: { google?: boolean } }
-    return settings.external?.google === true
-  } catch {
-    return false
-  }
 }

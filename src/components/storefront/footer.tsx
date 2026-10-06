@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Clock, Mail, MapPin, Phone } from 'lucide-react'
+import { ChevronDown, Clock, Mail, MapPin, Phone } from 'lucide-react'
 import type { BusinessSettings } from '@/types/catalog'
 import { whatsappLink } from '@/lib/contact'
 import { Logo } from './logo'
@@ -60,15 +60,15 @@ export function Footer({ business }: { business: BusinessSettings }) {
   const socials = Object.entries(business.socials ?? {}).filter(([, url]) => url)
   const year = new Date().getFullYear()
   return (
-    <footer className="glass-flat mt-14 rounded-t-[1.75rem] border-x-0 border-b-0">
-      <div className="container-page grid gap-8 py-10 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <div className="space-y-5">
+    <footer className="glass-flat mt-10 rounded-t-[1.75rem] border-x-0 border-b-0 lg:mt-14">
+      <div className="container-page grid gap-x-8 gap-y-5 py-6 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-y-8 lg:py-10">
+        <div className="space-y-3 lg:space-y-5">
           <Logo />
-          <p className="max-w-sm text-sm text-fg-secondary">{business.tagline}.</p>
-          <ul className="space-y-2.5 text-sm text-fg-secondary">
+          <p className="hidden max-w-sm text-sm text-fg-secondary lg:block">{business.tagline}.</p>
+          <ul className="space-y-1.5 text-sm text-fg-secondary lg:space-y-2.5">
             {business.phone ? (
               <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 text-fg-muted" aria-hidden="true" />
+                <Phone className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
                 <a href={`tel:${business.phone.replace(/\s/g, '')}`} className="hover:text-fg">
                   {business.phone}
                 </a>
@@ -76,19 +76,19 @@ export function Footer({ business }: { business: BusinessSettings }) {
             ) : null}
             {business.email ? (
               <li className="flex items-center gap-2.5">
-                <Mail className="h-4 w-4 text-fg-muted" aria-hidden="true" />
-                <a href={`mailto:${business.email}`} className="hover:text-fg">
+                <Mail className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
+                <a href={`mailto:${business.email}`} className="break-all hover:text-fg">
                   {business.email}
                 </a>
               </li>
             ) : null}
-            <li className="flex items-center gap-2.5">
-              <MapPin className="h-4 w-4 text-fg-muted" aria-hidden="true" />
+            <li className="flex items-start gap-2.5">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
               {business.address || business.location}
             </li>
             {business.business_hours ? (
-              <li className="flex items-center gap-2.5">
-                <Clock className="h-4 w-4 text-fg-muted" aria-hidden="true" />
+              <li className="flex items-start gap-2.5">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
                 {business.business_hours}
               </li>
             ) : null}
@@ -104,8 +104,30 @@ export function Footer({ business }: { business: BusinessSettings }) {
             </a>
           ) : null}
         </div>
+
+        {/* Phones and tablets: link groups fold away so the footer stays short. */}
+        <div className="divide-y divide-border border-y border-border md:self-start lg:hidden">
+          {columns.map((col) => (
+            <details key={col.title} className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between py-3 text-sm font-bold [&::-webkit-details-marker]:hidden">
+                {col.title}
+                <ChevronDown className="h-4 w-4 text-fg-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+              </summary>
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-2 pb-3">
+                {col.links.map(([label, href]) => (
+                  <li key={label}>
+                    <Link href={href} className="text-sm text-fg-secondary hover:text-fg">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ))}
+        </div>
+
         {columns.map((col) => (
-          <nav key={col.title} aria-label={col.title}>
+          <nav key={col.title} aria-label={col.title} className="hidden lg:block">
             <h2 className="mb-3 text-sm font-bold">{col.title}</h2>
             <ul className="space-y-2">
               {col.links.map(([label, href]) => (
@@ -120,10 +142,13 @@ export function Footer({ business }: { business: BusinessSettings }) {
         ))}
       </div>
       <div className="border-t border-border">
-        <div className="container-page flex flex-col items-center justify-between gap-4 py-5 text-sm text-fg-muted sm:flex-row">
-          <p>
-            © {year} {business.name}. All rights reserved.
-          </p>
+        <div className="container-page flex flex-col items-center gap-3 py-4 text-sm text-fg-muted lg:py-5">
+          <div className="text-center">
+            <p>
+              © {year} {business.name}. All rights reserved.
+            </p>
+            <p className="mt-0.5 text-xs">Developed By: Neurospark Technologies</p>
+          </div>
           {socials.length ? (
             <div className="flex items-center gap-2">
               <span className="mr-1">Follow us</span>

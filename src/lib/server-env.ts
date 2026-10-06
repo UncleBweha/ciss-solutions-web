@@ -22,10 +22,23 @@ export const serverEnv = {
     callbackSecret: optional('MPESA_CALLBACK_SECRET'),
   },
   email: {
-    provider: (optional('EMAIL_PROVIDER') ?? 'log') as 'log' | 'resend',
+    provider: (optional('EMAIL_PROVIDER') ?? 'log') as 'log' | 'resend' | 'smtp',
     apiKey: optional('EMAIL_API_KEY'),
-    from: optional('EMAIL_FROM') ?? 'CISS Solutions <info@cisssolutions.co.ke>',
-    adminAlerts: (optional('ADMIN_ALERT_EMAILS') ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    // EMAIL_PROVIDER=smtp: send through a mailbox (for example the orders mailbox itself).
+    smtp: {
+      host: optional('SMTP_HOST'),
+      port: Number(optional('SMTP_PORT') ?? 465),
+      user: optional('SMTP_USER'),
+      password: optional('SMTP_PASSWORD'),
+    },
+    from: optional('EMAIL_FROM') ?? 'CISS Solutions <orders@cisssolutions.co.ke>',
+    // The orders mailbox: every new-order alert goes here, and customers' replies too.
+    orders: optional('ORDERS_EMAIL') ?? 'orders@cisssolutions.co.ke',
+    adminAlerts: (optional('ADMIN_ALERT_EMAILS') ?? '').split(',').map((s) => s.trim()).filter((s) => s.includes('@')),
+  },
+  google: {
+    clientId: optional('GOOGLE_CLIENT_ID'),
+    clientSecret: optional('GOOGLE_CLIENT_SECRET'),
   },
   cronSecret: optional('CRON_SECRET'),
 }

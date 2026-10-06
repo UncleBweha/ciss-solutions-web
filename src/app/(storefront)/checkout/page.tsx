@@ -1,15 +1,28 @@
 import type { Metadata } from 'next'
 import { CheckoutForm } from '@/components/checkout/checkout-form'
+import { LinkButton } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/misc'
 import { getSessionUser } from '@/lib/auth'
-import { getDeliveryZones, getSettings } from '@/lib/catalog'
-import { deliveryEstimate } from '@/lib/ecommerce/delivery'
+import { getSettings } from '@/lib/catalog'
 import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Checkout', robots: { index: false } }
 
 export default async function CheckoutPage() {
-  const [settings, zones, user] = await Promise.all([getSettings(), getDeliveryZones(), getSessionUser()])
+  const [settings, user] = await Promise.all([getSettings(), getSessionUser()])
+
+  if (user && user.role !== 'customer') {
+    return (
+      <div className="container-page py-8">
+        <EmptyState
+          title="Staff accounts cannot place orders."
+          description="Sign out and use a customer account to buy from the store."
+          action={<LinkButton href="/admin">Go to the admin dashboard</LinkButton>}
+        />
+      </div>
+    )
+  }
 
   let addresses: { id: string; full_name: string; phone: string; county: string; town: string; address_line: string; instructions: string | null }[] = []
   if (user) {
@@ -36,7 +49,7 @@ export default async function CheckoutPage() {
           phone: user?.phone ? formatKenyanPhone(user.phone) : '',
         }}
         addresses={addresses}
-        zones={zones.map((z) => ({ name: z.name, counties: z.counties, fee: Number(z.fee), isDefault: z.is_default, estimate: deliveryEstimate(z), freeOver: z.free_delivery_threshold == null ? null : Number(z.free_delivery_threshold) }))}
+        shop={{ address: settings.business.address || settings.business.location, hours: settings.business.business_hours }}
         methods={{
           mpesa: pm.mpesa.enabled,
           bank_transfer: pm.bank_transfer.enabled,

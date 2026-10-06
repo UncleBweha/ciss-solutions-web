@@ -22,18 +22,20 @@ ARG NEXT_PUBLIC_SITE_URL=https://cisssolutions.co.ke
 ARG NEXT_PUBLIC_WHATSAPP_NUMBER
 ARG NEXT_PUBLIC_GA_ID
 ARG NEXT_PUBLIC_META_PIXEL_ID
-ARG NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=false
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
     NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY \
     NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_WHATSAPP_NUMBER=$NEXT_PUBLIC_WHATSAPP_NUMBER \
     NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID \
     NEXT_PUBLIC_META_PIXEL_ID=$NEXT_PUBLIC_META_PIXEL_ID \
-    NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=$NEXT_PUBLIC_GOOGLE_AUTH_ENABLED \
     NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Pages are prerendered from the database, so a deploy passes a fresh BUILD_ID to stop
+# Docker reusing an earlier build of the same source (and its stale page text).
+ARG BUILD_ID=dev
 RUN --mount=type=secret,id=ca,required=false \
+    echo "build $BUILD_ID"; \
     if [ -f /run/secrets/ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/ca; fi; \
     npm run build
 

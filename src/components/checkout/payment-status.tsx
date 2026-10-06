@@ -112,7 +112,7 @@ export function MpesaPaymentStatus({
         <label htmlFor="retry-phone" className="sr-only">
           M-Pesa phone number
         </label>
-        <Input id="retry-phone" type="tel" value={retryPhone} onChange={(e) => setRetryPhone(e.target.value)} className="sm:max-w-56" />
+        <Input id="retry-phone" type="tel" inputMode="tel" placeholder="0712345678" value={retryPhone} onChange={(e) => setRetryPhone(e.target.value)} className="sm:max-w-56" />
         <Button type="submit" variant={view.state === 'pending' ? 'glass' : 'primary'} loading={pending}>
           {view.state === 'pending' ? 'Resend prompt' : 'Pay with M-Pesa'}
         </Button>

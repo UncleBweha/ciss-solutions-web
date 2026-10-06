@@ -91,7 +91,7 @@ export function AdminShell({ nav, user, unread, children }: { nav: AdminNavItem[
               <Bell className="h-5 w-5" />
               {unread ? <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">{unread > 99 ? '99+' : unread}</span> : null}
             </Link>
-            <Link href="/account" className="rounded-lg px-3 py-1.5 text-right text-xs hover:bg-surface">
+            <Link href="/account/profile" className="rounded-lg px-3 py-1.5 text-right text-xs hover:bg-surface">
               <span className="block font-semibold text-fg">{user.name}</span>
               <span className="text-fg-muted">{user.role.replace(/_/g, ' ')}</span>
             </Link>

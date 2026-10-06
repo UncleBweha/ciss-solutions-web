@@ -203,9 +203,11 @@ sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
 anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
-token_refresh = 150
+# The store calls Auth from the server, so every customer shares the server's address:
+# these two must cover the whole site, not one visitor (the app rate-limits per customer).
+token_refresh = 3000
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
-sign_in_sign_ups = 30
+sign_in_sign_ups = 600
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
 token_verifications = 30
 # Number of Web3 logins that can be made in a 5 minute interval per IP address.
@@ -320,15 +322,6 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
-# "Continue with Google" (see docs/DEPLOYMENT.md). For local testing set enabled = true and
-# export SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID / _SECRET before `supabase start`;
-# also set NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true in .env.local.
-[auth.external.google]
-enabled = false
-client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
-secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
-redirect_uri = ""
-
 [auth.external.apple]
 enabled = false
 client_id = ""

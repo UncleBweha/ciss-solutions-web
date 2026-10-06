@@ -153,7 +153,7 @@ update public.coupons set applicable_category_ids = array[(select id from public
 out.push(`update public.settings set value = value || ${json({
   phone: '+254 700 000 000',
   whatsapp: '254700000000',
-  email: 'info@cisssolutions.co.ke',
+  email: 'sales@cisssolutions.co.ke',
   address: 'Nairobi CBD, Kenya',
 })} where key = 'business';`)
 

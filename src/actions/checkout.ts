@@ -1,11 +1,12 @@
 'use server'
 import { getSessionUser } from '@/lib/auth'
 import { getSettings } from '@/lib/catalog'
+import { PARCEL_DELIVERY, STORE_PICKUP } from '@/lib/ecommerce/delivery'
 import { quoteCart, type Quote } from '@/lib/ecommerce/quote'
 import { logger } from '@/lib/logger'
-import { background } from '@/lib/notifications'
+import { background, notifyOrderPlaced } from '@/lib/notifications'
 import { getOrderForViewer } from '@/lib/orders'
-import { runOutbox } from '@/lib/outbox'
+import { runTaskNow } from '@/lib/outbox'
 import { initiateMpesaPayment } from '@/lib/payments/service'
 import { clientIp, rateLimit } from '@/lib/security'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -26,9 +27,8 @@ const stockMessage = (sqlMessage: string) => {
 
 export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrderResult> {
   const ip = await clientIp()
-  if (!(await rateLimit(`checkout:${ip}`, 10, 600))) {
-    return { ok: false, message: 'Too many checkout attempts. Please wait a few minutes and try again.' }
-  }
+  const tooMany = { ok: false as const, message: 'Too many checkout attempts. Please wait a few minutes and try again.' }
+  if (!(await rateLimit(`checkout:${ip}`, 200, 600))) return tooMany
 
   const parsed = checkoutSchema.safeParse(input)
   if (!parsed.success) {
@@ -38,6 +38,8 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   }
   const data = parsed.data
   const [settings, user] = await Promise.all([getSettings(), getSessionUser()])
+  if (user && user.role !== 'customer') return { ok: false, message: 'Staff accounts cannot place orders. Sign in with a customer account to buy.' }
+  if (!(await rateLimit(`checkout-phone:${data.phone}`, 10, 600))) return tooMany
 
   // Payment method must be enabled (and COD only where offered).
   const method = settings.payment_methods[data.paymentMethod]
@@ -46,16 +48,18 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   if (data.paymentMethod === 'mpesa_paybill' && !settings.payment_methods.mpesa_paybill.paybill_number) {
     return { ok: false, message: 'That payment method is not available. Please choose another.' }
   }
-  if (data.paymentMethod === 'cash_on_delivery') {
+  const pickup = data.deliveryMethod === 'pickup'
+  // Cash is always accepted over the counter; for deliveries only in the listed counties.
+  if (data.paymentMethod === 'cash_on_delivery' && !pickup) {
     const counties = settings.payment_methods.cash_on_delivery.counties ?? []
     if (counties.length && !counties.includes(data.county)) {
       return { ok: false, message: `Cash on delivery is only available in ${counties.join(', ')}.`, errors: { paymentMethod: 'Not available for your county' } }
     }
   }
 
-  // Prices, discount, delivery and total are all computed here from the database.
+  // Prices, discount and total are all computed here from the database. Delivery is
+  // not charged at checkout: pickup is free, courier costs are agreed by phone.
   const quote = await quoteCart(data.items, {
-    county: data.county,
     couponCode: data.couponCode,
     customer: { userId: user?.id, phone: data.phone, email: data.email },
     maxPerItem: settings.checkout.max_quantity_per_item,
@@ -66,7 +70,12 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   if (data.couponCode && !quote.coupon) {
     return { ok: false, message: quote.couponMessage ?? 'This coupon cannot be applied.', errors: { couponCode: quote.couponMessage ?? 'Invalid coupon' }, quote }
   }
-  if (!quote.zone) return { ok: false, message: 'We do not deliver to that location yet. Please contact us.' }
+
+  // Pickup orders carry the shop's own address so staff and emails show where to collect.
+  const shop = settings.business
+  const destination = pickup
+    ? { county: 'Nairobi', town: shop.location || 'Nairobi', address: shop.address || shop.location || 'CISS Solutions shop', instructions: null }
+    : { county: data.county, town: data.town, address: data.address, instructions: data.instructions ?? null }
 
   const reservationMinutes =
     data.paymentMethod === 'mpesa'
@@ -91,12 +100,12 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
       total: quote.total,
       coupon_id: quote.coupon?.id ?? null,
       coupon_code: quote.coupon?.code ?? null,
-      delivery_zone_id: quote.zone.id,
-      delivery_zone_name: quote.zone.name,
-      delivery_county: data.county,
-      delivery_town: data.town,
-      delivery_address: data.address,
-      delivery_instructions: data.instructions ?? null,
+      delivery_zone_id: null,
+      delivery_zone_name: pickup ? STORE_PICKUP : PARCEL_DELIVERY,
+      delivery_county: destination.county,
+      delivery_town: destination.town,
+      delivery_address: destination.address,
+      delivery_instructions: destination.instructions,
       customer_notes: data.notes ?? null,
       reservation_minutes: reservationMinutes,
       items: quote.lines.map((l) => ({
@@ -123,13 +132,13 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   const order = placed as { id: string; order_number: string; access_token: string }
   logger.info('checkout.order_placed', { orderNumber: order.order_number, method: data.paymentMethod, total: quote.total })
   // Emails were queued in the outbox with the order; send them after the response.
-  background('outbox:order_placed', () => runOutbox({ orderId: order.id, kinds: ['order_placed'] }))
+  background('outbox:order_placed', () => runTaskNow(order.id, 'order_placed', () => notifyOrderPlaced(order.id)))
 
   if (user) {
     const supabase = await createClient()
     const { data: cart } = await supabase.from('carts').select('id').eq('user_id', user.id).maybeSingle()
     if (cart) await supabase.from('cart_items').delete().eq('cart_id', cart.id)
-    if (data.saveAddress) {
+    if (data.saveAddress && !pickup) {
       await supabase.from('addresses').insert({
         user_id: user.id,
         full_name: data.fullName,
@@ -147,17 +156,16 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   if (data.paymentMethod === 'mpesa') {
     // The STK push task was committed with the order. Run it now so the prompt reaches
     // the phone immediately; if this fails or the server stops, the cron sweep retries it.
-    const results = await runOutbox({ orderId: order.id, kinds: ['mpesa_stk_push'] }).catch((e) => {
+    const phone = data.mpesaPhone ? kenyanPhone.parse(data.mpesaPhone) : data.phone
+    const stk = await runTaskNow(order.id, 'mpesa_stk_push', () => initiateMpesaPayment(order.id, phone)).catch((e) => {
       logger.error('checkout.stk_failed', { error: e })
-      return []
+      return undefined
     })
-    const stk = results[0]
-    paymentMessage =
-      stk?.outcome === 'done' && stk.message
-        ? stk.message
-        : stk?.outcome === 'retry'
-          ? 'We are having trouble reaching M-Pesa and will retry shortly. You can also retry from the next page.'
-          : 'Sending the M-Pesa prompt to your phone…'
+    paymentMessage = !stk
+      ? 'We could not send the M-Pesa prompt. You can retry from the next page.'
+      : stk.outcome === 'retry'
+        ? 'We are having trouble reaching M-Pesa and will retry shortly. You can also retry from the next page.'
+        : (stk.message ?? 'Sending the M-Pesa prompt to your phone…')
   }
 
   return {
@@ -171,7 +179,8 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
 /** Re-sends the STK push for an unpaid M-Pesa order (from the order page). */
 export async function retryMpesaPaymentAction(orderNumber: string, token: string | null, phoneInput: string) {
   const ip = await clientIp()
-  if (!(await rateLimit(`retry:${ip}`, 10, 600))) return { ok: false, message: 'Too many attempts. Please wait a few minutes.' }
+  // Loose per-address ceiling; initiateMpesaPayment limits prompts per order.
+  if (!(await rateLimit(`retry:${ip}`, 200, 600))) return { ok: false, message: 'Too many attempts. Please wait a few minutes.' }
   const order = await getOrderForViewer(orderNumber, token)
   if (!order) return { ok: false, message: 'Order not found.' }
   const phone = kenyanPhone.safeParse(phoneInput)

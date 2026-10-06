@@ -43,8 +43,8 @@ export function CartView() {
   const canCheckout = Boolean(quote && quote.lines.length && !unavailable.length)
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[1fr_24rem]">
-      <section aria-label="Cart items" className="glass-flat rounded-[var(--radius-card)] px-5 sm:px-6">
+    <div className="grid items-start gap-5 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
+      <section aria-label="Cart items" className="glass-flat min-w-0 rounded-[var(--radius-card)] px-3.5 sm:px-6">
         <ul className="divide-y divide-border">
           {items.map((item) => {
             const line = quote?.lines.find((l) => l.productId === item.productId && l.variantId === item.variantId)
@@ -91,7 +91,7 @@ export function CartView() {
             Proceed to Checkout <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
           <p className="flex items-center justify-center gap-2 text-xs text-fg-muted">
-            <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Delivery and coupons are calculated at checkout
+            <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Choose store pickup or courier delivery at checkout
           </p>
         </OrderSummary>
         <Link href="/shop" className="block text-center text-sm font-semibold text-primary-light hover:text-fg">
