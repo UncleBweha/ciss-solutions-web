@@ -54,6 +54,7 @@ Every variable is described in [`.env.example`](../.env.example). Production nee
 | `SUPABASE_SERVICE_ROLE_KEY` | From the Supabase project (secret) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional: Google sign-in (section 1, step 4). The secret is a server secret |
 | `MPESA_*` | See [PAYMENTS.md](PAYMENTS.md). `MPESA_ENV=production`, never `mock` |
+| `EMAIL_FROM_NOREPLY`, `SMTP_NOREPLY_USER`, `SMTP_NOREPLY_PASSWORD` | Password reset codes are emailed from `noreply@cisssolutions.co.ke` (`EMAIL_FROM_NOREPLY` overrides it). The address must exist at the mail host. If it is its own mailbox, give its login here; if it is an alias of the main mailbox, leave these empty |
 | `EMAIL_PROVIDER`, `EMAIL_FROM`, `ADMIN_ALERT_EMAILS` | Transactional email. `EMAIL_PROVIDER=smtp` sends through a mailbox and needs `SMTP_HOST`, `SMTP_PORT` (465 or 587), `SMTP_USER`, `SMTP_PASSWORD`; `EMAIL_PROVIDER=resend` needs `EMAIL_API_KEY`; `log` only writes emails to the server log. Order emails are sent from, and new-order alerts always go to, `orders@cisssolutions.co.ke` (`ORDERS_EMAIL` overrides it) |
 | `CRON_SECRET` | Long random string (`openssl rand -hex 32`) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | e.g. `2547XXXXXXXX` |
