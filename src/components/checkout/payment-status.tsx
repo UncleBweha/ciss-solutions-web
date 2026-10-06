@@ -1,7 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
-import { CheckCircle2, Loader2, Smartphone, XCircle } from 'lucide-react'
+import { createContext, useContext, useEffect, useState, useTransition } from 'react'
+import { CheckCircle2, Clock, Loader2, Smartphone, XCircle } from 'lucide-react'
 import { retryMpesaPaymentAction } from '@/actions/checkout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/form'
@@ -10,60 +10,149 @@ import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 
 type View = { state: 'paid' | 'pending' | 'failed' | 'expired' | 'none'; message: string | null }
 
+const PaymentContext = createContext<{ view: View; setView: (view: View) => void } | null>(null)
+
 /**
- * Shows M-Pesa progress and polls the server. The server decides whether the
- * order is paid (callback / STK query); this component only displays it.
+ * Holds the M-Pesa progress for the order page and polls the server. The server decides
+ * whether the order is paid (callback / STK query); the heading and the status panel both
+ * read it from here, so they change at the same moment.
  */
-export function MpesaPaymentStatus({
+export function MpesaPaymentProvider({
   orderNumber,
   token,
-  phone,
   total,
   initial,
+  children,
 }: {
   orderNumber: string
   token: string | null
-  phone: string
   total: number
   initial: View
+  children: React.ReactNode
 }) {
   const router = useRouter()
   const [view, setView] = useState<View>(initial)
-  const [retryPhone, setRetryPhone] = useState(formatKenyanPhone(phone))
-  const [notice, setNotice] = useState<string | null>(null)
-  const [pending, start] = useTransition()
-  const polls = useRef(0)
 
   useEffect(() => {
     if (view.state !== 'pending' && view.state !== 'none') return
-    polls.current = 0
-    const t = setInterval(async () => {
-      polls.current += 1
-      if (polls.current > 60) return clearInterval(t) // ~5 minutes
+    let polls = 0
+    let timer: ReturnType<typeof setTimeout>
+    let stopped = false
+    const poll = async () => {
+      polls += 1
       try {
         const res = await fetch(`/api/orders/${encodeURIComponent(orderNumber)}/status${token ? `?t=${token}` : ''}`, { cache: 'no-store' })
-        if (!res.ok) return
-        const next = (await res.json()) as View
-        setView(next)
-        if (next.state === 'paid') {
-          track('purchase', { transaction_id: orderNumber, value: total })
-          router.refresh()
+        if (res.ok && !stopped) {
+          const next = (await res.json()) as View
+          setView(next)
+          if (next.state === 'paid') {
+            track('purchase', { transaction_id: orderNumber, value: total })
+            router.refresh()
+            return
+          }
         }
       } catch {
         // offline: keep polling
       }
-    }, 5000)
-    return () => clearInterval(t)
+      // Every 3s while the customer is likely entering their PIN, then every 6s; ~5 minutes in all.
+      if (!stopped && polls < 65) timer = setTimeout(poll, polls < 30 ? 3000 : 6000)
+    }
+    timer = setTimeout(poll, 3000)
+    return () => {
+      stopped = true
+      clearTimeout(timer)
+    }
   }, [view.state, orderNumber, token, total, router])
 
-  if (view.state === 'paid') {
-    return (
-      <div role="status" className="flex items-center gap-3 rounded-[var(--radius-card)] border border-success/40 bg-success/10 p-4 text-success">
-        <CheckCircle2 className="h-6 w-6 shrink-0" aria-hidden="true" />
-        <p className="font-semibold">Payment received. Thank you!</p>
-      </div>
-    )
-  }
+  return <PaymentContext.Provider value={{ view, setView }}>{children}</PaymentContext.Provider>
+}
+
+const CONFETTI_COLORS = ['var(--ink-cyan)', 'var(--ink-magenta)', 'var(--ink-yellow)', 'var(--primary-light)', 'var(--success)']
+
+/** A short burst of confetti behind the heading. Decorative; hidden when motion is reduced. */
+function Confetti() {
+  return (
+    <span className="confetti" aria-hidden="true">
+      {Array.from({ length: 28 }, (_, i) => (
+        <i
+          key={i}
+          style={{
+            left: `${(i * 37) % 100}%`,
+            background: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+            animationDelay: `${(i % 7) * 90}ms`,
+            animationDuration: `${1600 + ((i * 53) % 900)}ms`,
+            rotate: `${(i * 47) % 360}deg`,
+          }}
+        />
+      ))}
+    </span>
+  )
+}
+
+/**
+ * The heading of the order page. `paid` is what the server rendered; for M-Pesa orders the
+ * live payment state takes over as soon as the payment clears.
+ */
+export function OrderHeading({
+  orderNumber,
+  paid: paidOnServer,
+  awaitingMpesa,
+  failedLabel,
+  celebrate,
+}: {
+  orderNumber: string
+  paid: boolean
+  /** An M-Pesa order that still has to be paid. */
+  awaitingMpesa: boolean
+  /** Set when the order is cancelled, failed or refunded. */
+  failedLabel: string | null
+  /** Just placed (arrived from checkout): confetti once the payment is confirmed. */
+  celebrate: boolean
+}) {
+  const live = useContext(PaymentContext)
+  const paid = paidOnServer || live?.view.state === 'paid'
+  const waiting = awaitingMpesa && !paid
+  const title = failedLabel ? `Order ${failedLabel.toLowerCase()}` : waiting ? 'Almost there' : awaitingMpesa || paid ? 'Payment confirmed' : 'Order confirmed'
+  const text = failedLabel
+    ? 'This order is no longer active.'
+    : waiting
+      ? 'Complete your M-Pesa payment to confirm your order.'
+      : 'Thank you for your order. A confirmation has been sent to your email.'
+
+  return (
+    <header className="relative mb-8 text-center">
+      {celebrate && paid && !failedLabel ? <Confetti /> : null}
+      {failedLabel || waiting ? (
+        <span className={`mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full ${failedLabel ? 'bg-danger/15 text-danger' : 'bg-primary/15 text-primary-light'}`}>
+          <Clock className="h-8 w-8" aria-hidden="true" />
+        </span>
+      ) : (
+        <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-success/15 text-success">
+          <CheckCircle2 className="h-9 w-9" aria-hidden="true" />
+        </span>
+      )}
+      <h1 className="text-3xl font-bold sm:text-4xl" aria-live="polite">
+        {title}
+      </h1>
+      <p className="mt-2 text-fg-secondary">{text}</p>
+      <p className="mt-4 text-lg">
+        Order <strong className="font-mono">#{orderNumber}</strong>
+      </p>
+    </header>
+  )
+}
+
+/** The M-Pesa prompt panel: progress, failure and retry. Shows nothing once the order is paid. */
+export function MpesaPaymentStatus({ orderNumber, token, phone }: { orderNumber: string; token: string | null; phone: string }) {
+  const live = useContext(PaymentContext)
+  const [retryPhone, setRetryPhone] = useState(formatKenyanPhone(phone))
+  const [notice, setNotice] = useState<string | null>(null)
+  const [pending, start] = useTransition()
+  if (!live) return null
+  const { view, setView } = live
+
+  // The heading already says "Payment confirmed".
+  if (view.state === 'paid') return null
   if (view.state === 'expired') {
     return (
       <div role="alert" className="rounded-[var(--radius-card)] border border-danger/40 bg-danger/10 p-4 text-danger">
