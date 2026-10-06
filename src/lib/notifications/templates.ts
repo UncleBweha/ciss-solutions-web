@@ -73,7 +73,7 @@ function layout(subject: string, card: Card) {
 <body style="margin:0;padding:0;background:${C.page};font-family:${FONT};color:${C.text}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.page}" style="background:${C.page}"><tr><td align="center" style="padding:36px 16px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
-<tr><td align="center" style="padding:0 0 28px;font-size:26px;font-weight:800;letter-spacing:-0.5px;color:${C.text}">CISS<span style="color:${C.accent}">SOLUTIONS</span></td></tr>
+<tr><td align="center" style="padding:0 0 28px;font-size:26px;font-weight:800;color:${C.text}"><a href="${siteUrl}" style="text-decoration:none;color:${C.text}"><img src="${siteUrl}/email-logo.png" width="180" height="104" alt="Ciss Solutions" style="display:inline-block;border:0;outline:none;width:180px;height:auto;max-width:100%"></a></td></tr>
 <tr><td bgcolor="${C.card}" style="background:${C.card};border:1px solid ${C.cardBorder};border-top:4px solid ${tone};border-radius:18px;padding:36px 34px">
 <p style="margin:0 0 14px;font-size:12px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:${tone}">${esc(card.label)}</p>
 <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;font-weight:800;color:${C.text}">${esc(card.heading)}</h1>
