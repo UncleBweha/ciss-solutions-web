@@ -128,7 +128,8 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
 
   const order = placed as { id: string; order_number: string; access_token: string }
   logger.info('checkout.order_placed', { orderNumber: order.order_number, method: data.paymentMethod, total: quote.total })
-  background('order_placed', () => notifyOrderPlaced(order.id))
+  // M-Pesa orders are emailed once, when the payment is confirmed (notifyPaymentConfirmed).
+  if (data.paymentMethod !== 'mpesa') background('order_placed', () => notifyOrderPlaced(order.id))
 
   if (user) {
     const supabase = await createClient()

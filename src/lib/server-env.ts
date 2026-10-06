@@ -34,7 +34,7 @@ export const serverEnv = {
     from: optional('EMAIL_FROM') ?? 'CISS Solutions <orders@cisssolutions.co.ke>',
     // The orders mailbox: every new-order alert goes here. It only sends; nobody reads replies.
     orders: optional('ORDERS_EMAIL') ?? 'orders@cisssolutions.co.ke',
-    adminAlerts: (optional('ADMIN_ALERT_EMAILS') ?? '').split(',').map((s) => s.trim()).filter((s) => s.includes('@')),
+    adminAlerts: (optional('ADMIN_ALERT_EMAILS') ?? '').split(',').map((s) => s.replace(/[<>"'\s]/g, '')).filter((s) => /^[^@]+@[^@]+\.[^@]+$/.test(s)),
   },
   google: {
     clientId: optional('GOOGLE_CLIENT_ID'),
