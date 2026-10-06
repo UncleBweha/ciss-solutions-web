@@ -41,12 +41,12 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<'/admi
     <div>
       <AdminPageHeader title="Orders" description={`${count ?? 0} orders`} />
       <FilterBar>
-        <Input name="q" defaultValue={q} placeholder="Order no., name, phone, email" className="h-10 w-64!" aria-label="Search orders" />
-        <Select name="status" defaultValue={status ?? ''} className="h-10 w-48!" aria-label="Order status">
+        <Input name="q" defaultValue={q} placeholder="Order no., name, phone, email" className="h-10 w-full! sm:w-64!" aria-label="Search orders" />
+        <Select name="status" defaultValue={status ?? ''} className="h-10 w-full! sm:w-48!" aria-label="Order status">
           <option value="">All statuses</option>
           {Object.entries(orderStatusLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
-        <Select name="payment" defaultValue={payment ?? ''} className="h-10 w-44!" aria-label="Payment status">
+        <Select name="payment" defaultValue={payment ?? ''} className="h-10 w-full! sm:w-44!" aria-label="Payment status">
           <option value="">All payments</option>
           {Object.entries(paymentStatusLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>

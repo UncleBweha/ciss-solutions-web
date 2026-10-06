@@ -51,7 +51,7 @@ export function ColumnChart({
         {/* grid + axis labels */}
         {ticks.map((t) => (
           <div key={t} className="absolute inset-x-0 flex items-center gap-2" style={{ bottom: `${(t / max) * 100}%` }} aria-hidden="true">
-            <span className="w-10 -translate-y-1/2 text-right text-[10px] tabular-nums text-fg-muted">{compact.format(t)}</span>
+            <span className="w-10 -translate-y-1/2 text-right text-[11px] tabular-nums text-fg-muted">{compact.format(t)}</span>
             <span className="h-px flex-1 -translate-y-1/2 bg-border" />
           </div>
         ))}
@@ -85,7 +85,7 @@ export function ColumnChart({
           ) : null}
         </div>
       </div>
-      <div className="ml-12 mt-1.5 flex justify-between text-[10px] text-fg-muted" aria-hidden="true">
+      <div className="ml-12 mt-1.5 flex justify-between text-[11px] text-fg-muted" aria-hidden="true">
         <span>{data[0]?.label}</span>
         <span>{data[Math.floor(data.length / 2)]?.label}</span>
         <span>{data[data.length - 1]?.label}</span>

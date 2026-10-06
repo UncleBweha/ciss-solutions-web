@@ -11,7 +11,7 @@ import { escapeLike } from '@/lib/ecommerce/quote'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTime, param } from '@/lib/utils'
 
-export const metadata = { title: 'Inventory' }
+export const metadata = { title: 'Stock' }
 const PER_PAGE = 50
 const reasonLabels: Record<string, string> = {
   purchase: 'Purchase', sale: 'Sale', manual_adjustment: 'Manual', return: 'Return', damage: 'Damage', correction: 'Correction', order_cancellation: 'Order cancelled',
@@ -46,7 +46,7 @@ export default async function InventoryPage({ searchParams }: PageProps<'/admin/
 
   return (
     <div className="space-y-4">
-      <AdminPageHeader title="Inventory" description="Available = on hand − reserved for unpaid/unfulfilled orders. Every change is recorded below." />
+      <AdminPageHeader title="Stock" description="Available = on hand − reserved for unpaid/unfulfilled orders. Every change is recorded below." />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="SKUs" value={count ?? 0} />
         <StatCard label="Units on hand" value={units.stock} />
@@ -54,7 +54,7 @@ export default async function InventoryPage({ searchParams }: PageProps<'/admin/
         <StatCard label="Low stock" value={lowCount ?? 0} tone={lowCount ? 'warning' : 'neutral'} href="/admin/inventory?low=1" />
       </div>
       <FilterBar>
-        <Input name="q" defaultValue={q} placeholder="Product or SKU" className="h-10 w-64!" aria-label="Search inventory" />
+        <Input name="q" defaultValue={q} placeholder="Product or SKU" className="h-10 w-full! sm:w-64!" aria-label="Search inventory" />
         <label className="flex h-10 items-center gap-2 text-sm"><Checkbox name="low" value="1" defaultChecked={low} /> Low stock only</label>
         <Button type="submit" size="sm" className="h-10">Filter</Button>
       </FilterBar>

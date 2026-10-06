@@ -70,11 +70,11 @@ export default async function AdminProductsPage({ searchParams }: PageProps<'/ad
         }
       />
       <FilterBar>
-        <Input name="q" defaultValue={q} placeholder="Name, SKU or part number" className="h-10 w-64!" aria-label="Search products" />
+        <Input name="q" defaultValue={q} placeholder="Name, SKU or part number" className="h-10 w-full! sm:w-64!" aria-label="Search products" />
         <Select name="status" defaultValue={status ?? ''} className="h-10 w-36!" aria-label="Status">
           <option value="">All statuses</option><option value="active">Active</option><option value="draft">Draft</option><option value="archived">Archived</option>
         </Select>
-        <Select name="category" defaultValue={category ?? ''} className="h-10 w-48!" aria-label="Category">
+        <Select name="category" defaultValue={category ?? ''} className="h-10 w-full! sm:w-48!" aria-label="Category">
           <option value="">All categories</option>
           {(categories ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </Select>

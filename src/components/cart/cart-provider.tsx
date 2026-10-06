@@ -8,7 +8,7 @@ import { isSupabaseConfigured } from '@/lib/env'
 /** Display snapshot so the cart renders instantly; prices are re-quoted by the server. */
 export type CartSnapshot = { name: string; slug: string; price: number; imageUrl: string | null; variantName: string | null; sku: string }
 /** Who is signed in, for the header and bottom bar. */
-export type AccountSummary = { name: string | null; avatarUrl: string | null }
+export type AccountSummary = { name: string | null; avatarUrl: string | null; staff?: boolean }
 export type CartLine = { productId: string; variantId: string | null; quantity: number; snapshot?: CartSnapshot }
 
 type CartContextValue = {
@@ -121,8 +121,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const text = (value: unknown) => (typeof value === 'string' && value ? value : null)
         const fromSession = { name: text(meta.full_name) ?? text(meta.name), avatarUrl: text(meta.avatar_url) ?? text(meta.picture) }
         setAccount((current) => (replace ? fromSession : (current ?? fromSession)))
-        const { data: profile } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).maybeSingle()
-        if (profile && !cancelled) setAccount({ name: profile.full_name ?? fromSession.name, avatarUrl: profile.avatar_url ?? fromSession.avatarUrl })
+        const { data: profile } = await supabase.from('profiles').select('full_name, avatar_url, role').eq('id', user.id).maybeSingle()
+        if (profile && !cancelled) setAccount({ name: profile.full_name ?? fromSession.name, avatarUrl: profile.avatar_url ?? fromSession.avatarUrl, staff: profile.role !== 'customer' })
       }
       refreshAccountRef.current = () => {
         void supabase.auth.getSession().then(({ data }) => (data.session ? loadAccount(data.session.user) : undefined))
