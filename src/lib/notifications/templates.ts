@@ -83,8 +83,9 @@ ${card.button ? button(card.button.href, card.button.label) : ''}
 ${card.after ?? ''}
 </td></tr>
 <tr><td align="center" style="padding:26px 12px 0;font-size:13px;line-height:1.6;color:${C.muted}">
+This is an automated email. Please do not reply; replies are not read.<br>
 Questions about your order? Email <a href="mailto:${EMAIL_CONTACT}" style="color:${C.text};text-decoration:none;font-weight:700">${EMAIL_CONTACT}</a><br>
-CISS Solutions · Printers, spare parts, ink &amp; toner · <a href="${siteUrl}" style="color:${C.muted}">${siteUrl.replace(/^https?:\/\//, '')}</a>
+Ciss Solutions · Printers, spare parts, ink &amp; toner · <a href="${siteUrl}" style="color:${C.muted}">${siteUrl.replace(/^https?:\/\//, '')}</a>
 </td></tr>
 </table></td></tr></table></body></html>`
 }
@@ -126,10 +127,10 @@ function fulfilment(o: OrderEmailData) {
 
 const textSummary = (o: OrderEmailData) =>
   [...o.items.map((i) => `- ${i.name}${i.sku ? ` (${i.sku})` : ''} x${i.quantity}: ${formatKES(i.total)}`), `Total: ${formatKES(o.total)}`].join('\n')
-const textFooter = `\n\nQuestions? Email ${EMAIL_CONTACT}`
+const textFooter = `\n\nThis is an automated email. Please do not reply; replies are not read.\nQuestions? Email ${EMAIL_CONTACT}`
 
 export function orderConfirmationEmail(o: OrderEmailData) {
-  const subject = `Order received: ${o.orderNumber} | CISS Solutions`
+  const subject = `Order received: ${o.orderNumber} | Ciss Solutions`
   const awaitingMpesa = o.paymentMethod === 'mpesa'
   const payment = awaitingMpesa
     ? 'Complete the M&#8209;Pesa prompt on your phone to confirm it.'
@@ -147,7 +148,7 @@ export function orderConfirmationEmail(o: OrderEmailData) {
 
 /** The customer's one email for an M-Pesa order: order received and payment cleared. */
 export function paymentConfirmationEmail(o: OrderEmailData) {
-  const subject = `Order confirmed: ${o.orderNumber} | CISS Solutions`
+  const subject = `Order confirmed: ${o.orderNumber} | Ciss Solutions`
   const receipt = o.receipt ? `, M&#8209;Pesa receipt ${strong(o.receipt)}` : ''
   const html = layout(subject, {
     tone: 'success',
@@ -177,7 +178,7 @@ export function orderStatusEmail(o: OrderEmailData & { status: OrderStatus }) {
     REFUNDED: { tone: 'success', text: 'Your refund has been processed.' },
   }
   const c = copy[o.status] ?? { tone: 'info' as Tone, text: 'Your order status has changed.' }
-  const subject = `Order ${orderStatusLabels[o.status].toLowerCase()}: ${o.orderNumber} | CISS Solutions`
+  const subject = `Order ${orderStatusLabels[o.status].toLowerCase()}: ${o.orderNumber} | Ciss Solutions`
   const html = layout(subject, {
     tone: c.tone,
     label: `Order ${orderStatusLabels[o.status]}`,
@@ -227,7 +228,7 @@ export function adminLowStockEmail(items: { name: string; sku: string; available
 }
 
 export function welcomeEmail(name: string) {
-  const subject = 'Welcome to CISS Solutions'
+  const subject = 'Welcome to Ciss Solutions'
   const html = layout(subject, {
     tone: 'info',
     label: 'Account created',
@@ -242,7 +243,7 @@ export function welcomeEmail(name: string) {
 export const RESET_CODE_MINUTES = 15
 
 export function passwordResetEmail(code: string) {
-  const subject = `${code} is your CISS Solutions password reset code`
+  const subject = `${code} is your Ciss Solutions password reset code`
   const html = layout(subject, {
     tone: 'info',
     label: 'Password reset',
@@ -254,6 +255,6 @@ export function passwordResetEmail(code: string) {
   return {
     subject,
     html,
-    text: `Your CISS Solutions password reset code is ${code}.\n\nIt is valid for ${RESET_CODE_MINUTES} minutes and can be used once. If you did not ask to reset your password, ignore this email.${textFooter}`,
+    text: `Your Ciss Solutions password reset code is ${code}.\n\nIt is valid for ${RESET_CODE_MINUTES} minutes and can be used once. If you did not ask to reset your password, ignore this email.${textFooter}`,
   }
 }

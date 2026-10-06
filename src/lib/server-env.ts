@@ -5,6 +5,9 @@ function optional(name: string) {
   return process.env[name]?.trim() || undefined
 }
 
+/** Every email shows the same sender name, whatever name (if any) the env value carries. */
+const sender = (value: string) => `Ciss Solutions <${(value.match(/<([^>]+)>/)?.[1] ?? value).trim()}>`
+
 export const serverEnv = {
   serviceRoleKey: optional('SUPABASE_SERVICE_ROLE_KEY'),
   mpesa: {
@@ -31,10 +34,10 @@ export const serverEnv = {
       user: optional('SMTP_USER'),
       password: optional('SMTP_PASSWORD'),
     },
-    from: optional('EMAIL_FROM') ?? 'CISS Solutions <orders@cisssolutions.co.ke>',
+    from: sender(optional('EMAIL_FROM') ?? 'orders@cisssolutions.co.ke'),
     // Account emails (password reset codes) come from a no-reply address. If that mailbox
     // has its own login, set SMTP_NOREPLY_USER / SMTP_NOREPLY_PASSWORD; otherwise the main one is used.
-    noReplyFrom: optional('EMAIL_FROM_NOREPLY') ?? 'CISS Solutions <noreply@cisssolutions.co.ke>',
+    noReplyFrom: sender(optional('EMAIL_FROM_NOREPLY') ?? 'no-reply@cisssolutions.co.ke'),
     noReplySmtp: { user: optional('SMTP_NOREPLY_USER'), password: optional('SMTP_NOREPLY_PASSWORD') },
     // The orders mailbox: every new-order alert goes here. It only sends; nobody reads replies.
     orders: optional('ORDERS_EMAIL') ?? 'orders@cisssolutions.co.ke',
