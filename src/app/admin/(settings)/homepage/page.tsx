@@ -14,7 +14,7 @@ import { nowMs } from '@/lib/utils/time'
 export const metadata = { title: 'Homepage' }
 
 const sectionNames: Record<string, string> = {
-  hero: 'Hero slider', trust: 'Trust bar', categories: 'Categories', featured: 'Featured products', part_finder: 'Spare-part finder',
+  hero: 'Hero slider', categories: 'Categories', featured: 'Featured products', part_finder: 'Spare-part finder',
   deals: 'Deals', bestsellers: 'Best sellers', brands: 'Brands', cta: 'Call to action',
 }
 const local = (iso: string | null) => (iso ? new Date(new Date(iso).getTime() + 3 * 3600_000).toISOString().slice(0, 16) : '')
@@ -41,7 +41,7 @@ export default async function HomepageAdmin({ searchParams }: PageProps<'/admin/
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Sections (top to bottom)">
           <ul className="divide-y divide-border">
-            {(sections ?? []).map((s, i, arr) => (
+            {(sections ?? []).filter((s) => s.key !== 'trust').map((s, i, arr) => (
               <li key={s.id} className="flex items-center gap-3 py-2.5">
                 <MoveButtons up={moveSectionAction.bind(null, s.id, -1)} down={moveSectionAction.bind(null, s.id, 1)} first={i === 0} last={i === arr.length - 1} />
                 <div className="min-w-0 flex-1">
@@ -59,7 +59,7 @@ export default async function HomepageAdmin({ searchParams }: PageProps<'/admin/
               <AdminForm key={editingSection.id} action={saveSectionAction} className="space-y-3">
                 <input type="hidden" name="id" value={editingSection.id} />
                 <label className="flex items-center gap-2 text-sm"><Checkbox name="isEnabled" defaultChecked={editingSection.is_enabled} /> Show this section</label>
-                {editingSection.key !== 'hero' && editingSection.key !== 'trust' ? (
+                {editingSection.key !== 'hero' ? (
                   <>
                     <Field label="Title" htmlFor="sec-title"><Input id="sec-title" name="title" defaultValue={editingSection.title ?? ''} /></Field>
                     <Field label="Subtitle" htmlFor="sec-sub"><Input id="sec-sub" name="subtitle" defaultValue={editingSection.subtitle ?? ''} /></Field>

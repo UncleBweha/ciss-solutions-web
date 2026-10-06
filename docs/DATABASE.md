@@ -45,7 +45,7 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 
 **Orders and payments**
 
-- `orders`: number (`CISS-YYYYMMDD-NNNN`), customer or guest contact, delivery address,
+- `orders`: number (`CISS-` plus 8 random characters), customer or guest contact, delivery address,
   delivery zone, money columns (subtotal, discount, delivery fee, total), `payment_method`,
   `payment_status`, `order_status`, `stock_state`, `reservation_expires_at`, guest access token.
 - `order_items`: snapshot of name, SKU, unit price and quantity at the time of purchase.
