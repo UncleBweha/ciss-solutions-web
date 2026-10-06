@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer'
 import { logger } from '@/lib/logger'
 import { serverEnv } from '@/lib/server-env'
 
-export type EmailMessage = { to: string | string[]; subject: string; html: string; text: string }
+export type EmailMessage = { to: string | string[]; subject: string; html: string; text: string; from?: string }
 
 export interface EmailProvider {
   send(message: EmailMessage): Promise<{ id?: string }>
@@ -12,7 +12,7 @@ export interface EmailProvider {
 /** Development: write the email to the server log instead of sending it. */
 class LogEmailProvider implements EmailProvider {
   async send(message: EmailMessage) {
-    logger.info('email.logged', { to: message.to, subject: message.subject, text: message.text.slice(0, 500) })
+    logger.info('email.logged', { to: message.to, from: message.from, subject: message.subject, text: message.text.slice(0, 500) })
     return {}
   }
 }
@@ -24,7 +24,7 @@ class ResendEmailProvider implements EmailProvider {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: this.from, to: message.to, subject: message.subject, html: message.html, text: message.text }),
+      body: JSON.stringify({ from: message.from ?? this.from, to: message.to, subject: message.subject, html: message.html, text: message.text }),
       signal: AbortSignal.timeout(15_000),
     })
     if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text().catch(() => '')}`)
@@ -46,12 +46,13 @@ class SmtpEmailProvider implements EmailProvider {
     })
   }
   async send(message: EmailMessage) {
-    const info = await this.transport.sendMail({ from: this.from, to: message.to, subject: message.subject, html: message.html, text: message.text })
+    const info = await this.transport.sendMail({ from: message.from ?? this.from, to: message.to, subject: message.subject, html: message.html, text: message.text })
     return { id: info.messageId }
   }
 }
 
 let smtpProvider: SmtpEmailProvider | undefined
+let noReplyProvider: SmtpEmailProvider | undefined
 
 export function getEmailProvider(): EmailProvider {
   const { provider, apiKey, from, smtp } = serverEnv.email
@@ -62,4 +63,18 @@ export function getEmailProvider(): EmailProvider {
     return smtpProvider
   }
   return new LogEmailProvider()
+}
+
+/**
+ * Sends account emails (password reset codes) from the no-reply address. Uses that
+ * mailbox's own SMTP login when one is configured, otherwise the main provider with
+ * the no-reply address as the sender.
+ */
+export async function sendNoReplyEmail(message: Omit<EmailMessage, 'from'>) {
+  const { provider, smtp, noReplyFrom, noReplySmtp } = serverEnv.email
+  if (provider === 'smtp' && smtp.host && noReplySmtp.user && noReplySmtp.password) {
+    noReplyProvider ??= new SmtpEmailProvider({ host: smtp.host, port: smtp.port, user: noReplySmtp.user, password: noReplySmtp.password }, noReplyFrom)
+    return noReplyProvider.send(message)
+  }
+  return getEmailProvider().send({ ...message, from: noReplyFrom })
 }
