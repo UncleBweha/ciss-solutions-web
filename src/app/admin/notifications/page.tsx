@@ -24,7 +24,7 @@ export default async function NotificationsPage() {
   const supabase = await createClient()
   const { data } = await supabase.from('notifications').select('*').eq('channel', 'admin').order('created_at', { ascending: false }).limit(200)
   const link = (n: NonNullable<typeof data>[number]) =>
-    n.order_id ? `/admin/orders/${n.order_id}` : n.kind === 'low_stock' ? '/admin/inventory?low=1' : n.kind === 'new_review' ? '/admin/reviews' : n.kind === 'new_support_request' ? '/admin/support' : null
+    n.order_id ? `/admin/orders/${n.order_id}` : n.kind === 'low_stock' ? '/admin/inventory?low=1' : n.kind === 'new_support_request' ? '/admin/support' : null
   return (
     <div>
       <AdminPageHeader

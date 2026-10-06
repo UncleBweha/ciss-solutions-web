@@ -31,7 +31,7 @@ export function BottomNav({ categories }: { categories: NavCategory[] }) {
     { label: 'Wishlist', href: signedIn ? '/account/wishlist' : '/login?next=/account/wishlist', icon: Heart, active: pathname.startsWith('/account/wishlist'), badge: wishlist.size },
     {
       label: signedIn ? (firstName(account?.name) ?? 'Profile') : 'Sign in',
-      href: signedIn ? '/account' : '/login',
+      href: !signedIn ? '/login' : account?.staff ? '/admin' : '/account',
       icon: User,
       avatar: signedIn,
       active: (pathname.startsWith('/account') && !pathname.startsWith('/account/wishlist')) || pathname === '/login' || pathname === '/register',
