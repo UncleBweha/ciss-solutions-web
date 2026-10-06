@@ -35,6 +35,8 @@ export const serverEnv = {
       password: optional('SMTP_PASSWORD'),
     },
     from: sender(optional('EMAIL_FROM') ?? 'orders@cisssolutions.co.ke'),
+    // Sender of the reset code when the store has to send it itself (see requestPasswordResetAction).
+    noReplyFrom: sender(optional('EMAIL_FROM_NOREPLY') ?? 'no-reply@cisssolutions.co.ke'),
     // The orders mailbox: every new-order alert goes here. It only sends; nobody reads replies.
     orders: optional('ORDERS_EMAIL') ?? 'orders@cisssolutions.co.ke',
     adminAlerts: (optional('ADMIN_ALERT_EMAILS') ?? '').split(',').map((s) => s.replace(/[<>"'\s]/g, '')).filter((s) => /^[^@]+@[^@]+\.[^@]+$/.test(s)),
