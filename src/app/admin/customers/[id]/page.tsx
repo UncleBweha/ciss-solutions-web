@@ -22,7 +22,7 @@ export default async function CustomerPage({ params }: PageProps<'/admin/custome
   return (
     <div className="space-y-4">
       <AdminPageHeader title={c.full_name || c.email || 'Customer'} back={{ href: '/admin/customers', label: 'Customers' }} description={`${c.email ?? ''}${c.phone ? ` · ${c.phone}` : ''} · joined ${c.created_at ? formatDate(c.created_at) : ''}`} />
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <StatCard label="Orders" value={c.orders_count ?? 0} />
         <StatCard label="Total spent (paid)" value={formatKES(c.total_spent ?? 0)} />
         <StatCard label="Last order" value={c.last_order_at ? formatDate(c.last_order_at) : '—'} />

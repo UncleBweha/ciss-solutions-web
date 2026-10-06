@@ -1,11 +1,8 @@
 import Link from 'next/link'
-import { BadgeCheck, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { Accordion } from '@/components/ui/accordion'
-import { RatingStars } from '@/components/ui/misc'
 import { Tabs } from '@/components/ui/tabs'
 import type { ProductDetail } from '@/types/catalog'
-import { formatDate } from '@/lib/utils'
-import { ReviewForm } from './review-form'
 
 function Specs({ product }: { product: ProductDetail }) {
   const rows = [...product.specifications]
@@ -64,43 +61,6 @@ function Compatibility({ product }: { product: ProductDetail }) {
   )
 }
 
-function Reviews({ product }: { product: ProductDetail }) {
-  return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
-      <div>
-        {product.rating_count ? (
-          <div className="mb-6 flex items-center gap-4">
-            <span className="text-4xl font-bold">{product.rating_avg.toFixed(1)}</span>
-            <RatingStars rating={product.rating_avg} count={product.rating_count} size="md" />
-          </div>
-        ) : (
-          <p className="mb-6 text-fg-secondary">No reviews yet. Be the first to review this product.</p>
-        )}
-        <ul className="space-y-5">
-          {product.reviews.map((r) => (
-            <li key={r.id} className="border-b border-border pb-5 last:border-0">
-              <div className="flex flex-wrap items-center gap-3">
-                <RatingStars rating={r.rating} />
-                {r.title ? <p className="font-semibold">{r.title}</p> : null}
-              </div>
-              {r.comment ? <p className="mt-2 text-sm text-fg-secondary">{r.comment}</p> : null}
-              <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
-                {r.author_name || 'Customer'} · {formatDate(r.created_at)}
-                {r.is_verified_purchase ? (
-                  <span className="inline-flex items-center gap-1 font-semibold text-success">
-                    <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" /> Verified Purchase
-                  </span>
-                ) : null}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <ReviewForm productId={product.id} slug={product.slug} />
-    </div>
-  )
-}
-
 function List({ items }: { items: string[] }) {
   return (
     <ul className="space-y-2">
@@ -125,7 +85,6 @@ export function ProductInfo({ product }: { product: ProductDetail }) {
     product.features.length ? { id: 'features', title: 'Features', content: <List items={product.features} /> } : null,
     { id: 'compatibility', title: 'Compatibility', content: <Compatibility product={product} /> },
     product.whats_included.length ? { id: 'included', title: "What's Included", content: <List items={product.whats_included} /> } : null,
-    { id: 'reviews', title: `Reviews (${product.rating_count})`, content: <Reviews product={product} /> },
   ].filter((s): s is { id: string; title: string; content: React.ReactElement } => Boolean(s))
 
   return (
