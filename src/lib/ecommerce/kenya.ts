@@ -28,22 +28,13 @@ export function normalizeKenyanPhone(input: string): string | null {
   return `254${local}`
 }
 
-/** 254712345678 -> 0712 345 678 */
+/** 254712345678 -> 0712345678, the way customers type it. No spaces, so it can be copied or edited as is. */
 export function formatKenyanPhone(phone: string): string {
-  const normalized = normalizeKenyanPhone(phone)
-  if (!normalized) return phone
-  const local = `0${normalized.slice(3)}`
-  return `${local.slice(0, 4)} ${local.slice(4, 7)} ${local.slice(7)}`
-}
-
-/** 254712345678 -> 0712345678, the way customers type it (used to prefill phone inputs). */
-export function localKenyanPhone(phone: string): string {
   const normalized = normalizeKenyanPhone(phone)
   return normalized ? `0${normalized.slice(3)}` : phone
 }
 
-/** 254712345678 -> 0712 *** 678 for receipts and admin lists */
+/** 254712345678 -> 0712***678 for receipts and admin lists */
 export function maskPhone(phone: string): string {
-  const formatted = formatKenyanPhone(phone)
-  return formatted.replace(/^(\d{4}) \d{3}/, '$1 ***')
+  return formatKenyanPhone(phone).replace(/^(\d{4})\d{3}/, '$1***')
 }

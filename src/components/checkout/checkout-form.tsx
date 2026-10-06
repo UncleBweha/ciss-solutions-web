@@ -187,7 +187,7 @@ export function CheckoutForm({
                 <Input id="fullName" autoComplete="name" aria-invalid={Boolean(errors.fullName)} {...register('fullName')} />
               </Field>
               <Field label="Phone number" htmlFor="phone" error={errors.phone?.message} hint="For delivery updates" required>
-                <Input id="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0712 345 678" aria-invalid={Boolean(errors.phone)} {...register('phone')} />
+                <Input id="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0712345678" aria-invalid={Boolean(errors.phone)} {...register('phone')} />
               </Field>
               <Field label="Email" htmlFor="email" error={errors.email?.message} hint="We send your receipt here" required>
                 <Input id="email" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} {...register('email')} />
