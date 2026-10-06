@@ -6,10 +6,11 @@ import { z } from 'zod'
 import { siteUrl } from '@/lib/env'
 import { GOOGLE_OAUTH_COOKIE, GOOGLE_OAUTH_COOKIE_PATH, googleRedirectUri } from '@/lib/google-oauth'
 import { logger } from '@/lib/logger'
-import { getEmailProvider } from '@/lib/notifications/email'
-import { welcomeEmail } from '@/lib/notifications/templates'
+import { getEmailProvider, sendNoReplyEmail } from '@/lib/notifications/email'
+import { passwordResetEmail, RESET_CODE_MINUTES, welcomeEmail } from '@/lib/notifications/templates'
 import { clientIp, rateLimit } from '@/lib/security'
 import { serverEnv } from '@/lib/server-env'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { fieldErrors, optionalKenyanPhone, type FormState } from '@/lib/validation/forms'
 
@@ -105,20 +106,65 @@ export async function signUpAction(_prev: FormState, formData: FormData): Promis
 
 export async function signOutAction() {
   const supabase = await createClient()
-  await supabase.auth.signOut()
+  // This device only: signing out here must not sign the same person out on their other devices.
+  await supabase.auth.signOut({ scope: 'local' })
   redirect('/')
 }
 
+/** When the latest reset code for this email was issued, or null if there is none. */
+async function resetCodeIssuedAt(email: string): Promise<number | null> {
+  const admin = createAdminClient()
+  const { data: profile } = await admin.from('profiles').select('id').ilike('email', email.replace(/[\\%_]/g, '\\$&')).maybeSingle()
+  if (!profile) return null
+  const { data } = await admin.auth.admin.getUserById(profile.id)
+  const sentAt = data.user?.recovery_sent_at
+  return sentAt ? new Date(sentAt).getTime() : null
+}
+
+/** Step 1: email a one-time code. Says the same thing whether or not the account exists. */
 export async function requestPasswordResetAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const ip = await clientIp()
   if (!(await rateLimit(`reset:${ip}`, 60, 3600))) return { message: 'Too many requests. Please try again later.' }
-  const email = z.string().trim().email().safeParse(formData.get('email'))
+  const email = z.string().trim().toLowerCase().email().safeParse(formData.get('email'))
   if (!email.success) return { errors: { email: 'Enter a valid email' } }
-  if (!(await rateLimit(`reset-email:${email.data.toLowerCase()}`, 3, 3600))) return { message: 'Too many requests. Please try again later.' }
+  if (!(await rateLimit(`reset-email:${email.data}`, 3, 3600))) return { message: 'Too many requests. Please try again later.' }
+
+  // The code is created here and emailed from our own no-reply address (not by Supabase).
+  const { data, error } = await createAdminClient().auth.admin.generateLink({ type: 'recovery', email: email.data })
+  const code = data?.properties?.email_otp
+  if (!error && code) {
+    await sendNoReplyEmail({ to: email.data, ...passwordResetEmail(code) }).catch((e) => logger.error('auth.reset_email_failed', { error: e }))
+  }
+  return { ok: true, message: `If an account exists for ${email.data}, we have emailed it a code. It is valid for ${RESET_CODE_MINUTES} minutes.` }
+}
+
+/** Step 2: the emailed code plus a new password. Signs the customer in when it succeeds. */
+export async function resetPasswordWithCodeAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const ip = await clientIp()
+  if (!(await rateLimit(`reset-code:${ip}`, 30, 900))) return { message: 'Too many attempts. Please try again later.' }
+  const parsed = z
+    .object({
+      email: z.string().trim().toLowerCase().email(),
+      code: z.string().trim().regex(/^\d{6,10}$/, 'Enter the code from the email'),
+      password,
+      confirm: z.string(),
+    })
+    .refine((v) => v.password === v.confirm, { message: 'Passwords do not match', path: ['confirm'] })
+    .safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) }
+  // A handful of guesses per code, so it cannot be brute-forced inside its 15 minutes.
+  if (!(await rateLimit(`reset-code-email:${parsed.data.email}`, 6, 900))) return { message: 'Too many attempts. Request a new code.' }
+
+  const expired = { errors: { code: 'That code is wrong or has expired. Request a new one.' } }
+  const issuedAt = await resetCodeIssuedAt(parsed.data.email)
+  if (!issuedAt || Date.now() - issuedAt > RESET_CODE_MINUTES * 60_000) return expired
+
   const supabase = await createClient()
-  await supabase.auth.resetPasswordForEmail(email.data, { redirectTo: `${siteUrl}/auth/callback?next=/auth/reset-password` })
-  // Same answer whether or not the account exists.
-  return { ok: true, message: 'If an account exists for that email, we have sent a link to reset your password.' }
+  const { error } = await supabase.auth.verifyOtp({ email: parsed.data.email, token: parsed.data.code, type: 'recovery' })
+  if (error) return expired
+  const { error: updateError } = await supabase.auth.updateUser({ password: parsed.data.password })
+  if (updateError) return { message: 'We could not save that password. Please choose a different one.' }
+  redirect('/account')
 }
 
 export async function updatePasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -129,6 +175,6 @@ export async function updatePasswordAction(_prev: FormState, formData: FormData)
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
   const supabase = await createClient()
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
-  if (error) return { message: 'Your reset link has expired. Request a new one.' }
+  if (error) return { message: 'We could not update your password. Sign in again and retry.' }
   return { ok: true, message: 'Your password has been updated.' }
 }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AuthShell } from '@/components/account/auth-shell'
 import { GoogleSignIn, SignInForm } from '@/components/account/auth-forms'
+import { ClearStaleSession } from '@/components/account/stale-session'
 import { FormMessage } from '@/components/ui/form'
 import { getSessionUser } from '@/lib/auth'
 import { isGoogleSignInConfigured } from '@/lib/google-oauth'
@@ -19,6 +20,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
     <AuthShell title="Welcome back" subtitle="Sign in to track orders, save addresses and keep your wishlist.">
       {param(sp.error) === 'link' ? <div className="mb-4"><FormMessage>That link is invalid or has expired. Please try again.</FormMessage></div> : null}
       {param(sp.error) === 'google' ? <div className="mb-4"><FormMessage>We could not sign you in with Google. Please try again.</FormMessage></div> : null}
+      <ClearStaleSession />
       {isGoogleSignInConfigured ? <GoogleSignIn next={next} /> : null}
       <SignInForm next={next} />
     </AuthShell>

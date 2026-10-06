@@ -1,8 +1,8 @@
 'use client'
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { requestPasswordResetAction, signInAction, signInWithGoogleAction, signUpAction, updatePasswordAction } from '@/actions/auth'
+import { requestPasswordResetAction, resetPasswordWithCodeAction, signInAction, signInWithGoogleAction, signUpAction, updatePasswordAction } from '@/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Field, FormMessage, Input } from '@/components/ui/form'
 
@@ -101,19 +101,51 @@ export function SignUpForm({ next }: { next?: string }) {
   )
 }
 
+/** Two steps on one page: ask for a code by email, then enter it with the new password. */
 export function ForgotPasswordForm() {
-  const [state, action, pending] = useActionState(requestPasswordResetAction, {})
-  if (state.ok) return <FormMessage tone="success">{state.message}</FormMessage>
+  const [email, setEmail] = useState('')
+  const [request, requestAction, requesting] = useActionState(requestPasswordResetAction, {})
+  const [reset, resetAction, resetting] = useActionState(resetPasswordWithCodeAction, {})
+
+  if (!request.ok) {
+    return (
+      <form action={requestAction} className="space-y-4">
+        <Field label="Email" htmlFor="email" error={request.errors?.email} required>
+          <Input id="email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </Field>
+        <FormMessage>{request.message}</FormMessage>
+        <Button type="submit" size="lg" className="w-full" loading={requesting}>
+          Email me a code
+        </Button>
+      </form>
+    )
+  }
   return (
-    <form action={action} className="space-y-4">
-      <Field label="Email" htmlFor="email" error={state.errors?.email} required>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
-      </Field>
-      <FormMessage>{state.message}</FormMessage>
-      <Button type="submit" size="lg" className="w-full" loading={pending}>
-        Send reset link
-      </Button>
-    </form>
+    <div className="space-y-4">
+      <FormMessage tone="success">{request.message}</FormMessage>
+      <form action={resetAction} className="space-y-4">
+        <input type="hidden" name="email" value={email} />
+        <Field label="Code from the email" htmlFor="code" error={reset.errors?.code} required>
+          <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6,10}" maxLength={10} className="font-mono tracking-[0.3em]" required />
+        </Field>
+        <Field label="New password" htmlFor="password" error={reset.errors?.password} required>
+          <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
+        </Field>
+        <Field label="Confirm password" htmlFor="confirm" error={reset.errors?.confirm} required>
+          <Input id="confirm" name="confirm" type="password" autoComplete="new-password" required />
+        </Field>
+        <FormMessage>{reset.message}</FormMessage>
+        <Button type="submit" size="lg" className="w-full" loading={resetting}>
+          Reset password
+        </Button>
+      </form>
+      <form action={requestAction}>
+        <input type="hidden" name="email" value={email} />
+        <button type="submit" className="text-sm font-semibold text-primary-light hover:underline" disabled={requesting}>
+          {requesting ? 'Sending…' : 'Send a new code'}
+        </button>
+      </form>
+    </div>
   )
 }
 
