@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { requestPasswordResetAction, resetPasswordWithCodeAction, signInAction, signInWithGoogleAction, signUpAction, updatePasswordAction } from '@/actions/auth'
+import { completePasswordResetAction, requestPasswordResetAction, signInAction, signInWithGoogleAction, signUpAction, updatePasswordAction, verifyResetCodeAction } from '@/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Field, FormMessage, Input } from '@/components/ui/form'
 
@@ -101,11 +101,12 @@ export function SignUpForm({ next }: { next?: string }) {
   )
 }
 
-/** Two steps on one page: ask for a code by email, then enter it with the new password. */
+/** Three steps on one page: ask for a code by email, enter the code, then choose a new password. */
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState('')
   const [request, requestAction, requesting] = useActionState(requestPasswordResetAction, {})
-  const [reset, resetAction, resetting] = useActionState(resetPasswordWithCodeAction, {})
+  const [verify, verifyAction, verifying] = useActionState(verifyResetCodeAction, {})
+  const [reset, resetAction, resetting] = useActionState(completePasswordResetAction, {})
 
   if (!request.ok) {
     return (
@@ -120,16 +121,37 @@ export function ForgotPasswordForm() {
       </form>
     )
   }
+
+  if (!verify.ok) {
+    return (
+      <div className="space-y-4">
+        <FormMessage tone="success">{request.message}</FormMessage>
+        <form action={verifyAction} className="space-y-4">
+          <input type="hidden" name="email" value={email} />
+          <Field label="Code from the email" htmlFor="code" error={verify.errors?.code} required>
+            <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6,10}" maxLength={10} className="font-mono tracking-[0.3em]" autoFocus required />
+          </Field>
+          <FormMessage>{verify.message}</FormMessage>
+          <Button type="submit" size="lg" className="w-full" loading={verifying}>
+            Continue
+          </Button>
+        </form>
+        <form action={requestAction}>
+          <input type="hidden" name="email" value={email} />
+          <button type="submit" className="text-sm font-semibold text-primary-light hover:underline" disabled={requesting}>
+            {requesting ? 'Sending…' : 'Send a new code'}
+          </button>
+        </form>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      <FormMessage tone="success">{request.message}</FormMessage>
+      <FormMessage tone="success">Code accepted. Choose a new password.</FormMessage>
       <form action={resetAction} className="space-y-4">
-        <input type="hidden" name="email" value={email} />
-        <Field label="Code from the email" htmlFor="code" error={reset.errors?.code} required>
-          <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6,10}" maxLength={10} className="font-mono tracking-[0.3em]" required />
-        </Field>
         <Field label="New password" htmlFor="password" error={reset.errors?.password} required>
-          <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
+          <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} autoFocus required />
         </Field>
         <Field label="Confirm password" htmlFor="confirm" error={reset.errors?.confirm} required>
           <Input id="confirm" name="confirm" type="password" autoComplete="new-password" required />
@@ -138,12 +160,6 @@ export function ForgotPasswordForm() {
         <Button type="submit" size="lg" className="w-full" loading={resetting}>
           Reset password
         </Button>
-      </form>
-      <form action={requestAction}>
-        <input type="hidden" name="email" value={email} />
-        <button type="submit" className="text-sm font-semibold text-primary-light hover:underline" disabled={requesting}>
-          {requesting ? 'Sending…' : 'Send a new code'}
-        </button>
       </form>
     </div>
   )

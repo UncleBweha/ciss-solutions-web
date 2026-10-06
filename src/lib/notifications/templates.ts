@@ -241,3 +241,16 @@ export function welcomeEmail(name: string) {
 
 /** How long a password reset code stays valid. */
 export const RESET_CODE_MINUTES = 15
+
+export function passwordResetEmail(code: string) {
+  const subject = `${code} is your Ciss Solutions password reset code`
+  const html = layout(subject, {
+    tone: 'info',
+    label: 'Password reset',
+    heading: 'Your reset code',
+    intro: `<p style="margin:0 0 18px">Enter this code on the password reset page to choose a new password.</p>
+<p style="margin:0 0 18px;font-size:34px;line-height:1;font-weight:800;letter-spacing:8px;color:${C.text}">${esc(code)}</p>
+<p style="margin:0">The code is valid for ${RESET_CODE_MINUTES} minutes and can be used once. If you did not ask to reset your password, ignore this email; your password stays the same.</p>`,
+  })
+  return { subject, html, text: `Your Ciss Solutions password reset code is ${code}. It is valid for ${RESET_CODE_MINUTES} minutes and can be used once.${textFooter}` }
+}
