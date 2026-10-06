@@ -172,13 +172,7 @@ the server in `/opt/ciss-store/.env` and are never stored in GitHub.
 
 ## Password reset codes
 
-"Forgot password" asks Supabase to email a one-time code; the store then checks the code and
-saves the new password. Supabase sends that email, so it is set up in the Supabase dashboard:
-
-1. **Authentication -> Emails -> SMTP settings:** enable custom SMTP with the mail host, port,
-   mailbox login, sender address `no-reply@cisssolutions.co.ke` and sender name `Ciss Solutions`.
-   Without custom SMTP Supabase sends from its own address and only a few emails an hour.
-2. **Authentication -> Emails -> Templates -> Reset password:** the body must show the code with
-   `{{ .Token }}` and must not contain `{{ .ConfirmationURL }}` (the store has no page for the link).
-3. **Authentication -> Sign In / Providers -> Email -> Email OTP expiration:** 900 seconds. The
-   store also refuses a code older than 15 minutes, whatever this is set to.
+"Forgot password" has three steps on one page: email, the emailed code, then the new password.
+Supabase creates the code and checks it; the store emails it through its own mailbox from
+`no-reply@cisssolutions.co.ke` (`EMAIL_FROM_NOREPLY` overrides the address). The store refuses a
+code older than 15 minutes. Nothing needs to be set in the Supabase dashboard for this.
