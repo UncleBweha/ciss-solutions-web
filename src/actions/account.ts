@@ -19,6 +19,45 @@ export async function updateProfileAction(_prev: FormState, formData: FormData):
   return { ok: true, message: 'Profile saved.' }
 }
 
+const AVATAR_TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+
+/** Deletes the customer's stored pictures, except the one at `keep`. */
+async function clearAvatars(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, keep?: string) {
+  const { data: files } = await supabase.storage.from('avatars').list(userId)
+  const stale = (files ?? []).map((f) => `${userId}/${f.name}`).filter((path) => path !== keep)
+  if (stale.length) await supabase.storage.from('avatars').remove(stale)
+}
+
+/** The browser sends a small square picture (see AvatarForm), so it fits a server action. */
+export async function uploadAvatarAction(formData: FormData): Promise<FormState> {
+  const user = await requireUser()
+  const file = formData.get('avatar')
+  const extension = file instanceof File ? AVATAR_TYPES[file.type] : undefined
+  if (!(file instanceof File) || !extension || file.size === 0 || file.size > 512 * 1024) return { message: 'Choose a JPG, PNG or WebP picture.' }
+
+  const supabase = await createClient()
+  // A new name each time, so browsers never show the previous picture from cache.
+  const path = `${user.id}/${Date.now()}.${extension}`
+  const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type })
+  if (uploadError) return { message: 'Could not upload your picture.' }
+  const { error } = await supabase.from('profiles').update({ avatar_url: supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl }).eq('id', user.id)
+  if (error) return { message: 'Could not save your picture.' }
+  await clearAvatars(supabase, user.id, path)
+  revalidatePath('/account', 'layout')
+  return { ok: true, message: 'Picture updated.' }
+}
+
+/** Back to the Google account picture, or to initials when there is none. */
+export async function removeAvatarAction(): Promise<FormState> {
+  const user = await requireUser()
+  const supabase = await createClient()
+  const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id)
+  if (error) return { message: 'Could not remove your picture.' }
+  await clearAvatars(supabase, user.id)
+  revalidatePath('/account', 'layout')
+  return { ok: true, message: 'Picture removed.' }
+}
+
 const addressSchema = z.object({
   label: z.string().trim().max(40).optional(),
   fullName: z.string().trim().min(2, 'Enter a name').max(100),

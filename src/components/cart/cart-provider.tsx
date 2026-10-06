@@ -7,6 +7,8 @@ import { isSupabaseConfigured } from '@/lib/env'
 
 /** Display snapshot so the cart renders instantly; prices are re-quoted by the server. */
 export type CartSnapshot = { name: string; slug: string; price: number; imageUrl: string | null; variantName: string | null; sku: string }
+/** Who is signed in, for the header and bottom bar. */
+export type AccountSummary = { name: string | null; avatarUrl: string | null }
 export type CartLine = { productId: string; variantId: string | null; quantity: number; snapshot?: CartSnapshot }
 
 type CartContextValue = {
@@ -22,6 +24,9 @@ type CartContextValue = {
   wishlist: Set<string>
   toggleWishlist: (productId: string, name?: string) => Promise<'saved' | 'removed' | 'local'>
   signedIn: boolean
+  account: AccountSummary | null
+  /** Re-reads the name and picture after the customer edits their profile. */
+  refreshAccount: () => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -51,6 +56,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [wishlist, setWishlist] = useState<Set<string>>(new Set())
   const [ready, setReady] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
+  const [account, setAccount] = useState<AccountSummary | null>(null)
+  const refreshAccountRef = useRef<() => void>(() => {})
   const [bump, setBump] = useState(0)
   const signedInRef = useRef(false)
   // Wishlist taps made while an account sync is in flight, re-applied on its result.
@@ -107,11 +114,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     void import('@/lib/supabase/client').then(({ createClient }) => {
       if (cancelled) return
       const supabase = createClient()
+      // Name and picture: straight from the session first, then the saved profile
+      // (an edited name or an uploaded picture wins over the Google one).
+      const loadAccount = async (user: { id: string; user_metadata?: Record<string, unknown> }, replace = false) => {
+        const meta = user.user_metadata ?? {}
+        const text = (value: unknown) => (typeof value === 'string' && value ? value : null)
+        const fromSession = { name: text(meta.full_name) ?? text(meta.name), avatarUrl: text(meta.avatar_url) ?? text(meta.picture) }
+        setAccount((current) => (replace ? fromSession : (current ?? fromSession)))
+        const { data: profile } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).maybeSingle()
+        if (profile && !cancelled) setAccount({ name: profile.full_name ?? fromSession.name, avatarUrl: profile.avatar_url ?? fromSession.avatarUrl })
+      }
+      refreshAccountRef.current = () => {
+        void supabase.auth.getSession().then(({ data }) => (data.session ? loadAccount(data.session.user) : undefined))
+      }
       supabase.auth.getSession().then(({ data }) => {
         const has = Boolean(data.session)
         signedInRef.current = has
         setSignedIn(has)
-        if (has) void syncForUser()
+        if (data.session) {
+          void syncForUser()
+          void loadAccount(data.session.user)
+        }
       })
       const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
         const has = Boolean(session)
@@ -120,7 +143,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
           // The account keeps its cart; this shared browser starts empty.
           setItems([])
           setWishlist(new Set())
+          setAccount(null)
         }
+        // Deferred: Supabase must not be queried from inside its own auth callback.
+        if (event === 'SIGNED_IN' && session && !signedInRef.current) setTimeout(() => void loadAccount(session.user, true), 0)
         signedInRef.current = has
         setSignedIn(has)
       })
@@ -199,6 +225,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return result.saved ? ('saved' as const) : ('removed' as const)
   }, [wishlist])
 
+  const refreshAccount = useCallback(() => refreshAccountRef.current(), [])
+
   const value = useMemo<CartContextValue>(
     () => ({
       items,
@@ -213,8 +241,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       wishlist,
       toggleWishlist,
       signedIn,
+      account,
+      refreshAccount,
     }),
-    [items, ready, bump, add, setQuantity, remove, clear, replace, wishlist, toggleWishlist, signedIn],
+    [items, ready, bump, add, setQuantity, remove, clear, replace, wishlist, toggleWishlist, signedIn, account, refreshAccount],
   )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

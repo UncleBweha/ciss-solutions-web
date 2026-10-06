@@ -1,6 +1,7 @@
 import 'server-only'
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 import { formatKES } from '@/lib/ecommerce/money'
+import { deliveryFeeLabel } from '@/lib/ecommerce/delivery'
 import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { paymentMethodLabels } from '@/lib/ecommerce/orders'
 import type { ViewerOrder } from '@/lib/orders'
@@ -88,7 +89,7 @@ export async function renderInvoicePdf(order: ViewerOrder, business: BusinessSet
   const totals: [string, string, boolean][] = [
     ['Subtotal', formatKES(order.subtotal), false],
     ...(Number(order.discount) ? ([[`Discount${order.coupon_code ? ` (${order.coupon_code})` : ''}`, `-${formatKES(order.discount)}`, false]] as [string, string, boolean][]) : []),
-    ['Delivery', formatKES(order.delivery_fee), false],
+    ['Delivery', deliveryFeeLabel(order.delivery_fee, order.delivery_zone_name), false],
     ['Total', formatKES(order.total), true],
   ]
   y -= 8

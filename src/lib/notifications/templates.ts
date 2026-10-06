@@ -1,4 +1,5 @@
 import { siteUrl } from '@/lib/env'
+import { DELIVERY_TBC_NOTE, deliveryFeeLabel, isStorePickup } from '@/lib/ecommerce/delivery'
 import { formatKES } from '@/lib/ecommerce/money'
 import { orderStatusLabels, paymentMethodLabels, type OrderStatus, type PaymentMethod } from '@/lib/ecommerce/orders'
 
@@ -39,7 +40,7 @@ function orderTable(o: OrderEmailData) {
     `<tr><td style="padding:4px 0;${bold ? 'font-weight:800' : 'color:#475569'}">${label}</td><td align="right" style="${bold ? 'font-weight:800' : ''}">${value}</td></tr>`
   return `<table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px;margin:16px 0">${rows}
 <tr><td colspan="2" style="border-top:1px solid #e2e8f0;padding-top:6px"></td></tr>
-${line('Subtotal', formatKES(o.subtotal))}${o.discount ? line('Discount', `-${formatKES(o.discount)}`) : ''}${line('Delivery', formatKES(o.deliveryFee))}${line('Total', formatKES(o.total), true)}</table>`
+${line('Subtotal', formatKES(o.subtotal))}${o.discount ? line('Discount', `-${formatKES(o.discount)}`) : ''}${line('Delivery', deliveryFeeLabel(o.deliveryFee, o.deliveryZone))}${line('Total', formatKES(o.total), true)}</table>`
 }
 
 const orderLink = (o: OrderEmailData) => `${siteUrl}/order/${encodeURIComponent(o.orderNumber)}?t=${o.accessToken}`
@@ -54,7 +55,8 @@ export function orderConfirmationEmail(o: OrderEmailData) {
   const html = layout(
     title,
     `<p>Hi ${esc(o.customerName.split(' ')[0])}, thank you for your order.</p>
-<p>Payment: <strong>${paymentMethodLabels[o.paymentMethod]}</strong><br>Delivery: ${esc(o.deliveryZone ?? '')} – ${esc(o.deliveryAddress)}</p>
+<p>Payment: <strong>${paymentMethodLabels[o.paymentMethod]}</strong><br>${isStorePickup(o.deliveryZone) ? 'Collect from' : 'Delivery'}: ${esc(o.deliveryZone ?? '')} – ${esc(o.deliveryAddress)}</p>
+${isStorePickup(o.deliveryZone) || o.deliveryFee ? '' : `<p style="color:#475569;font-size:13px">${esc(DELIVERY_TBC_NOTE)}</p>`}
 ${orderTable(o)}${button(orderLink(o), 'View or track your order')}`,
   )
   return { subject: title, html, text: `${title}\n\n${textSummary(o)}\n\nTrack: ${orderLink(o)}` }
