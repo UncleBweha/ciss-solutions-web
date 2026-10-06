@@ -145,6 +145,7 @@ export function orderConfirmationEmail(o: OrderEmailData) {
   return { subject, html, text: `Thanks for your order ${o.orderNumber}.\n\n${textSummary(o)}\n\nTrack: ${orderLink(o)}${textFooter}` }
 }
 
+/** The customer's one email for an M-Pesa order: order received and payment cleared. */
 export function paymentConfirmationEmail(o: OrderEmailData) {
   const subject = `Order confirmed: ${o.orderNumber} | CISS Solutions`
   const receipt = o.receipt ? `, M&#8209;Pesa receipt ${strong(o.receipt)}` : ''
@@ -188,24 +189,20 @@ export function orderStatusEmail(o: OrderEmailData & { status: OrderStatus }) {
   return { subject, html, text: `${c.text} Order ${o.orderNumber}.\n\n${orderLink(o)}${textFooter}` }
 }
 
-/** Staff alert. 'placed' goes out with every new order; 'paid' follows once an M-Pesa payment is confirmed. */
+/** Staff alert, one per order: 'placed' as soon as a non-M-Pesa order comes in, 'paid' once an M-Pesa payment clears. */
 export function adminNewOrderEmail(o: OrderEmailData, stage: 'placed' | 'paid' = 'placed') {
   const method = paymentMethodLabels[o.paymentMethod]
-  const awaiting = stage === 'placed' && o.paymentMethod === 'mpesa'
-  const subject =
-    stage === 'paid' ? `Payment received: order ${o.orderNumber} – ${formatKES(o.total)}` : `New order ${o.orderNumber} – ${formatKES(o.total)}${awaiting ? ' (awaiting payment)' : ''}`
+  const subject = `New order ${o.orderNumber} – ${formatKES(o.total)}${stage === 'paid' ? ' (paid)' : ''}`
   const intro =
     stage === 'paid'
-      ? `${esc(o.customerName)} has paid for this order by ${esc(method)}${o.receipt ? ` (ref ${strong(o.receipt)})` : ''}.`
-      : awaiting
-        ? `${esc(o.customerName)} placed an order and is paying by ${esc(method)}. You will get another email when the payment is confirmed.`
-        : `${esc(o.customerName)} placed an order paid by ${esc(method)}.`
+      ? `${esc(o.customerName)} placed an order and has paid by ${esc(method)}${o.receipt ? ` (ref ${strong(o.receipt)})` : ''}.`
+      : `${esc(o.customerName)} placed an order paid by ${esc(method)}.`
   const pickup = isStorePickup(o.deliveryZone)
   const contact = [o.customerPhone ? `Phone: ${formatKenyanPhone(o.customerPhone)}` : null, o.customerEmail ? `Email: ${o.customerEmail}` : null].filter((l): l is string => Boolean(l))
   const delivery = pickup ? `${o.deliveryZone}: the customer will collect from the shop.` : `${o.deliveryZone ?? 'Delivery'}: ${o.deliveryAddress}. Call the customer to agree the courier and delivery cost.`
   const html = layout(subject, {
-    tone: stage === 'paid' ? 'success' : awaiting ? 'warning' : 'info',
-    label: stage === 'paid' ? 'Payment received' : awaiting ? 'New order · awaiting payment' : 'New order',
+    tone: stage === 'paid' ? 'success' : 'info',
+    label: stage === 'paid' ? 'New order · paid' : 'New order',
     heading: o.orderNumber,
     intro: `<p style="margin:0 0 12px">${intro}</p><p style="margin:0 0 12px">${contact.map(esc).join('<br>')}</p><p style="margin:0">${esc(delivery)}</p>`,
     order: o,
