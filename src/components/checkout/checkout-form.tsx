@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { useForm, type FieldPath } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Banknote, Building2, Check, Lock, Pencil, ShoppingCart, Smartphone, Store, Truck } from 'lucide-react'
+import { Banknote, Building2, Check, Loader2, Lock, Pencil, ShoppingCart, Smartphone, Store, Truck } from 'lucide-react'
 import { placeOrderAction } from '@/actions/checkout'
 import { useCart } from '@/components/cart/cart-provider'
 import { OrderSummary } from '@/components/cart/order-summary'
@@ -57,6 +57,8 @@ export function CheckoutForm({
   const [coupon, setCoupon] = useState<string | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [placing, startPlacing] = useTransition()
+  // Set once the order exists: the cart is emptied before the order page has loaded.
+  const [placed, setPlaced] = useState(false)
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
@@ -102,6 +104,15 @@ export function CheckoutForm({
   }, [county, pickup, codAllowed, method, fallbackMethod, setValue])
 
   if (!ready) return <div className="skeleton h-96 rounded-[var(--radius-card)]" />
+  if (placed) {
+    return (
+      <EmptyState
+        icon={<Loader2 className="h-8 w-8 animate-spin" />}
+        title="Order placed."
+        description="Taking you to your order…"
+      />
+    )
+  }
   if (!items.length) {
     return (
       <EmptyState
@@ -128,6 +139,7 @@ export function CheckoutForm({
         items: items.map(({ productId, variantId, quantity }) => ({ productId, variantId, quantity })),
       })
       if (result.ok) {
+        setPlaced(true)
         clear()
         router.push(result.redirectTo)
         return
