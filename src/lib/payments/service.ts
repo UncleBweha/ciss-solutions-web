@@ -150,7 +150,11 @@ async function confirm(
   const status = (data as { status: string }).status as CallbackOutcome
   if (status === 'confirmed') {
     logger.info('mpesa.payment_confirmed', { paymentId, receipt })
-    background('payment_confirmed', () => notifyPaymentConfirmed(orderId))
+    // confirm_payment() queued the receipt emails in the outbox; send them after the response.
+    // (Dynamic import: the outbox worker itself imports this module for the STK push.)
+    background('outbox:payment_confirmed', async () =>
+      (await import('@/lib/outbox')).runTaskNow(orderId, 'payment_confirmed', () => notifyPaymentConfirmed(orderId)),
+    )
   }
   // Confirmed earlier by a status query: record the receipt once the callback brings it.
   if (status === 'already_paid' && receipt && !existingReference) {
