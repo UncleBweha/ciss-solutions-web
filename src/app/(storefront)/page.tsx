@@ -4,7 +4,6 @@ import { ProductRail } from '@/components/product/product-card'
 import { BrandCard, CategoryCard } from '@/components/storefront/cards'
 import { Hero, type HeroSlide } from '@/components/storefront/hero'
 import { PartFinder, PartFinderPanel } from '@/components/storefront/part-finder'
-import { TrustBar } from '@/components/storefront/trust-bar'
 import { buttonClass } from '@/components/ui/button'
 import { SectionHeading } from '@/components/ui/misc'
 import { InkBackdrop } from '@/components/storefront/ink-backdrop'
@@ -114,8 +113,6 @@ async function renderSection(section: HomepageSection, banners: Awaited<ReturnTy
       )
     }
 
-    case 'trust':
-      return <TrustBar />
 
     case 'categories': {
       const tree = await getCategoryTree()

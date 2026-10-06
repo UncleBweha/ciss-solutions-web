@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { CheckCircle2, Clock, FileText } from 'lucide-react'
-import { MpesaPaymentStatus } from '@/components/checkout/payment-status'
+import { FileText } from 'lucide-react'
+import { MpesaPaymentProvider, MpesaPaymentStatus, OrderHeading } from '@/components/checkout/payment-status'
 import { OrderTimeline } from '@/components/checkout/order-timeline'
 import { OrderSummary } from '@/components/cart/order-summary'
 import { ProductImage } from '@/components/product/product-image'
@@ -22,6 +22,8 @@ export const metadata: Metadata = { title: 'Your order', robots: { index: false 
 export default async function OrderPage({ params, searchParams }: PageProps<'/order/[number]'>) {
   const [{ number }, sp] = await Promise.all([params, searchParams])
   const token = param(sp.t) ?? null
+  // Straight from checkout: a payment confirmation. Order progress is for people tracking an order.
+  const justPlaced = param(sp.placed) === '1'
   const order = await getOrderForViewer(decodeURIComponent(number), token)
   if (!order) notFound()
 
@@ -38,37 +40,20 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
   const paybill = settings.payment_methods.mpesa_paybill
   const tokenQs = token ? `?t=${token}` : ''
 
-  return (
+  const page = (
     <div className="container-page max-w-5xl py-10">
-      <header className="mb-8 text-center">
-        {failed ? (
-          <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-danger/15 text-danger">
-            <Clock className="h-8 w-8" aria-hidden="true" />
-          </span>
-        ) : (
-          <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-success/15 text-success">
-            <CheckCircle2 className="h-9 w-9" aria-hidden="true" />
-          </span>
-        )}
-        <h1 className="text-3xl font-bold sm:text-4xl">
-          {failed ? `Order ${orderStatusLabels[order.order_status].toLowerCase()}` : paid || !isMpesa ? 'Order Confirmed' : 'Almost there'}
-        </h1>
-        <p className="mt-2 text-fg-secondary">
-          {failed
-            ? 'This order is no longer active.'
-            : paid || !isMpesa
-              ? 'Thank you for your order. A confirmation has been sent to your email.'
-              : 'Complete your M-Pesa payment to confirm your order.'}
-        </p>
-        <p className="mt-4 text-lg">
-          Order <strong className="font-mono">#{order.order_number}</strong>
-        </p>
-      </header>
+      <OrderHeading
+        orderNumber={order.order_number}
+        paid={paid}
+        awaitingMpesa={isMpesa && !paid}
+        failedLabel={failed ? orderStatusLabels[order.order_status] : null}
+        celebrate={justPlaced}
+      />
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
           {isMpesa && !failed && view ? (
-            <MpesaPaymentStatus orderNumber={order.order_number} token={token} phone={order.customer_phone} total={Number(order.total)} initial={{ state: view.state, message: view.message }} />
+            <MpesaPaymentStatus orderNumber={order.order_number} token={token} phone={order.customer_phone} />
           ) : null}
 
           {order.payment_method === 'bank_transfer' && !paid && !failed ? (
@@ -115,6 +100,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
             </section>
           ) : null}
 
+          {justPlaced ? null : (
           <section className="glass-flat rounded-[var(--radius-card)] p-5 sm:p-6">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-bold">Order status</h2>
@@ -122,6 +108,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
             </div>
             {failed ? <p className="text-sm text-fg-secondary">Status: {orderStatusLabels[order.order_status]}.</p> : <OrderTimeline order={order} />}
           </section>
+          )}
 
           <section className="glass-flat rounded-[var(--radius-card)] p-5 sm:p-6">
             <h2 className="mb-4 text-lg font-bold">Items</h2>
@@ -193,5 +180,13 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
         </div>
       </div>
     </div>
+  )
+  // M-Pesa orders share one live payment state between the heading and the prompt panel.
+  return isMpesa && !failed && view ? (
+    <MpesaPaymentProvider orderNumber={order.order_number} token={token} total={Number(order.total)} initial={{ state: view.state, message: view.message }}>
+      {page}
+    </MpesaPaymentProvider>
+  ) : (
+    page
   )
 }

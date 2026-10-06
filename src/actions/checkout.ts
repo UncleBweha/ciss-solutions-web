@@ -171,7 +171,7 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   return {
     ok: true,
     orderNumber: order.order_number,
-    redirectTo: `/order/${encodeURIComponent(order.order_number)}?t=${order.access_token}`,
+    redirectTo: `/order/${encodeURIComponent(order.order_number)}?t=${order.access_token}&placed=1`,
     paymentMessage,
   }
 }

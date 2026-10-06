@@ -264,6 +264,28 @@
 .animate-fade-up { animation: fade-up 0.5s ease-out both; }
 .animate-cart-bump { animation: cart-bump 0.4s ease-out; }
 
+/* Payment confirmed: a short burst of paper falling behind the heading. */
+.confetti {
+  position: absolute;
+  inset: -1rem 0 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.confetti i {
+  position: absolute;
+  top: -0.75rem;
+  width: 0.45rem;
+  height: 0.8rem;
+  border-radius: 1px;
+  opacity: 0;
+  animation: confetti-fall 2s ease-in forwards;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotateX(0); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(14rem) rotateX(540deg); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
