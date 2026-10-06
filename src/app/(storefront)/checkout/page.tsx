@@ -4,7 +4,7 @@ import { LinkButton } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/misc'
 import { getSessionUser } from '@/lib/auth'
 import { getSettings } from '@/lib/catalog'
-import { localKenyanPhone } from '@/lib/ecommerce/kenya'
+import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Checkout', robots: { index: false } }
@@ -46,7 +46,7 @@ export default async function CheckoutPage() {
         defaults={{
           fullName: user?.fullName ?? '',
           email: user?.email ?? '',
-          phone: user?.phone ? localKenyanPhone(user.phone) : '',
+          phone: user?.phone ? formatKenyanPhone(user.phone) : '',
         }}
         addresses={addresses}
         shop={{ address: settings.business.address || settings.business.location, hours: settings.business.business_hours }}

@@ -6,7 +6,7 @@ import { retryMpesaPaymentAction } from '@/actions/checkout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/form'
 import { track } from '@/lib/analytics'
-import { formatKenyanPhone, localKenyanPhone } from '@/lib/ecommerce/kenya'
+import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 
 type View = { state: 'paid' | 'pending' | 'failed' | 'expired' | 'none'; message: string | null }
 
@@ -29,7 +29,7 @@ export function MpesaPaymentStatus({
 }) {
   const router = useRouter()
   const [view, setView] = useState<View>(initial)
-  const [retryPhone, setRetryPhone] = useState(localKenyanPhone(phone))
+  const [retryPhone, setRetryPhone] = useState(formatKenyanPhone(phone))
   const [notice, setNotice] = useState<string | null>(null)
   const [pending, start] = useTransition()
   const polls = useRef(0)
