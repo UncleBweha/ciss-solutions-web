@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { completePasswordResetAction, requestPasswordResetAction, restartPasswordResetAction, signInAction, signInWithGoogleAction, signUpAction, updatePasswordAction, verifyResetCodeAction } from '@/actions/auth'
 import { Button } from '@/components/ui/button'
@@ -123,6 +123,8 @@ export function ResetRequestForm() {
 export function ResetCodeForm({ email, justSent }: { email: string; justSent: boolean }) {
   const [state, action, pending] = useActionState(verifyResetCodeAction, {})
   const [resend, resendAction, resending] = useActionState(requestPasswordResetAction, {})
+  // Digits only: anything else typed or pasted (spaces, letters, dashes) is dropped as it arrives.
+  const [code, setCode] = useState('')
   return (
     <div className="space-y-4">
       <FormMessage tone="success">
@@ -130,7 +132,17 @@ export function ResetCodeForm({ email, justSent }: { email: string; justSent: bo
       </FormMessage>
       <form action={action} className="space-y-4">
         <Field label="Code from the email" htmlFor="code" error={state.errors?.code} required>
-          <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={16} className="font-mono tracking-[0.3em]" autoFocus required />
+          <Input
+            id="code"
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
+            className="font-mono tracking-[0.3em]"
+            autoFocus
+            required
+          />
         </Field>
         <FormMessage>{state.message}</FormMessage>
         <Button type="submit" size="lg" className="w-full" loading={pending}>
