@@ -16,6 +16,7 @@ const kindLabels: Record<string, string> = {
   new_review: 'New review',
   new_support_request: 'Support request',
   stock_shortage: 'Stock shortage',
+  outbox_dead: 'Task failed',
 }
 
 export default async function NotificationsPage() {
@@ -42,7 +43,7 @@ export default async function NotificationsPage() {
               const href = link(n)
               return (
                 <tr key={n.id}>
-                  <Td><Badge tone={n.kind === 'low_stock' || n.kind === 'payment_failed' || n.kind === 'stock_shortage' ? 'warning' : 'info'}>{kindLabels[n.kind] ?? n.kind}</Badge></Td>
+                  <Td><Badge tone={n.kind === 'outbox_dead' ? 'danger' : n.kind === 'low_stock' || n.kind === 'payment_failed' || n.kind === 'stock_shortage' ? 'warning' : 'info'}>{kindLabels[n.kind] ?? n.kind}</Badge></Td>
                   <Td className={n.read_at ? 'text-fg-secondary' : 'font-semibold'}>{href ? <Link href={href} className="hover:text-primary-light">{n.subject}</Link> : n.subject}</Td>
                   <Td className="whitespace-nowrap text-fg-muted">{formatDateTime(n.created_at)}</Td>
                 </tr>

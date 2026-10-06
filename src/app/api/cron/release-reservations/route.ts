@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { logger } from '@/lib/logger'
+import { runOutbox } from '@/lib/outbox'
 import { releaseExpiredReservations } from '@/lib/payments/service'
 import { safeEqual } from '@/lib/security'
 import { serverEnv } from '@/lib/server-env'
 
-// Reconciles M-Pesa pushes still awaiting a result, then releases stock held by
-// unpaid orders whose payment window has passed.
+// Reconciles M-Pesa pushes still awaiting a result, releases stock held by unpaid
+// orders whose payment window has passed, and sweeps the outbox (emails, STK pushes).
 // Schedule every 5-10 minutes (Vercel Cron, GitHub Actions, or crontab + curl):
 //   curl -H "Authorization: Bearer $CRON_SECRET" https://<site>/api/cron/release-reservations
 export async function GET(request: NextRequest) {
@@ -14,6 +15,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const result = await releaseExpiredReservations()
-  logger.info('cron.release_reservations', result)
-  return NextResponse.json(result)
+  // Sweep the outbox: anything not finished by the request that created it.
+  const tasks = await runOutbox({ limit: 50 })
+  const outbox = {
+    done: tasks.filter((t) => t.outcome === 'done').length,
+    retry: tasks.filter((t) => t.outcome === 'retry').length,
+    dead: tasks.filter((t) => t.outcome === 'dead').length,
+  }
+  logger.info('cron.release_reservations', { ...result, outbox })
+  return NextResponse.json({ ...result, outbox })
 }
