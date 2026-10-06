@@ -19,12 +19,12 @@ class LogEmailProvider implements EmailProvider {
 
 /** Resend (https://resend.com) over HTTPS; swap for another provider by implementing EmailProvider. */
 class ResendEmailProvider implements EmailProvider {
-  constructor(private readonly apiKey: string, private readonly from: string, private readonly replyTo: string) {}
+  constructor(private readonly apiKey: string, private readonly from: string) {}
   async send(message: EmailMessage) {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: this.from, reply_to: this.replyTo, to: message.to, subject: message.subject, html: message.html, text: message.text }),
+      body: JSON.stringify({ from: this.from, to: message.to, subject: message.subject, html: message.html, text: message.text }),
       signal: AbortSignal.timeout(15_000),
     })
     if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text().catch(() => '')}`)
@@ -35,7 +35,7 @@ class ResendEmailProvider implements EmailProvider {
 /** Sends through a mailbox over SMTP. Port 465 uses TLS from the start; 587 upgrades with STARTTLS. */
 class SmtpEmailProvider implements EmailProvider {
   private readonly transport
-  constructor(smtp: { host: string; port: number; user: string; password: string }, private readonly from: string, private readonly replyTo: string) {
+  constructor(smtp: { host: string; port: number; user: string; password: string }, private readonly from: string) {
     this.transport = nodemailer.createTransport({
       host: smtp.host,
       port: smtp.port,
@@ -46,7 +46,7 @@ class SmtpEmailProvider implements EmailProvider {
     })
   }
   async send(message: EmailMessage) {
-    const info = await this.transport.sendMail({ from: this.from, replyTo: this.replyTo, to: message.to, subject: message.subject, html: message.html, text: message.text })
+    const info = await this.transport.sendMail({ from: this.from, to: message.to, subject: message.subject, html: message.html, text: message.text })
     return { id: info.messageId }
   }
 }
@@ -54,11 +54,11 @@ class SmtpEmailProvider implements EmailProvider {
 let smtpProvider: SmtpEmailProvider | undefined
 
 export function getEmailProvider(): EmailProvider {
-  const { provider, apiKey, from, orders, smtp } = serverEnv.email
-  if (provider === 'resend' && apiKey) return new ResendEmailProvider(apiKey, from, orders)
+  const { provider, apiKey, from, smtp } = serverEnv.email
+  if (provider === 'resend' && apiKey) return new ResendEmailProvider(apiKey, from)
   if (provider === 'smtp' && smtp.host && smtp.user && smtp.password) {
     // One transport for the life of the server, so connections are reused.
-    smtpProvider ??= new SmtpEmailProvider({ host: smtp.host, port: smtp.port, user: smtp.user, password: smtp.password }, from, orders)
+    smtpProvider ??= new SmtpEmailProvider({ host: smtp.host, port: smtp.port, user: smtp.user, password: smtp.password }, from)
     return smtpProvider
   }
   return new LogEmailProvider()

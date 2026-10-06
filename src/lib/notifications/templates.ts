@@ -31,7 +31,7 @@ function layout(title: string, body: string) {
 <tr><td style="background:#ffffff;border-bottom:4px solid #0b6fd8;padding:20px 28px;color:#111827;font-size:20px;font-weight:800">CISS Solutions</td></tr>
 <tr><td style="height:4px;background:linear-gradient(90deg,#06b6d4 0 25%,#db2777 25% 50%,#facc15 50% 75%,#e2e8f0 75%)"></td></tr>
 <tr><td style="padding:28px"><h1 style="margin:0 0 12px;font-size:22px">${esc(title)}</h1>${body}</td></tr>
-<tr><td style="padding:18px 28px;background:#f8fafc;color:#64748b;font-size:12px">CISS Solutions · Printers, spare parts, ink &amp; toner in Kenya · <a href="${siteUrl}" style="color:#0b6fd8">${siteUrl.replace(/^https?:\/\//, '')}</a></td></tr>
+<tr><td style="padding:18px 28px;background:#f8fafc;color:#64748b;font-size:12px">CISS Solutions · Printers, spare parts, ink &amp; toner in Kenya · <a href="${siteUrl}" style="color:#0b6fd8">${siteUrl.replace(/^https?:\/\//, '')}</a><br>This is an automated email. Replies to this address are not read.</td></tr>
 </table></td></tr></table></body></html>`
 }
 
