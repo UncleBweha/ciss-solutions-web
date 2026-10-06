@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import { saveCartAction, syncCartAction } from '@/actions/cart'
 import { setWishlistAction, syncWishlistAction } from '@/actions/wishlist'
 import { track } from '@/lib/analytics'
@@ -58,6 +59,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [signedIn, setSignedIn] = useState(false)
   const [account, setAccount] = useState<AccountSummary | null>(null)
   const refreshAccountRef = useRef<() => void>(() => {})
+  const recheckSessionRef = useRef<() => void>(() => {})
+  const pathname = usePathname()
   const [bump, setBump] = useState(0)
   const signedInRef = useRef(false)
   // Wishlist taps made while an account sync is in flight, re-applied on its result.
@@ -136,6 +139,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
           void loadAccount(data.session.user)
         }
       })
+      // Signing in and out happen on the server (form actions), which this browser client
+      // hears nothing about. Compare with the session cookie and catch up if it changed.
+      recheckSessionRef.current = () => {
+        void supabase.auth.getSession().then(({ data }) => {
+          const has = Boolean(data.session)
+          if (cancelled || has === signedInRef.current) return
+          signedInRef.current = has
+          setSignedIn(has)
+          if (data.session) {
+            void syncForUser()
+            void loadAccount(data.session.user, true)
+          } else {
+            // The account keeps its cart; this shared browser starts empty.
+            setItems([])
+            setWishlist(new Set())
+            setAccount(null)
+          }
+        })
+      }
       const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
         const has = Boolean(session)
         if (event === 'SIGNED_IN' && !signedInRef.current) void syncForUser()
@@ -224,6 +246,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if ('error' in result) return 'local' as const
     return result.saved ? ('saved' as const) : ('removed' as const)
   }, [wishlist])
+
+  // Every navigation: a sign-in or sign-out form has usually just redirected here.
+  useEffect(() => {
+    recheckSessionRef.current()
+  }, [pathname])
 
   const refreshAccount = useCallback(() => refreshAccountRef.current(), [])
 
