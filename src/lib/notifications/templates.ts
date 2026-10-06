@@ -243,7 +243,7 @@ export function welcomeEmail(name: string) {
 export const RESET_CODE_MINUTES = 15
 
 export function passwordResetEmail(code: string) {
-  const subject = `${code} is your Ciss Solutions password reset code`
+  const subject = 'Your Ciss Solutions password reset code'
   const html = layout(subject, {
     tone: 'info',
     label: 'Password reset',

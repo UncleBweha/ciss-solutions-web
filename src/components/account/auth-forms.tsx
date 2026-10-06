@@ -1,8 +1,8 @@
 'use client'
 import Link from 'next/link'
-import { useActionState, useState } from 'react'
+import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { completePasswordResetAction, requestPasswordResetAction, signInAction, signInWithGoogleAction, signUpAction, updatePasswordAction, verifyResetCodeAction } from '@/actions/auth'
+import { completePasswordResetAction, requestPasswordResetAction, restartPasswordResetAction, signInAction, signInWithGoogleAction, signUpAction, updatePasswordAction, verifyResetCodeAction } from '@/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Field, FormMessage, Input } from '@/components/ui/form'
 
@@ -101,63 +101,74 @@ export function SignUpForm({ next }: { next?: string }) {
   )
 }
 
-/** Three steps on one page: ask for a code by email, enter the code, then choose a new password. */
-export function ForgotPasswordForm() {
-  const [email, setEmail] = useState('')
-  const [request, requestAction, requesting] = useActionState(requestPasswordResetAction, {})
-  const [verify, verifyAction, verifying] = useActionState(verifyResetCodeAction, {})
-  const [reset, resetAction, resetting] = useActionState(completePasswordResetAction, {})
+// "Forgot password" is three forms; the page decides which one to show (see lib/reset-flow.ts).
 
-  if (!request.ok) {
-    return (
-      <form action={requestAction} className="space-y-4">
-        <Field label="Email" htmlFor="email" error={request.errors?.email} required>
-          <Input id="email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+/** Step 1: ask for a code by email. */
+export function ResetRequestForm() {
+  const [state, action, pending] = useActionState(requestPasswordResetAction, {})
+  return (
+    <form action={action} className="space-y-4">
+      <Field label="Email" htmlFor="email" error={state.errors?.email} required>
+        <Input id="email" name="email" type="email" autoComplete="email" required />
+      </Field>
+      <FormMessage>{state.message}</FormMessage>
+      <Button type="submit" size="lg" className="w-full" loading={pending}>
+        Email me a code
+      </Button>
+    </form>
+  )
+}
+
+/** Step 2: enter the emailed code. */
+export function ResetCodeForm({ email, justSent }: { email: string; justSent: boolean }) {
+  const [state, action, pending] = useActionState(verifyResetCodeAction, {})
+  const [resend, resendAction, resending] = useActionState(requestPasswordResetAction, {})
+  return (
+    <div className="space-y-4">
+      <FormMessage tone="success">
+        {justSent ? 'Code sent. ' : ''}If an account exists for {email}, we have emailed it a code. It is valid for 15 minutes.
+      </FormMessage>
+      <form action={action} className="space-y-4">
+        <Field label="Code from the email" htmlFor="code" error={state.errors?.code} required>
+          <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={16} className="font-mono tracking-[0.3em]" autoFocus required />
         </Field>
-        <FormMessage>{request.message}</FormMessage>
-        <Button type="submit" size="lg" className="w-full" loading={requesting}>
-          Email me a code
+        <FormMessage>{state.message}</FormMessage>
+        <Button type="submit" size="lg" className="w-full" loading={pending}>
+          Continue
         </Button>
       </form>
-    )
-  }
-
-  if (!verify.ok) {
-    return (
-      <div className="space-y-4">
-        <FormMessage tone="success">{request.message}</FormMessage>
-        <form action={verifyAction} className="space-y-4">
-          <input type="hidden" name="email" value={email} />
-          <Field label="Code from the email" htmlFor="code" error={verify.errors?.code} required>
-            <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6,10}" maxLength={10} className="font-mono tracking-[0.3em]" autoFocus required />
-          </Field>
-          <FormMessage>{verify.message}</FormMessage>
-          <Button type="submit" size="lg" className="w-full" loading={verifying}>
-            Continue
-          </Button>
+      <FormMessage>{resend.message}</FormMessage>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm font-semibold text-primary-light">
+        <form action={resendAction}>
+          <button type="submit" className="hover:underline" disabled={resending}>
+            {resending ? 'Sending…' : 'Send a new code'}
+          </button>
         </form>
-        <form action={requestAction}>
-          <input type="hidden" name="email" value={email} />
-          <button type="submit" className="text-sm font-semibold text-primary-light hover:underline" disabled={requesting}>
-            {requesting ? 'Sending…' : 'Send a new code'}
+        <form action={restartPasswordResetAction}>
+          <button type="submit" className="hover:underline">
+            Use a different email
           </button>
         </form>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
+/** Step 3: the code was accepted; choose the new password. */
+export function ResetPasswordForm() {
+  const [state, action, pending] = useActionState(completePasswordResetAction, {})
   return (
     <div className="space-y-4">
       <FormMessage tone="success">Code accepted. Choose a new password.</FormMessage>
-      <form action={resetAction} className="space-y-4">
-        <Field label="New password" htmlFor="password" error={reset.errors?.password} required>
+      <form action={action} className="space-y-4">
+        <Field label="New password" htmlFor="password" error={state.errors?.password} required>
           <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} autoFocus required />
         </Field>
-        <Field label="Confirm password" htmlFor="confirm" error={reset.errors?.confirm} required>
+        <Field label="Confirm password" htmlFor="confirm" error={state.errors?.confirm} required>
           <Input id="confirm" name="confirm" type="password" autoComplete="new-password" required />
         </Field>
-        <FormMessage>{reset.message}</FormMessage>
-        <Button type="submit" size="lg" className="w-full" loading={resetting}>
+        <FormMessage>{state.message}</FormMessage>
+        <Button type="submit" size="lg" className="w-full" loading={pending}>
           Reset password
         </Button>
       </form>
