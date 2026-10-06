@@ -95,7 +95,8 @@ export class DarajaProvider implements MpesaProvider {
         Timestamp: timestamp,
         CheckoutRequestID: checkoutRequestId,
       })
-      if (body.ResultCode === undefined) return { state: 'pending' }
+      // 4999: "The transaction is still under processing" (the customer has not entered their PIN yet).
+      if (body.ResultCode === undefined || String(body.ResultCode) === '4999') return { state: 'pending' }
       if (String(body.ResultCode) === '0') return { state: 'success' }
       return { state: 'failed', code: String(body.ResultCode), description: body.ResultDesc ?? 'Payment failed' }
     } catch (error) {
