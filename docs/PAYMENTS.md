@@ -20,8 +20,9 @@ Customer          Next.js server                       Postgres                 
    │ Place order ───►│ placeOrderAction                     │                        │
    │                 │  validate input, rate limit          │                        │
    │                 │  place_order() ─────────────────────►│ price, reserve stock,  │
-   │                 │                                      │ order PAYMENT_PENDING  │
-   │                 │  initiateMpesaPayment()              │                        │
+   │                 │                                      │ order PAYMENT_PENDING, │
+   │                 │                                      │ outbox: STK push task  │
+   │                 │  run outbox task → initiateMpesaPayment()                     │
    │                 │   payments row (PENDING) ───────────►│                        │
    │                 │   STK Push ──────────────────────────┼───────────────────────►│
    │                 │   save MerchantRequestID,            │                        │
@@ -64,6 +65,9 @@ database is unreachable), so Safaricom retries later.
   retry from the order page, up to a rate limit, with the same or a different number.
 - If neither a callback nor a query answer arrives within 3 minutes, the attempt is marked failed
   (code 1019) and the customer can retry.
+- If the server stops between saving the order and sending the STK push, the push is still in
+  the outbox (committed with the order); the cron sweep sends it within 10 minutes of the order,
+  and never sends a second prompt if one was already attempted.
 - A lost callback doesn't strand a paid order: the order page queries Safaricom (STK Query)
   after 15 seconds without a result, and the cron job does the same for every push still
   awaiting a result, so it works even if the customer closed the page.
