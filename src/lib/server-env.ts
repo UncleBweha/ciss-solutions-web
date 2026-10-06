@@ -29,5 +29,9 @@ export const serverEnv = {
     orders: optional('ORDERS_EMAIL') ?? 'orders@cisssolutions.co.ke',
     adminAlerts: (optional('ADMIN_ALERT_EMAILS') ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   },
+  google: {
+    clientId: optional('GOOGLE_CLIENT_ID'),
+    clientSecret: optional('GOOGLE_CLIENT_SECRET'),
+  },
   cronSecret: optional('CRON_SECRET'),
 }

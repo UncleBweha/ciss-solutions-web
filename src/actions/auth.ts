@@ -1,11 +1,15 @@
 'use server'
+import { createHash, randomBytes } from 'node:crypto'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { siteUrl } from '@/lib/env'
+import { GOOGLE_OAUTH_COOKIE, GOOGLE_OAUTH_COOKIE_PATH, googleRedirectUri } from '@/lib/google-oauth'
 import { logger } from '@/lib/logger'
 import { getEmailProvider } from '@/lib/notifications/email'
 import { welcomeEmail } from '@/lib/notifications/templates'
 import { clientIp, rateLimit } from '@/lib/security'
+import { serverEnv } from '@/lib/server-env'
 import { createClient } from '@/lib/supabase/server'
 import { fieldErrors, optionalKenyanPhone, type FormState } from '@/lib/validation/forms'
 
@@ -35,6 +39,35 @@ export async function signInAction(_prev: FormState, formData: FormData): Promis
   const next = safeNext(formData.get('next'))
   if (profile && profile.role !== 'customer') redirect(next.startsWith('/admin') ? next : '/admin')
   redirect(next)
+}
+
+/** Starts the Google sign-in: sends the browser to Google, which returns to /auth/google/callback. */
+export async function signInWithGoogleAction(formData: FormData) {
+  const ip = await clientIp()
+  const clientId = serverEnv.google.clientId
+  if (!clientId || !(await rateLimit(`login:${ip}`, 300, 600))) redirect('/login?error=google')
+
+  const state = randomBytes(16).toString('hex')
+  const nonce = randomBytes(16).toString('hex')
+  const cookieStore = await cookies()
+  cookieStore.set(GOOGLE_OAUTH_COOKIE, JSON.stringify({ state, nonce, next: safeNext(formData.get('next')) }), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: siteUrl.startsWith('https://'),
+    path: GOOGLE_OAUTH_COOKIE_PATH,
+    maxAge: 600,
+  })
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: googleRedirectUri,
+    response_type: 'code',
+    scope: 'openid email profile',
+    state,
+    // Supabase checks the ID token against the SHA-256 of the nonce it is given.
+    nonce: createHash('sha256').update(nonce).digest('hex'),
+    prompt: 'select_account',
+  })
+  redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
 }
 
 export async function signUpAction(_prev: FormState, formData: FormData): Promise<FormState> {
