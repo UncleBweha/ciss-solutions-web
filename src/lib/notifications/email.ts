@@ -1,4 +1,5 @@
 import 'server-only'
+import nodemailer from 'nodemailer'
 import { logger } from '@/lib/logger'
 import { serverEnv } from '@/lib/server-env'
 
@@ -31,8 +32,34 @@ class ResendEmailProvider implements EmailProvider {
   }
 }
 
+/** Sends through a mailbox over SMTP. Port 465 uses TLS from the start; 587 upgrades with STARTTLS. */
+class SmtpEmailProvider implements EmailProvider {
+  private readonly transport
+  constructor(smtp: { host: string; port: number; user: string; password: string }, private readonly from: string, private readonly replyTo: string) {
+    this.transport = nodemailer.createTransport({
+      host: smtp.host,
+      port: smtp.port,
+      secure: smtp.port === 465,
+      auth: { user: smtp.user, pass: smtp.password },
+      connectionTimeout: 15_000,
+      socketTimeout: 20_000,
+    })
+  }
+  async send(message: EmailMessage) {
+    const info = await this.transport.sendMail({ from: this.from, replyTo: this.replyTo, to: message.to, subject: message.subject, html: message.html, text: message.text })
+    return { id: info.messageId }
+  }
+}
+
+let smtpProvider: SmtpEmailProvider | undefined
+
 export function getEmailProvider(): EmailProvider {
-  const { provider, apiKey, from, orders } = serverEnv.email
+  const { provider, apiKey, from, orders, smtp } = serverEnv.email
   if (provider === 'resend' && apiKey) return new ResendEmailProvider(apiKey, from, orders)
+  if (provider === 'smtp' && smtp.host && smtp.user && smtp.password) {
+    // One transport for the life of the server, so connections are reused.
+    smtpProvider ??= new SmtpEmailProvider({ host: smtp.host, port: smtp.port, user: smtp.user, password: smtp.password }, from, orders)
+    return smtpProvider
+  }
   return new LogEmailProvider()
 }
