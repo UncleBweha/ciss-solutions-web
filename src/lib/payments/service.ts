@@ -1,6 +1,6 @@
 import 'server-only'
 import { logger } from '@/lib/logger'
-import { background, notifyPaymentConfirmed } from '@/lib/notifications'
+import { background } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { describeResultCode, parseStkCallback } from './mpesa-result'
 import { mockReceipt } from './mock'
@@ -150,7 +150,9 @@ async function confirm(
   const status = (data as { status: string }).status as CallbackOutcome
   if (status === 'confirmed') {
     logger.info('mpesa.payment_confirmed', { paymentId, receipt })
-    background('payment_confirmed', () => notifyPaymentConfirmed(orderId))
+    // confirm_payment() queued the receipt emails in the outbox; send them after the response.
+    // (Dynamic import: the outbox worker itself imports this module for the STK push.)
+    background('outbox:payment_confirmed', async () => (await import('@/lib/outbox')).runOutbox({ orderId, kinds: ['payment_confirmed'] }))
   }
   // Confirmed earlier by a status query: record the receipt once the callback brings it.
   if (status === 'already_paid' && receipt && !existingReference) {

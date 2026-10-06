@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
-    "test:db": "supabase db reset && psql \"postgresql://postgres:postgres@127.0.0.1:54322/postgres\" -v ON_ERROR_STOP=1 -q -f tests/db/order_lifecycle.sql -f tests/db/rls.sql",
+    "test:db": "supabase db reset && psql \"postgresql://postgres:postgres@127.0.0.1:54322/postgres\" -v ON_ERROR_STOP=1 -q -f tests/db/order_lifecycle.sql -f tests/db/rls.sql -f tests/db/outbox.sql",
     "test:e2e": "playwright test",
     "db:types": "supabase gen types typescript --local > src/types/database.ts",
     "db:seed:generate": "node scripts/seed/images.mjs && node scripts/seed/generate.mjs",

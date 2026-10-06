@@ -364,6 +364,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"outbox": {
+                  Row: {
+                    "attempts": number,"created_at": string,"id": string,"kind": string,"last_error": string | null,"locked_until": string | null,"max_attempts": number,"next_attempt_at": string,"order_id": string | null,"payload": NonNullable<Json>,"processed_at": string | null,"status": string,"updated_at": string
+                  }
+                  Insert: {
+                    "attempts"?: number,"created_at"?: string,"id"?: string,"kind": string,"last_error"?: string | null,"locked_until"?: string | null,"max_attempts"?: number,"next_attempt_at"?: string,"order_id"?: string | null,"payload"?: NonNullable<Json>,"processed_at"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "attempts"?: number,"created_at"?: string,"id"?: string,"kind"?: string,"last_error"?: string | null,"locked_until"?: string | null,"max_attempts"?: number,"next_attempt_at"?: string,"order_id"?: string | null,"payload"?: NonNullable<Json>,"processed_at"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "outbox_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"payments": {
                   Row: {
                     "amount": number,"checkout_request_id": string | null,"created_at": string,"id": string,"merchant_request_id": string | null,"method": Database["public"]['Enums']["payment_method"],"order_id": string,"paid_at": string | null,"phone_number": string | null,"provider": string,"raw_response": Json | null,"result_code": string | null,"result_description": string | null,"status": Database["public"]['Enums']["payment_status"],"transaction_reference": string | null,"updated_at": string
@@ -795,6 +814,31 @@ isOneToOne: false
 "check_rate_limit":
 { Args: { "p_key": string,"p_max": number,"p_window_seconds": number }; Returns: boolean
                            },
+"claim_outbox":
+{ Args: { "p_kinds"?: (string)[],"p_limit"?: number,"p_order_id"?: string }; Returns: {
+              "attempts": number,
+"created_at": string,
+"id": string,
+"kind": string,
+"last_error": string | null,
+"locked_until": string | null,
+"max_attempts": number,
+"next_attempt_at": string,
+"order_id": string | null,
+"payload": NonNullable<Json>,
+"processed_at": string | null,
+"status": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "outbox"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"complete_outbox":
+{ Args: { "p_id": string,"p_note"?: string }; Returns: undefined
+                           },
 "confirm_payment":
 { Args: { "p_actor"?: string,"p_amount": number,"p_payment_id": string,"p_raw"?: Json,"p_transaction_reference": string }; Returns: Json
                            },
@@ -806,6 +850,9 @@ isOneToOne: false
                            },
 "expire_stale_orders":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"fail_outbox":
+{ Args: { "p_error": string,"p_id": string }; Returns: string
                            },
 "fail_payment":
 { Args: { "p_description": string,"p_payment_id": string,"p_raw"?: Json,"p_result_code": string }; Returns: Json

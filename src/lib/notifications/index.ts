@@ -23,6 +23,18 @@ async function deliver(kind: string, to: string | string[], message: { subject: 
   const db = createAdminClient()
   const recipients = Array.isArray(to) ? to : [to]
   if (!recipients.length) return
+  // Idempotent per order: outbox tasks can be retried, so never send the same email twice.
+  if (orderId) {
+    const { data: sent } = await db
+      .from('notifications')
+      .select('id')
+      .eq('channel', 'email')
+      .eq('kind', kind)
+      .eq('order_id', orderId)
+      .eq('status', 'sent')
+      .limit(1)
+    if (sent?.length) return
+  }
   let status: 'sent' | 'failed' = 'sent'
   let error: string | null = null
   try {
@@ -43,6 +55,8 @@ async function deliver(kind: string, to: string | string[], message: { subject: 
     order_id: orderId ?? null,
     sent_at: status === 'sent' ? new Date().toISOString() : null,
   })
+  // Surface the failure so the outbox task is retried with back-off.
+  if (status === 'failed') throw new Error(`email ${kind} failed: ${error}`)
 }
 
 /** Loads what an order email needs. */

@@ -3,8 +3,9 @@ import { getSessionUser } from '@/lib/auth'
 import { getSettings } from '@/lib/catalog'
 import { quoteCart, type Quote } from '@/lib/ecommerce/quote'
 import { logger } from '@/lib/logger'
-import { background, notifyOrderPlaced } from '@/lib/notifications'
+import { background } from '@/lib/notifications'
 import { getOrderForViewer } from '@/lib/orders'
+import { runOutbox } from '@/lib/outbox'
 import { initiateMpesaPayment } from '@/lib/payments/service'
 import { clientIp, rateLimit } from '@/lib/security'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -81,6 +82,8 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
       customer_name: data.fullName,
       customer_email: data.email,
       customer_phone: data.phone,
+      // M-Pesa number for the STK push (stored in the outbox task with the order)
+      payment_phone: data.paymentMethod === 'mpesa' && data.mpesaPhone ? kenyanPhone.parse(data.mpesaPhone) : data.phone,
       payment_method: data.paymentMethod,
       subtotal: quote.subtotal,
       discount: quote.discount,
@@ -119,7 +122,8 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
 
   const order = placed as { id: string; order_number: string; access_token: string }
   logger.info('checkout.order_placed', { orderNumber: order.order_number, method: data.paymentMethod, total: quote.total })
-  background('order_placed', () => notifyOrderPlaced(order.id))
+  // Emails were queued in the outbox with the order; send them after the response.
+  background('outbox:order_placed', () => runOutbox({ orderId: order.id, kinds: ['order_placed'] }))
 
   if (user) {
     const supabase = await createClient()
@@ -141,12 +145,19 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
 
   let paymentMessage: string | undefined
   if (data.paymentMethod === 'mpesa') {
-    const phone = data.mpesaPhone ? kenyanPhone.parse(data.mpesaPhone) : data.phone
-    const result = await initiateMpesaPayment(order.id, phone).catch((e) => {
+    // The STK push task was committed with the order. Run it now so the prompt reaches
+    // the phone immediately; if this fails or the server stops, the cron sweep retries it.
+    const results = await runOutbox({ orderId: order.id, kinds: ['mpesa_stk_push'] }).catch((e) => {
       logger.error('checkout.stk_failed', { error: e })
-      return { ok: false as const, message: 'We could not send the M-Pesa prompt. You can retry from the next page.' }
+      return []
     })
-    paymentMessage = result.message
+    const stk = results[0]
+    paymentMessage =
+      stk?.outcome === 'done' && stk.message
+        ? stk.message
+        : stk?.outcome === 'retry'
+          ? 'We are having trouble reaching M-Pesa and will retry shortly. You can also retry from the next page.'
+          : 'Sending the M-Pesa prompt to your phone…'
   }
 
   return {
