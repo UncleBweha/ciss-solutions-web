@@ -36,6 +36,12 @@ export function formatKenyanPhone(phone: string): string {
   return `${local.slice(0, 4)} ${local.slice(4, 7)} ${local.slice(7)}`
 }
 
+/** 254712345678 -> 0712345678, the way customers type it (used to prefill phone inputs). */
+export function localKenyanPhone(phone: string): string {
+  const normalized = normalizeKenyanPhone(phone)
+  return normalized ? `0${normalized.slice(3)}` : phone
+}
+
 /** 254712345678 -> 0712 *** 678 for receipts and admin lists */
 export function maskPhone(phone: string): string {
   const formatted = formatKenyanPhone(phone)

@@ -183,7 +183,7 @@ export function ProductPurchase({ product, variants, maxPerItem, whatsappNumber 
       <ul className="space-y-2.5 text-sm text-fg-secondary">
         <li className="flex items-center gap-2.5">
           <Truck className="h-4 w-4 text-primary-light" aria-hidden="true" />
-          Delivery available across Kenya.{' '}
+          Collect in store or have it sent by courier.{' '}
           <Link href="/shipping-policy" className="underline hover:text-fg">
             Delivery info
           </Link>

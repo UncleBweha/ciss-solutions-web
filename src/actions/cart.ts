@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/server'
 import { cartItemsSchema, type CartItemInput } from '@/lib/validation/cart'
 
 const quoteOptions = z.object({
-  county: z.string().max(60).nullish(),
   couponCode: z.string().max(40).nullish(),
 })
 

@@ -6,7 +6,7 @@ import { retryMpesaPaymentAction } from '@/actions/checkout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/form'
 import { track } from '@/lib/analytics'
-import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
+import { formatKenyanPhone, localKenyanPhone } from '@/lib/ecommerce/kenya'
 
 type View = { state: 'paid' | 'pending' | 'failed' | 'expired' | 'none'; message: string | null }
 
@@ -29,7 +29,7 @@ export function MpesaPaymentStatus({
 }) {
   const router = useRouter()
   const [view, setView] = useState<View>(initial)
-  const [retryPhone, setRetryPhone] = useState(formatKenyanPhone(phone))
+  const [retryPhone, setRetryPhone] = useState(localKenyanPhone(phone))
   const [notice, setNotice] = useState<string | null>(null)
   const [pending, start] = useTransition()
   const polls = useRef(0)
@@ -112,7 +112,7 @@ export function MpesaPaymentStatus({
         <label htmlFor="retry-phone" className="sr-only">
           M-Pesa phone number
         </label>
-        <Input id="retry-phone" type="tel" value={retryPhone} onChange={(e) => setRetryPhone(e.target.value)} className="sm:max-w-56" />
+        <Input id="retry-phone" type="tel" inputMode="tel" placeholder="0712345678" value={retryPhone} onChange={(e) => setRetryPhone(e.target.value)} className="sm:max-w-56" />
         <Button type="submit" variant={view.state === 'pending' ? 'glass' : 'primary'} loading={pending}>
           {view.state === 'pending' ? 'Resend prompt' : 'Pay with M-Pesa'}
         </Button>

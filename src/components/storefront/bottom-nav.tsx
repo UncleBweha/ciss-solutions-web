@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { Heart, Home, LayoutGrid, Tag, User } from 'lucide-react'
 import { useCart } from '@/components/cart/cart-provider'
+import { Avatar, firstName } from '@/components/ui/avatar'
 import { Drawer } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import type { NavCategory } from './header'
@@ -13,7 +14,7 @@ const item = 'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 t
 /** Thumb-reach navigation for phones and tablets; the desktop header covers the same links. */
 export function BottomNav({ categories }: { categories: NavCategory[] }) {
   const pathname = usePathname()
-  const { signedIn, wishlist } = useCart()
+  const { signedIn, wishlist, account } = useCart()
   const [open, setOpen] = useState(false)
 
   // Close the category sheet when the route changes (state adjusted during render).
@@ -29,18 +30,19 @@ export function BottomNav({ categories }: { categories: NavCategory[] }) {
     { label: 'Deals', href: '/deals', icon: Tag, active: pathname.startsWith('/deals') },
     { label: 'Wishlist', href: signedIn ? '/account/wishlist' : '/login?next=/account/wishlist', icon: Heart, active: pathname.startsWith('/account/wishlist'), badge: wishlist.size },
     {
-      label: signedIn ? 'Profile' : 'Sign in',
+      label: signedIn ? (firstName(account?.name) ?? 'Profile') : 'Sign in',
       href: signedIn ? '/account' : '/login',
       icon: User,
+      avatar: signedIn,
       active: (pathname.startsWith('/account') && !pathname.startsWith('/account/wishlist')) || pathname === '/login' || pathname === '/register',
     },
   ]
   const tone = (active: boolean) => (active ? 'text-primary-light' : 'text-fg-secondary hover:text-fg')
 
-  const link = ({ label, href, icon: Icon, active, badge }: (typeof links)[number]) => (
-    <Link key={label} href={href} aria-current={active ? 'page' : undefined} className={cn(item, tone(active))}>
+  const link = ({ label, href, icon: Icon, active, badge, avatar }: { label: string; href: string; icon: typeof User; active: boolean; badge?: number; avatar?: boolean }) => (
+    <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={cn(item, tone(active))}>
       <span className="relative">
-        <Icon className="h-5 w-5" aria-hidden="true" />
+        {avatar ? <Avatar src={account?.avatarUrl} name={account?.name} className="h-5 w-5" /> : <Icon className="h-5 w-5" aria-hidden="true" />}
         {badge ? (
           <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-ink-magenta px-1 text-[10px] font-bold text-white">{badge > 9 ? '9+' : badge}</span>
         ) : null}
