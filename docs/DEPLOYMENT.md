@@ -25,6 +25,13 @@ you can stage it on the server first.
    to 600 per 5 minutes. Auth is called from the store's server, so Supabase sees every customer
    as one IP address; the defaults (150 and 30) lock customers out once a few hundred are signed
    in. The store applies its own per-customer limits.
+   **Authentication → Sign In / Providers → Google** (optional): enable it and enter the client
+   ID of a Google Cloud OAuth client (type "Web application"). In Google Cloud, set the client's
+   authorised JavaScript origin to `https://cisssolutions.co.ke` and its authorised redirect URI
+   to `https://cisssolutions.co.ke/auth/google/callback`. The store runs the Google exchange
+   itself so that Google's screen says "continue to cisssolutions.co.ke"; put the same client's
+   ID and secret in the env file as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. The
+   "Continue with Google" button only appears when both are set.
 5. **Project settings → API**: copy the URL, the anon key and the service role key into the env
    file (next section). The service role key is a server secret.
 6. Create the first staff account: register on the live site (or **Authentication → Users → Add
@@ -45,6 +52,7 @@ Every variable is described in [`.env.example`](../.env.example). Production nee
 | `NEXT_PUBLIC_SITE_URL` | `https://cisssolutions.co.ke` |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | From the Supabase project |
 | `SUPABASE_SERVICE_ROLE_KEY` | From the Supabase project (secret) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional: Google sign-in (section 1, step 4). The secret is a server secret |
 | `MPESA_*` | See [PAYMENTS.md](PAYMENTS.md). `MPESA_ENV=production`, never `mock` |
 | `EMAIL_PROVIDER=resend`, `EMAIL_API_KEY`, `EMAIL_FROM`, `ADMIN_ALERT_EMAILS` | Transactional email. Order emails are sent from, and new-order alerts always go to, `orders@cisssolutions.co.ke` (`ORDERS_EMAIL` overrides it) |
 | `CRON_SECRET` | Long random string (`openssl rand -hex 32`) |
