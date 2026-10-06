@@ -52,7 +52,6 @@ class SmtpEmailProvider implements EmailProvider {
 }
 
 let smtpProvider: SmtpEmailProvider | undefined
-let noReplyProvider: SmtpEmailProvider | undefined
 
 export function getEmailProvider(): EmailProvider {
   const { provider, apiKey, from, smtp } = serverEnv.email
@@ -63,18 +62,4 @@ export function getEmailProvider(): EmailProvider {
     return smtpProvider
   }
   return new LogEmailProvider()
-}
-
-/**
- * Sends account emails (password reset codes) from the no-reply address. Uses that
- * mailbox's own SMTP login when one is configured, otherwise the main provider with
- * the no-reply address as the sender.
- */
-export async function sendNoReplyEmail(message: Omit<EmailMessage, 'from'>) {
-  const { provider, smtp, noReplyFrom, noReplySmtp } = serverEnv.email
-  if (provider === 'smtp' && smtp.host && noReplySmtp.user && noReplySmtp.password) {
-    noReplyProvider ??= new SmtpEmailProvider({ host: smtp.host, port: smtp.port, user: noReplySmtp.user, password: noReplySmtp.password }, noReplyFrom)
-    return noReplyProvider.send(message)
-  }
-  return getEmailProvider().send({ ...message, from: noReplyFrom })
 }

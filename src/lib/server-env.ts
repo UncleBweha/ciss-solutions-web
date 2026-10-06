@@ -35,10 +35,6 @@ export const serverEnv = {
       password: optional('SMTP_PASSWORD'),
     },
     from: sender(optional('EMAIL_FROM') ?? 'orders@cisssolutions.co.ke'),
-    // Account emails (password reset codes) come from a no-reply address. If that mailbox
-    // has its own login, set SMTP_NOREPLY_USER / SMTP_NOREPLY_PASSWORD; otherwise the main one is used.
-    noReplyFrom: sender(optional('EMAIL_FROM_NOREPLY') ?? 'no-reply@cisssolutions.co.ke'),
-    noReplySmtp: { user: optional('SMTP_NOREPLY_USER'), password: optional('SMTP_NOREPLY_PASSWORD') },
     // The orders mailbox: every new-order alert goes here. It only sends; nobody reads replies.
     orders: optional('ORDERS_EMAIL') ?? 'orders@cisssolutions.co.ke',
     adminAlerts: (optional('ADMIN_ALERT_EMAILS') ?? '').split(',').map((s) => s.replace(/[<>"'\s]/g, '')).filter((s) => /^[^@]+@[^@]+\.[^@]+$/.test(s)),
