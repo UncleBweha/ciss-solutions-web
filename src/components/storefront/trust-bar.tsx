@@ -1,9 +1,9 @@
 import { Banknote, MessageCircle, Smartphone, Truck } from 'lucide-react'
 
-// Concrete promises that match the store's actual settings (delivery zones,
+// Concrete promises that match how the store works (pickup or courier delivery,
 // enabled payment methods). Update alongside Admin -> Settings.
 const items = [
-  { icon: Truck, title: 'Delivery across Kenya', text: 'Same or next day in Nairobi' },
+  { icon: Truck, title: 'Delivery across Kenya', text: 'By courier, or collect in store' },
   { icon: Smartphone, title: 'Pay with M-Pesa', text: 'STK push to your phone' },
   { icon: Banknote, title: 'Cash on delivery', text: 'Available in Nairobi' },
   { icon: MessageCircle, title: 'Ask a technician', text: 'Help choosing the right part' },

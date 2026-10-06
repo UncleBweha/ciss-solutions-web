@@ -4,6 +4,7 @@ import { AdminPageHeader, Panel, Table, Td, Th } from '@/components/admin/admin-
 import { OrderNotes, OrderStatusActions } from '@/components/admin/order-actions'
 import { Badge } from '@/components/ui/badge'
 import { can, requireStaff } from '@/lib/auth'
+import { deliveryFeeLabel, isStorePickup } from '@/lib/ecommerce/delivery'
 import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { formatKES } from '@/lib/ecommerce/money'
 import { allowedTransitions, orderStatusLabels, orderStatusTone, paymentMethodLabels, paymentStatusLabels, paymentStatusTone } from '@/lib/ecommerce/orders'
@@ -66,7 +67,7 @@ export default async function AdminOrderPage({ params }: PageProps<'/admin/order
                 ))}
                 <tr><Td colSpan={4} className="text-right text-fg-muted">Subtotal</Td><Td className="text-right tabular-nums">{formatKES(order.subtotal)}</Td></tr>
                 {Number(order.discount) ? <tr><Td colSpan={4} className="text-right text-fg-muted">Discount {order.coupon_code ? `(${order.coupon_code})` : ''}</Td><Td className="text-right tabular-nums">-{formatKES(order.discount)}</Td></tr> : null}
-                <tr><Td colSpan={4} className="text-right text-fg-muted">Delivery ({order.delivery_zone_name})</Td><Td className="text-right tabular-nums">{formatKES(order.delivery_fee)}</Td></tr>
+                <tr><Td colSpan={4} className="text-right text-fg-muted">Delivery ({order.delivery_zone_name})</Td><Td className="text-right tabular-nums">{deliveryFeeLabel(order.delivery_fee, order.delivery_zone_name)}</Td></tr>
                 <tr><Td colSpan={4} className="text-right font-bold">Total</Td><Td className="text-right text-base font-bold tabular-nums">{formatKES(order.total)}</Td></tr>
               </tbody>
             </Table>
@@ -101,7 +102,7 @@ export default async function AdminOrderPage({ params }: PageProps<'/admin/order
               <dd className="text-xs text-fg-muted">{order.user_id ? 'Registered customer' : 'Guest checkout'}</dd>
             </dl>
           </Panel>
-          <Panel title="Delivery">
+          <Panel title={isStorePickup(order.delivery_zone_name) ? 'Store pickup' : 'Delivery (call the customer to arrange the courier)'}>
             <p className="text-sm">{order.delivery_address}<br />{order.delivery_town}, {order.delivery_county}</p>
             {order.delivery_instructions ? <p className="mt-2 text-sm text-fg-secondary">“{order.delivery_instructions}”</p> : null}
             {order.customer_notes ? <p className="mt-2 text-sm text-fg-secondary">Customer note: {order.customer_notes}</p> : null}

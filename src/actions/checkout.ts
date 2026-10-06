@@ -1,6 +1,7 @@
 'use server'
 import { getSessionUser } from '@/lib/auth'
 import { getSettings } from '@/lib/catalog'
+import { PARCEL_DELIVERY, STORE_PICKUP } from '@/lib/ecommerce/delivery'
 import { quoteCart, type Quote } from '@/lib/ecommerce/quote'
 import { logger } from '@/lib/logger'
 import { background, notifyOrderPlaced } from '@/lib/notifications'
@@ -46,16 +47,18 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   if (data.paymentMethod === 'mpesa_paybill' && !settings.payment_methods.mpesa_paybill.paybill_number) {
     return { ok: false, message: 'That payment method is not available. Please choose another.' }
   }
-  if (data.paymentMethod === 'cash_on_delivery') {
+  const pickup = data.deliveryMethod === 'pickup'
+  // Cash is always accepted over the counter; for deliveries only in the listed counties.
+  if (data.paymentMethod === 'cash_on_delivery' && !pickup) {
     const counties = settings.payment_methods.cash_on_delivery.counties ?? []
     if (counties.length && !counties.includes(data.county)) {
       return { ok: false, message: `Cash on delivery is only available in ${counties.join(', ')}.`, errors: { paymentMethod: 'Not available for your county' } }
     }
   }
 
-  // Prices, discount, delivery and total are all computed here from the database.
+  // Prices, discount and total are all computed here from the database. Delivery is
+  // not charged at checkout: pickup is free, courier costs are agreed by phone.
   const quote = await quoteCart(data.items, {
-    county: data.county,
     couponCode: data.couponCode,
     customer: { userId: user?.id, phone: data.phone, email: data.email },
     maxPerItem: settings.checkout.max_quantity_per_item,
@@ -66,7 +69,12 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   if (data.couponCode && !quote.coupon) {
     return { ok: false, message: quote.couponMessage ?? 'This coupon cannot be applied.', errors: { couponCode: quote.couponMessage ?? 'Invalid coupon' }, quote }
   }
-  if (!quote.zone) return { ok: false, message: 'We do not deliver to that location yet. Please contact us.' }
+
+  // Pickup orders carry the shop's own address so staff and emails show where to collect.
+  const shop = settings.business
+  const destination = pickup
+    ? { county: 'Nairobi', town: shop.location || 'Nairobi', address: shop.address || shop.location || 'CISS Solutions shop', instructions: null }
+    : { county: data.county, town: data.town, address: data.address, instructions: data.instructions ?? null }
 
   const reservationMinutes =
     data.paymentMethod === 'mpesa'
@@ -89,12 +97,12 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
       total: quote.total,
       coupon_id: quote.coupon?.id ?? null,
       coupon_code: quote.coupon?.code ?? null,
-      delivery_zone_id: quote.zone.id,
-      delivery_zone_name: quote.zone.name,
-      delivery_county: data.county,
-      delivery_town: data.town,
-      delivery_address: data.address,
-      delivery_instructions: data.instructions ?? null,
+      delivery_zone_id: null,
+      delivery_zone_name: pickup ? STORE_PICKUP : PARCEL_DELIVERY,
+      delivery_county: destination.county,
+      delivery_town: destination.town,
+      delivery_address: destination.address,
+      delivery_instructions: destination.instructions,
       customer_notes: data.notes ?? null,
       reservation_minutes: reservationMinutes,
       items: quote.lines.map((l) => ({
@@ -126,7 +134,7 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
     const supabase = await createClient()
     const { data: cart } = await supabase.from('carts').select('id').eq('user_id', user.id).maybeSingle()
     if (cart) await supabase.from('cart_items').delete().eq('cart_id', cart.id)
-    if (data.saveAddress) {
+    if (data.saveAddress && !pickup) {
       await supabase.from('addresses').insert({
         user_id: user.id,
         full_name: data.fullName,

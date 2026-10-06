@@ -23,6 +23,8 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 **People**
 
 - `profiles`: one row per auth user (created by the `handle_new_user` trigger): name, phone,
+  `avatar_url` (their uploaded picture, kept in the public `avatars` bucket under a folder named
+  after their user id; without one the store shows their Google picture),
   `role` (`user_role` enum), active flag. `protect_profile_role` stops users changing their own role.
 - `role_permissions`: (`role`, `permission`) pairs. See [ADMIN.md](ADMIN.md) for the list.
 - `addresses`: saved delivery addresses (county, town, area, landmark).

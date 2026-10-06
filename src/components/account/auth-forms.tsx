@@ -82,7 +82,7 @@ export function SignUpForm({ next }: { next?: string }) {
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </Field>
       <Field label="Phone (optional)" htmlFor="phone" error={state.errors?.phone} hint="For order updates">
-        <Input id="phone" name="phone" type="tel" autoComplete="tel" placeholder="0712 345 678" />
+        <Input id="phone" name="phone" type="tel" autoComplete="tel" placeholder="0712345678" />
       </Field>
       <Field label="Password" htmlFor="password" error={state.errors?.password} hint="At least 8 characters" required>
         <Input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} />
