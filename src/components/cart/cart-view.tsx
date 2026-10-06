@@ -40,7 +40,13 @@ export function CartView() {
   }
 
   const unavailable = quote?.issues.filter((i) => i.kind !== 'insufficient_stock') ?? []
-  const canCheckout = Boolean(quote && quote.lines.length && !unavailable.length)
+  // Checkout re-quotes on the server, so the button does not wait for this page's quote:
+  // it is only held back once the quote has come in and found a problem.
+  const canCheckout = quote ? Boolean(quote.lines.length && !unavailable.length) : true
+  // Until the quote arrives, show the prices saved with the cart instead of zero.
+  const known = items.every((i) => i.snapshot)
+  const estimate = items.reduce((sum, i) => sum + (i.snapshot?.price ?? 0) * i.quantity, 0)
+  const subtotal = quote?.subtotal ?? (known ? estimate : null)
 
   return (
     <div className="grid items-start gap-5 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
@@ -50,6 +56,14 @@ export function CartView() {
             const line = quote?.lines.find((l) => l.productId === item.productId && l.variantId === item.variantId)
             const issue = quote?.issues.find((i) => i.productId === item.productId && i.variantId === item.variantId)
             const snap = item.snapshot
+            // Nothing to show for this line yet (it came from the account): hold its place.
+            if (!line && !snap && !quote) {
+              return (
+                <li key={`${item.productId}:${item.variantId}`} className="py-4 sm:py-5">
+                  <Skeleton className="h-20 sm:h-28" />
+                </li>
+              )
+            }
             return (
               <CartItem
                 key={`${item.productId}:${item.variantId}`}
@@ -71,11 +85,11 @@ export function CartView() {
 
       <div className="space-y-4 lg:sticky lg:top-[calc(var(--header-height)+1rem)]">
         <OrderSummary
-          subtotal={quote?.subtotal ?? 0}
+          subtotal={subtotal ?? 0}
           discount={0}
           deliveryFee={null}
-          total={quote?.subtotal ?? 0}
-          loading={loading || !quote}
+          total={subtotal ?? 0}
+          loading={subtotal === null || (loading && Boolean(quote))}
         >
           {unavailable.length ? (
             <p role="alert" className="text-sm text-warning">

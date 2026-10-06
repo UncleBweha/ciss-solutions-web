@@ -40,7 +40,7 @@ export function OrderSummary({
       <dl className={cn('transition-opacity', loading && 'opacity-50')}>
         <div className={row}>
           <dt className="text-fg-secondary">Subtotal</dt>
-          <dd className="font-semibold">{formatKES(subtotal)}</dd>
+          <dd className="font-semibold">{loading && !subtotal ? "…" : formatKES(subtotal)}</dd>
         </div>
         <div className={row}>
           <dt className="text-fg-secondary">
@@ -56,7 +56,7 @@ export function OrderSummary({
         ) : null}
         <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-border pt-4">
           <dt className="font-bold">Total</dt>
-          <dd className="text-2xl font-bold">{formatKES(total)}</dd>
+          <dd className="text-2xl font-bold">{loading && !total ? "…" : formatKES(total)}</dd>
         </div>
         {totalNote ? <p className="mt-1 text-right text-xs text-fg-muted">{totalNote}</p> : null}
       </dl>
