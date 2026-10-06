@@ -64,6 +64,9 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 - `homepage_sections`, `homepage_banners`.
 - `support_requests` (contact and part-request forms), `notifications` (staff inbox).
 - `audit_logs`: staff actions. `rate_limits`: counters used by `check_rate_limit()`.
+- `outbox`: follow-up tasks (emails, STK push) written in the same transaction as the order or
+  payment change; status `pending` / `processing` / `failed` / `done` / `dead`, attempts, next
+  attempt time and last error. Server-only (staff can read).
 
 ## Order and payment states
 
@@ -95,6 +98,7 @@ roles that need them.
 | `catalog_search(query, category, brands, …, sort, page)` | search, listings | Prefix full-text search plus trigram match on SKU, model and part numbers, with filters and a total count. |
 | `admin_dashboard_stats(days)` | admin dashboard | Revenue, orders by status, top products, low stock for the last N days. |
 | `check_rate_limit(key, limit, window)` | server actions | Fixed-window counter. |
+| `claim_outbox(limit, order, kinds)` / `complete_outbox(id, note)` / `fail_outbox(id, error)` | outbox worker, cron | Claim due tasks (`FOR UPDATE SKIP LOCKED`, reclaims expired locks), mark done, or reschedule with back-off and mark dead after the last attempt (notifying staff). |
 | `has_permission(permission)`, `is_staff()`, `is_service_role()` | RLS policies | Authorisation helpers. `is_service_role()` checks the JWT role, not `current_user`, so it is correct inside `SECURITY DEFINER` functions. |
 
 Views: `product_cards` (listing data with availability across variants), `category_product_counts`,
@@ -129,5 +133,8 @@ staff permission (customers may upload review images into their own folder).
 - `tests/db/order_lifecycle.sql`: place order, reserve, confirm (and confirm again), amount
   mismatch, expiry and release, transitions, refunds and restock.
 - `tests/db/rls.sql`: impersonates anon, customers and staff roles and checks what each can read and write.
+- `tests/db/outbox.sql`: tasks are committed (and rolled back) with the order, claimed once,
+  retried with back-off, marked dead with a staff notification; receipt and status tasks fire
+  only when they should; customers can't see or run them.
 
-Run both with `npm run test:db` (it resets the local database first).
+Run them with `npm run test:db` (it resets the local database first).

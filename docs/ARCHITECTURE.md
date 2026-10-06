@@ -113,8 +113,20 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
 
 ## Background work
 
-- Emails (order received, payment confirmed, status updates, staff alerts) are sent with Next's
-  `after()`, so they never delay the response, and failures are logged rather than surfaced.
+- **Transactional outbox** (`outbox` table, `src/lib/outbox.ts`). Follow-up work is written in
+  the same database transaction as the change that causes it, so it can't be lost between
+  "order saved" and "work done":
+  - `place_order()` queues `order_placed` (confirmation and staff alert) and, for M-Pesa,
+    `mpesa_stk_push` with the number entered at checkout;
+  - a trigger on `orders` queues `payment_confirmed` when an online payment is confirmed and
+    `order_status` when staff change an order's status.
+- The request that created a task runs it straight away (the STK push before the response, so
+  the prompt reaches the phone immediately; emails after it with Next's `after()`). The cron
+  endpoint sweeps up anything left: a crash, a deploy, or an email or M-Pesa outage.
+- Failed tasks retry with back-off (1, 4, 16, 60 minutes …). After 6 attempts a task is marked
+  dead and staff see a "Task failed" entry in Admin → Notifications.
+- Handlers are safe to repeat: an email already sent for an order is never re-sent, and the STK
+  push is skipped if the order already has a payment attempt or is more than 10 minutes old.
 - `expire_stale_orders()` cancels unpaid orders after their payment window
   (`checkout.mpesa_reservation_minutes`, default 30) and releases their reserved stock. It runs
   from the cron endpoint and opportunistically when an order page polls for status.

@@ -6,6 +6,7 @@ import { quoteCart, type Quote } from '@/lib/ecommerce/quote'
 import { logger } from '@/lib/logger'
 import { background, notifyOrderPlaced } from '@/lib/notifications'
 import { getOrderForViewer } from '@/lib/orders'
+import { runTaskNow } from '@/lib/outbox'
 import { initiateMpesaPayment } from '@/lib/payments/service'
 import { clientIp, rateLimit } from '@/lib/security'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -90,6 +91,8 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
       customer_name: data.fullName,
       customer_email: data.email,
       customer_phone: data.phone,
+      // M-Pesa number for the STK push (stored in the outbox task with the order)
+      payment_phone: data.paymentMethod === 'mpesa' && data.mpesaPhone ? kenyanPhone.parse(data.mpesaPhone) : data.phone,
       payment_method: data.paymentMethod,
       subtotal: quote.subtotal,
       discount: quote.discount,
@@ -128,8 +131,8 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
 
   const order = placed as { id: string; order_number: string; access_token: string }
   logger.info('checkout.order_placed', { orderNumber: order.order_number, method: data.paymentMethod, total: quote.total })
-  // M-Pesa orders are emailed once, when the payment is confirmed (notifyPaymentConfirmed).
-  if (data.paymentMethod !== 'mpesa') background('order_placed', () => notifyOrderPlaced(order.id))
+  // Emails were queued in the outbox with the order; send them after the response.
+  background('outbox:order_placed', () => runTaskNow(order.id, 'order_placed', () => notifyOrderPlaced(order.id)))
 
   if (user) {
     const supabase = await createClient()
@@ -151,12 +154,18 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
 
   let paymentMessage: string | undefined
   if (data.paymentMethod === 'mpesa') {
+    // The STK push task was committed with the order. Run it now so the prompt reaches
+    // the phone immediately; if this fails or the server stops, the cron sweep retries it.
     const phone = data.mpesaPhone ? kenyanPhone.parse(data.mpesaPhone) : data.phone
-    const result = await initiateMpesaPayment(order.id, phone).catch((e) => {
+    const stk = await runTaskNow(order.id, 'mpesa_stk_push', () => initiateMpesaPayment(order.id, phone)).catch((e) => {
       logger.error('checkout.stk_failed', { error: e })
-      return { ok: false as const, message: 'We could not send the M-Pesa prompt. You can retry from the next page.' }
+      return undefined
     })
-    paymentMessage = result.message
+    paymentMessage = !stk
+      ? 'We could not send the M-Pesa prompt. You can retry from the next page.'
+      : stk.outcome === 'retry'
+        ? 'We are having trouble reaching M-Pesa and will retry shortly. You can also retry from the next page.'
+        : (stk.message ?? 'Sending the M-Pesa prompt to your phone…')
   }
 
   return {
