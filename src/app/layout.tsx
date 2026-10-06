@@ -35,6 +35,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export const viewport: Viewport = {
   themeColor: '#ffffff',
   colorScheme: 'dark',
+  // Lets the bottom navigation pad itself above the phone's home indicator.
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

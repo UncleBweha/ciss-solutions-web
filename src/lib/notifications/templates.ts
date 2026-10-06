@@ -1,4 +1,6 @@
 import { siteUrl } from '@/lib/env'
+import { DELIVERY_TBC_NOTE, deliveryFeeLabel, isStorePickup } from '@/lib/ecommerce/delivery'
+import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { formatKES } from '@/lib/ecommerce/money'
 import { orderStatusLabels, paymentMethodLabels, type OrderStatus, type PaymentMethod } from '@/lib/ecommerce/orders'
 
@@ -6,6 +8,8 @@ export type OrderEmailData = {
   orderNumber: string
   accessToken: string
   customerName: string
+  customerPhone?: string | null
+  customerEmail?: string | null
   total: number
   subtotal: number
   discount: number
@@ -39,7 +43,7 @@ function orderTable(o: OrderEmailData) {
     `<tr><td style="padding:4px 0;${bold ? 'font-weight:800' : 'color:#475569'}">${label}</td><td align="right" style="${bold ? 'font-weight:800' : ''}">${value}</td></tr>`
   return `<table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px;margin:16px 0">${rows}
 <tr><td colspan="2" style="border-top:1px solid #e2e8f0;padding-top:6px"></td></tr>
-${line('Subtotal', formatKES(o.subtotal))}${o.discount ? line('Discount', `-${formatKES(o.discount)}`) : ''}${line('Delivery', formatKES(o.deliveryFee))}${line('Total', formatKES(o.total), true)}</table>`
+${line('Subtotal', formatKES(o.subtotal))}${o.discount ? line('Discount', `-${formatKES(o.discount)}`) : ''}${line('Delivery', deliveryFeeLabel(o.deliveryFee, o.deliveryZone))}${line('Total', formatKES(o.total), true)}</table>`
 }
 
 const orderLink = (o: OrderEmailData) => `${siteUrl}/order/${encodeURIComponent(o.orderNumber)}?t=${o.accessToken}`
@@ -54,7 +58,8 @@ export function orderConfirmationEmail(o: OrderEmailData) {
   const html = layout(
     title,
     `<p>Hi ${esc(o.customerName.split(' ')[0])}, thank you for your order.</p>
-<p>Payment: <strong>${paymentMethodLabels[o.paymentMethod]}</strong><br>Delivery: ${esc(o.deliveryZone ?? '')} – ${esc(o.deliveryAddress)}</p>
+<p>Payment: <strong>${paymentMethodLabels[o.paymentMethod]}</strong><br>${isStorePickup(o.deliveryZone) ? 'Collect from' : 'Delivery'}: ${esc(o.deliveryZone ?? '')} – ${esc(o.deliveryAddress)}</p>
+${isStorePickup(o.deliveryZone) || o.deliveryFee ? '' : `<p style="color:#475569;font-size:13px">${esc(DELIVERY_TBC_NOTE)}</p>`}
 ${orderTable(o)}${button(orderLink(o), 'View or track your order')}`,
   )
   return { subject: title, html, text: `${title}\n\n${textSummary(o)}\n\nTrack: ${orderLink(o)}` }
@@ -84,13 +89,26 @@ export function orderStatusEmail(o: OrderEmailData & { status: OrderStatus }) {
   return { subject: title, html, text: `${title}\n\n${messages[o.status] ?? ''}\n\n${orderLink(o)}` }
 }
 
-export function adminNewOrderEmail(o: OrderEmailData) {
-  const title = `New order ${o.orderNumber} – ${formatKES(o.total)}`
+/** Staff alert. 'placed' goes out with every new order; 'paid' follows once an M-Pesa payment is confirmed. */
+export function adminNewOrderEmail(o: OrderEmailData, stage: 'placed' | 'paid' = 'placed') {
+  const method = paymentMethodLabels[o.paymentMethod]
+  const awaiting = stage === 'placed' && o.paymentMethod === 'mpesa'
+  const title =
+    stage === 'paid' ? `Payment received: order ${o.orderNumber} – ${formatKES(o.total)}` : `New order ${o.orderNumber} – ${formatKES(o.total)}${awaiting ? ' (awaiting payment)' : ''}`
+  const intro =
+    stage === 'paid'
+      ? `${esc(o.customerName)} has paid for this order by ${method}${o.receipt ? ` (ref ${esc(o.receipt)})` : ''}.`
+      : awaiting
+        ? `${esc(o.customerName)} placed an order and is paying by ${method}. You will get another email when the payment is confirmed.`
+        : `${esc(o.customerName)} placed an order paid by ${method}.`
+  const pickup = isStorePickup(o.deliveryZone)
+  const contact = [o.customerPhone ? `Phone: ${formatKenyanPhone(o.customerPhone)}` : null, o.customerEmail ? `Email: ${o.customerEmail}` : null].filter((l): l is string => Boolean(l))
+  const delivery = pickup ? `${o.deliveryZone}: the customer will collect from the shop.` : `${o.deliveryZone ?? 'Delivery'}: ${o.deliveryAddress}. Call the customer to agree the courier and delivery cost.`
   const html = layout(
     title,
-    `<p>${esc(o.customerName)} placed an order paid by ${paymentMethodLabels[o.paymentMethod]}.</p>${orderTable(o)}${button(`${siteUrl}/admin/orders`, 'Open in admin')}`,
+    `<p>${intro}</p><p>${contact.map(esc).join('<br>')}</p><p>${esc(delivery)}</p>${orderTable(o)}${button(`${siteUrl}/admin/orders`, 'Open in admin')}`,
   )
-  return { subject: title, html, text: `${title}\n\n${textSummary(o)}` }
+  return { subject: title, html, text: [title, intro, ...contact, delivery, textSummary(o)].join('\n\n') }
 }
 
 export function adminLowStockEmail(items: { name: string; sku: string; available: number }[]) {

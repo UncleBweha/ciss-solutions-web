@@ -1,6 +1,6 @@
 import 'server-only'
 import { logger } from '@/lib/logger'
-import { background } from '@/lib/notifications'
+import { background, notifyPaymentConfirmed } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { describeResultCode, parseStkCallback } from './mpesa-result'
 import { mockReceipt } from './mock'
@@ -152,7 +152,9 @@ async function confirm(
     logger.info('mpesa.payment_confirmed', { paymentId, receipt })
     // confirm_payment() queued the receipt emails in the outbox; send them after the response.
     // (Dynamic import: the outbox worker itself imports this module for the STK push.)
-    background('outbox:payment_confirmed', async () => (await import('@/lib/outbox')).runOutbox({ orderId, kinds: ['payment_confirmed'] }))
+    background('outbox:payment_confirmed', async () =>
+      (await import('@/lib/outbox')).runTaskNow(orderId, 'payment_confirmed', () => notifyPaymentConfirmed(orderId)),
+    )
   }
   // Confirmed earlier by a status query: record the receipt once the callback brings it.
   if (status === 'already_paid' && receipt && !existingReference) {
@@ -160,6 +162,9 @@ async function confirm(
   }
   return status
 }
+
+const EXPIRY_SWEEP_MS = 30_000
+let lastExpirySweep = 0
 
 export type PaymentView = {
   orderStatus: string
@@ -175,7 +180,12 @@ export type PaymentView = {
  */
 export async function refreshPaymentStatus(orderId: string): Promise<PaymentView> {
   const db = createAdminClient()
-  await db.rpc('expire_stale_orders')
+  // Every open order page polls this; sweep expired orders at most once per interval
+  // per server instead of once per poll (cron does the same sweep regardless).
+  if (Date.now() - lastExpirySweep > EXPIRY_SWEEP_MS) {
+    lastExpirySweep = Date.now()
+    await db.rpc('expire_stale_orders')
+  }
   const { data: order } = await db.from('orders').select('order_status, payment_status, total').eq('id', orderId).maybeSingle()
   if (!order) return { orderStatus: 'UNKNOWN', paymentStatus: 'UNKNOWN', state: 'none', message: null }
 

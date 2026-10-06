@@ -28,7 +28,8 @@ tar -xzf "$SRC_TGZ" -C "$APP/src.new"
 rm -rf "$APP/src"
 mv "$APP/src.new" "$APP/src"
 
-BUILD_ARGS=()
+# Always rebuild: catalogue and content pages are prerendered from the live database.
+BUILD_ARGS=(--build-arg "BUILD_ID=$REV-$(date +%s)")
 while IFS= read -r line; do
   BUILD_ARGS+=(--build-arg "$line")
 done < <(grep -E '^NEXT_PUBLIC_[A-Z0-9_]+=' "$ENV_FILE" | sed -E 's/^([A-Z0-9_]+)="?([^"]*)"?$/\1=\2/')

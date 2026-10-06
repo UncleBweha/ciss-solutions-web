@@ -28,6 +28,9 @@ export type SessionUser = {
   email: string | null
   fullName: string | null
   phone: string | null
+  /** The picture they uploaded, otherwise the one from their Google account. */
+  avatarUrl: string | null
+  hasUploadedAvatar: boolean
   role: Role
   permissions: Set<Permission>
 }
@@ -40,7 +43,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return null
-  const { data: profile } = await supabase.from('profiles').select('full_name, phone, role, email').eq('id', user.id).maybeSingle()
+  const { data: profile } = await supabase.from('profiles').select('full_name, phone, role, email, avatar_url').eq('id', user.id).maybeSingle()
   const role = (profile?.role ?? 'customer') as Role
   let permissions = new Set<Permission>()
   if (role === 'super_admin') {
@@ -54,6 +57,8 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
     email: user.email ?? profile?.email ?? null,
     fullName: profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? null,
     phone: profile?.phone ?? null,
+    avatarUrl: profile?.avatar_url ?? (user.user_metadata?.avatar_url as string | undefined) ?? (user.user_metadata?.picture as string | undefined) ?? null,
+    hasUploadedAvatar: Boolean(profile?.avatar_url),
     role,
     permissions,
   }

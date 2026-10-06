@@ -29,32 +29,32 @@ export function CartItem({
   onRemove: () => void
 }) {
   return (
-    <li className="flex gap-4 py-5">
-      <Link href={`/p/${slug}`} className="product-stage relative h-24 w-24 shrink-0 overflow-hidden rounded-md sm:h-28 sm:w-28">
-        <ProductImage src={imageUrl} alt={name} fill sizes="112px" className="object-contain p-2" />
+    // Phones: image + details on top, then quantity / remove / line total on a full-width
+    // row (beside the image there is no room for them). From sm: one row, controls at the end.
+    <li className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-3 py-4 sm:grid-cols-[7rem_minmax(0,1fr)_auto] sm:gap-x-4 sm:py-5">
+      <Link href={`/p/${slug}`} className="product-stage relative aspect-square w-full self-start overflow-hidden rounded-md">
+        <ProductImage src={imageUrl} alt={name} fill sizes="112px" className="object-contain p-1.5 sm:p-2" />
       </Link>
-      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <Link href={`/p/${slug}`} className="line-clamp-2 font-semibold hover:text-primary-light">
-            {name}
-          </Link>
-          {variantName ? <p className="text-sm text-fg-muted">{variantName}</p> : null}
-          <p className="mt-1 text-sm text-fg-secondary">{formatKES(unitPrice)} each</p>
-          {issue ? (
-            <p role="alert" className="mt-1 text-xs font-semibold text-warning">
-              {issue}
-            </p>
-          ) : null}
+      <div className="min-w-0">
+        <Link href={`/p/${slug}`} className="line-clamp-2 text-sm font-semibold hover:text-primary-light sm:text-base">
+          {name}
+        </Link>
+        {variantName ? <p className="text-sm text-fg-muted">{variantName}</p> : null}
+        <p className="mt-1 text-sm text-fg-secondary">{formatKES(unitPrice)} each</p>
+        {issue ? (
+          <p role="alert" className="mt-1 text-xs font-semibold text-warning">
+            {issue}
+          </p>
+        ) : null}
+      </div>
+      <div className="col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:flex-col-reverse sm:items-end sm:justify-start">
+        <div className="flex items-center gap-1">
+          <QuantitySelector size="sm" value={quantity} max={Math.max(1, max)} onChange={onQuantity} label={`Quantity of ${name}`} />
+          <button type="button" onClick={onRemove} className="grid h-10 w-10 place-items-center rounded-full text-fg-muted hover:bg-surface hover:text-danger" aria-label={`Remove ${name}`}>
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
-        <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-          <p className="font-bold">{formatKES(unitPrice * quantity)}</p>
-          <div className="flex items-center gap-2">
-            <QuantitySelector size="sm" value={quantity} max={Math.max(1, max)} onChange={onQuantity} label={`Quantity of ${name}`} />
-            <button type="button" onClick={onRemove} className="rounded-lg p-2 text-fg-muted hover:bg-surface hover:text-danger" aria-label={`Remove ${name}`}>
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        <p className="whitespace-nowrap font-bold">{formatKES(unitPrice * quantity)}</p>
       </div>
     </li>
   )

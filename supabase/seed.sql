@@ -860,6 +860,6 @@ values ('CISS10', '10% off orders over KSh 5,000', 'percentage', 10, 5000, 5000,
 update public.coupons set applicable_category_ids = array[(select id from public.categories where slug = 'ink-toner')]
  where code = 'INK500';
 
-update public.settings set value = value || '{"phone":"+254 700 000 000","whatsapp":"254700000000","email":"info@cisssolutions.co.ke","address":"Nairobi CBD, Kenya"}'::jsonb where key = 'business';
+update public.settings set value = value || '{"phone":"+254 700 000 000","whatsapp":"254700000000","email":"sales@cisssolutions.co.ke","address":"Nairobi CBD, Kenya"}'::jsonb where key = 'business';
 
 commit;

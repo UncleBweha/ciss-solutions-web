@@ -8,7 +8,7 @@ export const kenyanPhone = z
   .transform((v, ctx) => {
     const n = normalizeKenyanPhone(v)
     if (!n) {
-      ctx.addIssue({ code: 'custom', message: 'Enter a valid Kenyan mobile number, e.g. 0712 345 678' })
+      ctx.addIssue({ code: 'custom', message: 'Enter a valid Kenyan mobile number, e.g. 0712345678' })
       return z.NEVER
     }
     return n

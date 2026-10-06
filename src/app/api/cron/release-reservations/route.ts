@@ -16,11 +16,18 @@ export async function GET(request: NextRequest) {
   }
   const result = await releaseExpiredReservations()
   // Sweep the outbox: anything not finished by the request that created it.
-  const tasks = await runOutbox({ limit: 50 })
-  const outbox = {
-    done: tasks.filter((t) => t.outcome === 'done').length,
-    retry: tasks.filter((t) => t.outcome === 'retry').length,
-    dead: tasks.filter((t) => t.outcome === 'dead').length,
+  let outbox: Record<string, number | string>
+  try {
+    const tasks = await runOutbox({ limit: 50 })
+    outbox = {
+      done: tasks.filter((t) => t.outcome === 'done').length,
+      retry: tasks.filter((t) => t.outcome === 'retry').length,
+      dead: tasks.filter((t) => t.outcome === 'dead').length,
+    }
+  } catch (error) {
+    // Outbox migration not applied yet: everything else in this job still runs.
+    logger.warn('cron.outbox_unavailable', { error })
+    outbox = { error: 'unavailable' }
   }
   logger.info('cron.release_reservations', { ...result, outbox })
   return NextResponse.json({ ...result, outbox })

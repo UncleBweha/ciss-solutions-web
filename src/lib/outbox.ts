@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { OrderStatus } from '@/lib/ecommerce/orders'
 import type { Database } from '@/types/database'
 
-// Transactional outbox worker (see supabase/migrations/20261006000100_outbox.sql).
+// Transactional outbox worker (see supabase/migrations/20261006000300_outbox.sql).
 // Tasks are committed together with the change that caused them, then run here:
 // straight away by the request that created them, and by the cron sweep for
 // anything left behind (crash, deploy, provider outage). Handlers must be safe to
@@ -94,4 +94,24 @@ export async function runOutbox(opts: { orderId?: string; kinds?: OutboxKind[]; 
     }
   }
   return results
+}
+
+/**
+ * Runs one order's task of the given kind now. If there is no task to run (the database
+ * migration hasn't been applied yet, or the cron sweep already took it), runs `direct`
+ * instead, so deploying the code before or after the migration both work.
+ */
+export async function runTaskNow(
+  orderId: string,
+  kind: OutboxKind,
+  direct: () => Promise<{ message?: string } | void>,
+): Promise<TaskResult> {
+  try {
+    const [result] = await runOutbox({ orderId, kinds: [kind] })
+    if (result) return result
+  } catch (error) {
+    logger.warn('outbox.unavailable', { kind, error })
+  }
+  const out = await direct()
+  return { id: 'direct', kind, orderId, outcome: 'done', message: out ? out.message : undefined }
 }

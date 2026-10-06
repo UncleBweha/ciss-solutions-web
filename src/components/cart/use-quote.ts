@@ -5,12 +5,12 @@ import type { Quote } from '@/lib/ecommerce/quote'
 import { useCart } from './cart-provider'
 
 /** Server quote for the current cart (debounced). Keeps the cart in sync with stock. */
-export function useQuote(options: { county?: string | null; couponCode?: string | null } = {}) {
+export function useQuote(options: { couponCode?: string | null } = {}) {
   const { items, ready, replace } = useCart()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [loading, setLoading] = useState(false)
   const seq = useRef(0)
-  const key = JSON.stringify([items.map((i) => [i.productId, i.variantId, i.quantity]), options.county, options.couponCode])
+  const key = JSON.stringify([items.map((i) => [i.productId, i.variantId, i.quantity]), options.couponCode])
 
   useEffect(() => {
     if (!ready || !items.length) return
@@ -20,7 +20,7 @@ export function useQuote(options: { county?: string | null; couponCode?: string 
       try {
         const q = await quoteCartAction(
           items.map(({ productId, variantId, quantity }) => ({ productId, variantId, quantity })),
-          { county: options.county || null, couponCode: options.couponCode || null },
+          { couponCode: options.couponCode || null },
         )
         if (id !== seq.current) return
         setQuote(q)

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { ChevronDown, Menu, MessageCircle, Phone, ShoppingCart, Truck, User } from 'lucide-react'
 import { useCart } from '@/components/cart/cart-provider'
+import { Avatar, firstName } from '@/components/ui/avatar'
 import { Drawer } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { Logo } from './logo'
@@ -65,7 +66,7 @@ function MenuLink({ href, children, count, onClick }: { href: string; children: 
 }
 
 export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact }) {
-  const { count, bump, signedIn } = useCart()
+  const { count, bump, signedIn, account } = useCart()
   const pathname = usePathname()
   const [menu, setMenu] = useState<MenuKey | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -118,8 +119,8 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
       {/* Info bar: who we are and how to reach us. Scrolls away. */}
       <div className="hidden text-xs text-fg-secondary md:block">
         <div className="container-page flex h-9 items-center gap-5">
-          <span>{[contact.location, contact.hours].filter(Boolean).join(' · ')}</span>
-          <span className="ml-auto flex items-center gap-5">
+          <span className="min-w-0 truncate">{[contact.location, contact.hours].filter(Boolean).join(' · ')}</span>
+          <span className="ml-auto flex shrink-0 items-center gap-5 whitespace-nowrap">
             {contact.phone ? (
               <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} className="flex items-center gap-1.5 hover:text-fg">
                 <Phone className="h-3.5 w-3.5" aria-hidden="true" /> {contact.phone}
@@ -159,14 +160,15 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
           <SearchBar className="order-last w-full md:order-none md:max-w-3xl md:flex-1" />
 
           <div className="ml-auto flex items-center gap-1">
+            {/* Phones and tablets reach the account from the bottom bar instead. */}
             <Link
               href={signedIn ? '/account' : '/login'}
-              className="flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm text-fg hover:bg-white/70"
+              className="hidden items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm text-fg hover:bg-white/70 lg:flex"
             >
-              <User className="h-6 w-6" aria-hidden="true" />
+              {signedIn ? <Avatar src={account?.avatarUrl} name={account?.name} className="h-7 w-7" /> : <User className="h-6 w-6" aria-hidden="true" />}
               <span className="hidden leading-tight xl:block">
-                <span className="block text-xs text-fg-muted">{signedIn ? 'My' : 'Hello,'}</span>
-                <span className="block font-semibold">{signedIn ? 'Account' : 'Sign in'}</span>
+                <span className="block text-xs text-fg-muted">Hello,</span>
+                <span className="block max-w-32 truncate font-semibold">{signedIn ? (firstName(account?.name) ?? 'Account') : 'Sign in'}</span>
               </span>
               <span className="sr-only xl:hidden">{signedIn ? 'Account' : 'Sign in'}</span>
             </Link>

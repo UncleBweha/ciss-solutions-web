@@ -21,6 +21,17 @@ you can stage it on the server first.
    `https://cisssolutions.co.ke/auth/callback`.
 4. **Authentication → Emails**: configure custom SMTP (for example Resend) so sign-up and
    password-reset emails come from your domain and aren't subject to Supabase's low default limit.
+   **Authentication → Rate limits**: raise "token refreshes" to 3000 and "sign-ups and sign-ins"
+   to 600 per 5 minutes. Auth is called from the store's server, so Supabase sees every customer
+   as one IP address; the defaults (150 and 30) lock customers out once a few hundred are signed
+   in. The store applies its own per-customer limits.
+   **Authentication → Sign In / Providers → Google** (optional): enable it and enter the client
+   ID of a Google Cloud OAuth client (type "Web application"). In Google Cloud, set the client's
+   authorised JavaScript origin to `https://cisssolutions.co.ke` and its authorised redirect URI
+   to `https://cisssolutions.co.ke/auth/google/callback`. The store runs the Google exchange
+   itself so that Google's screen says "continue to cisssolutions.co.ke"; put the same client's
+   ID and secret in the env file as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. The
+   "Continue with Google" button only appears when both are set.
 5. **Project settings → API**: copy the URL, the anon key and the service role key into the env
    file (next section). The service role key is a server secret.
 6. Create the first staff account: register on the live site (or **Authentication → Users → Add
@@ -32,27 +43,6 @@ you can stage it on the server first.
    Add further staff from Admin, Settings, Staff & roles.
 7. Turn on Point-in-Time Recovery or at least daily backups (Pro plan) before taking real orders.
 
-### Google sign-in (optional)
-
-Customers can sign in with Google once this is set up; it creates the same customer account
-as email sign-up.
-
-1. In [Google Cloud Console](https://console.cloud.google.com/), create a project, configure the
-   **OAuth consent screen** (app name "CISS Solutions", support email `info@cisssolutions.co.ke`,
-   authorised domain `cisssolutions.co.ke`), then publish it.
-2. **APIs & Services → Credentials → Create credentials → OAuth client ID**, type
-   **Web application**:
-   - Authorised JavaScript origins: `https://cisssolutions.co.ke`
-   - Authorised redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
-     (Supabase shows the exact value on its Google provider page).
-3. In Supabase, **Authentication → Sign In / Providers → Google**: enable it and paste the
-   client ID and client secret.
-4. Set `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` in `/opt/ciss-store/.env` and redeploy (it is
-   compiled into the page, so it needs a rebuild).
-
-If Google is enabled in the env file but not in Supabase, the button returns the customer to
-the sign-in page with a message to use email instead.
-
 ## 2. Environment variables
 
 Every variable is described in [`.env.example`](../.env.example). Production needs:
@@ -62,8 +52,9 @@ Every variable is described in [`.env.example`](../.env.example). Production nee
 | `NEXT_PUBLIC_SITE_URL` | `https://cisssolutions.co.ke` |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | From the Supabase project |
 | `SUPABASE_SERVICE_ROLE_KEY` | From the Supabase project (secret) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional: Google sign-in (section 1, step 4). The secret is a server secret |
 | `MPESA_*` | See [PAYMENTS.md](PAYMENTS.md). `MPESA_ENV=production`, never `mock` |
-| `EMAIL_PROVIDER=resend`, `EMAIL_API_KEY`, `EMAIL_FROM`, `ADMIN_ALERT_EMAILS` | Transactional email |
+| `EMAIL_PROVIDER`, `EMAIL_FROM`, `ADMIN_ALERT_EMAILS` | Transactional email. `EMAIL_PROVIDER=smtp` sends through a mailbox and needs `SMTP_HOST`, `SMTP_PORT` (465 or 587), `SMTP_USER`, `SMTP_PASSWORD`; `EMAIL_PROVIDER=resend` needs `EMAIL_API_KEY`; `log` only writes emails to the server log. Order emails are sent from, and new-order alerts always go to, `orders@cisssolutions.co.ke` (`ORDERS_EMAIL` overrides it) |
 | `CRON_SECRET` | Long random string (`openssl rand -hex 32`) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | e.g. `2547XXXXXXXX` |
 | `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_META_PIXEL_ID` | Optional |
@@ -84,7 +75,7 @@ sudo nano /opt/ciss-store/.env        # production values, KEY=value per line
 sudo chmod 600 /opt/ciss-store/.env
 ```
 
-Write values without surrounding quotes (`EMAIL_FROM=CISS Solutions <info@cisssolutions.co.ke>`):
+Write values without surrounding quotes (`EMAIL_FROM=CISS Solutions <orders@cisssolutions.co.ke>`):
 Docker's `--env-file` keeps quotes literally.
 
 **Deploy** (from your machine, or GitHub Actions → "Deploy store to VPS" → Run workflow):
@@ -160,8 +151,8 @@ Run it every 5–10 minutes. Without it, abandoned M-Pesa orders hold stock unti
 | Workflow | Trigger | Does |
 | --- | --- | --- |
 | `ci.yml` | every push and pull request | Starts a throwaway local Supabase, then lint, typecheck, unit + integration tests, SQL tests, production build, and the Playwright E2E suite. Needs no secrets. |
-| `deploy-app.yml` | manual | Deploys the store to the VPS (section 3), optionally switches the domain |
-| `deploy.yml` | push to `main` | Deploys the static coming-soon page (unchanged) |
+| `deploy-app.yml` | push to `main`, or manual | Deploys the store to the VPS (section 3). A manual run can also switch the domain |
+| `deploy.yml` | manual | Deploys the static coming-soon page |
 
 The deploy workflows use repository secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` and
 `VPS_KNOWN_HOSTS` (`deploy/setup-github-secrets.sh` sets them). Production app secrets stay on
@@ -169,7 +160,7 @@ the server in `/opt/ciss-store/.env` and are never stored in GitHub.
 
 ## Launch checklist
 
-- [ ] Migrations pushed, first super admin created, SMTP configured
+- [ ] Migrations pushed, first super admin created, SMTP configured, Auth rate limits raised
 - [ ] Business details, payment methods, delivery zones and fees set in Admin, Settings
 - [ ] Legal pages written or reviewed and marked "Reviewed"
 - [ ] Real products, prices, stock and photos loaded (Admin, Products, or CSV import)

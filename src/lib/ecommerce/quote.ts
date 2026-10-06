@@ -2,7 +2,6 @@ import 'server-only'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Coupon, CouponError } from './coupons'
 import { couponErrorMessages } from './coupons'
-import { deliveryEstimate, resolveDeliveryZone, type DeliveryZone } from './delivery'
 import { calculateTotals, lineTotal, type OrderTotals, type PricedLine } from './pricing'
 import type { CartItemInput } from '@/lib/validation/cart'
 
@@ -24,13 +23,11 @@ export type QuoteIssue = {
 export type Quote = OrderTotals & {
   lines: QuoteLine[]
   issues: QuoteIssue[]
-  zone: { id: string; name: string; estimate: string } | null
   coupon: { id: string; code: string } | null
   couponMessage: string | null
 }
 
 type QuoteOptions = {
-  county?: string | null
   couponCode?: string | null
   customer?: { userId?: string | null; phone?: string | null; email?: string | null }
   maxPerItem?: number
@@ -43,25 +40,24 @@ export function escapeLike(value: string) {
 
 /**
  * Prices a cart from the database. Client-supplied prices are never accepted:
- * the browser sends product/variant ids and quantities only.
+ * the browser sends product/variant ids and quantities only. Delivery is not
+ * priced here: store pickup is free and courier charges are agreed by phone
+ * after the order is placed.
  */
 export async function quoteCart(items: CartItemInput[], opts: QuoteOptions = {}): Promise<Quote> {
   const db = createAdminClient()
   const productIds = [...new Set(items.map((i) => i.productId))]
 
-  const [{ data: products, error }, { data: zones }] = await Promise.all([
-    productIds.length
-      ? db
-          .from('products')
-          .select(
-            'id, name, slug, sku, price, compare_at_price, status, available_quantity, category_id, ' +
-              'images:product_images(url, is_primary, sort_order), ' +
-              'variants:product_variants(id, name, sku, price, compare_at_price, available_quantity, image_url, is_active)',
-          )
-          .in('id', productIds)
-      : Promise.resolve({ data: [], error: null }),
-    opts.county ? db.from('delivery_zones').select('*').eq('is_active', true) : Promise.resolve({ data: [] }),
-  ])
+  const { data: products, error } = productIds.length
+    ? await db
+        .from('products')
+        .select(
+          'id, name, slug, sku, price, compare_at_price, status, available_quantity, category_id, ' +
+            'images:product_images(url, is_primary, sort_order), ' +
+            'variants:product_variants(id, name, sku, price, compare_at_price, available_quantity, image_url, is_active)',
+        )
+        .in('id', productIds)
+    : { data: [], error: null }
   if (error) throw new Error(`quote: ${error.message}`)
 
   type Row = {
@@ -79,8 +75,9 @@ export async function quoteCart(items: CartItemInput[], opts: QuoteOptions = {})
   }
   const byId = new Map(((products ?? []) as unknown as Row[]).map((p) => [p.id, p]))
 
-  // Category ancestry so category-restricted coupons match subcategories.
-  const { data: categories } = await db.from('categories').select('id, parent_id')
+  // Category ancestry so category-restricted coupons match subcategories (only
+  // coupons use it, so carts without a code skip the read).
+  const { data: categories } = opts.couponCode?.trim() ? await db.from('categories').select('id, parent_id') : { data: [] }
   const parentOf = new Map((categories ?? []).map((c) => [c.id, c.parent_id]))
   const ancestry = (id: string | null) => {
     const out: string[] = []
@@ -153,8 +150,6 @@ export async function quoteCart(items: CartItemInput[], opts: QuoteOptions = {})
     })
   }
 
-  const zone = opts.county ? resolveDeliveryZone((zones ?? []) as unknown as DeliveryZone[], opts.county) : null
-
   let coupon: Coupon | null = null
   let couponMessage: string | null = null
   let customerUses = 0
@@ -177,7 +172,7 @@ export async function quoteCart(items: CartItemInput[], opts: QuoteOptions = {})
     }
   }
 
-  const totals = calculateTotals(lines, { coupon, couponCustomerUses: customerUses, zone })
+  const totals = calculateTotals(lines, { coupon, couponCustomerUses: customerUses })
   const couponError: CouponError | null = totals.couponError
   if (couponError) couponMessage = couponErrorMessages[couponError]
 
@@ -185,7 +180,6 @@ export async function quoteCart(items: CartItemInput[], opts: QuoteOptions = {})
     ...totals,
     lines,
     issues,
-    zone: zone ? { id: zone.id, name: zone.name, estimate: deliveryEstimate(zone) } : null,
     coupon: coupon && !couponError ? { id: coupon.id, code: coupon.code.toUpperCase() } : null,
     couponMessage,
   }

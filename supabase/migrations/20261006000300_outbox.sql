@@ -282,28 +282,3 @@ grant execute on function public.claim_outbox(int, uuid, text[]) to service_role
 grant execute on function public.complete_outbox(uuid, text) to service_role;
 grant execute on function public.fail_outbox(uuid, text) to service_role;
 grant select on public.outbox to authenticated;
-
--- Changes made after the first migrations: idempotent, for databases created earlier.
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  insert into public.profiles (id, email, full_name, phone)
-  values (
-    new.id,
-    new.email,
-    coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), nullif(new.raw_user_meta_data ->> 'name', '')),
-    nullif(new.raw_user_meta_data ->> 'phone', '')
-  )
-  on conflict (id) do nothing;
-  return new;
-end;
-$$;
-
-update public.settings set value = jsonb_set(value, '{email}', '"info@cisssolutions.co.ke"')
- where key = 'business' and coalesce(value ->> 'email', '') = '';
-update public.settings set value = jsonb_set(value, '{admin_emails}', '["info@cisssolutions.co.ke"]')
- where key = 'notifications' and coalesce(jsonb_array_length(value -> 'admin_emails'), 0) = 0;

@@ -71,8 +71,8 @@ describe('Kenyan phone numbers', () => {
     for (const input of ['12345', '0212345678', '25471234567', 'abc']) expect(normalizeKenyanPhone(input)).toBeNull()
   })
   it('formats and masks', () => {
-    expect(formatKenyanPhone('254712345678')).toBe('0712 345 678')
-    expect(maskPhone('254712345678')).toBe('0712 *** 678')
+    expect(formatKenyanPhone('254712345678')).toBe('0712345678')
+    expect(maskPhone('254712345678')).toBe('0712***678')
   })
 })
 

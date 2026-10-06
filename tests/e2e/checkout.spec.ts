@@ -40,11 +40,11 @@ test('customer can find a printer and buy it with M-Pesa', async ({ page }) => {
   await page.getByLabel('Town / City').fill('Westlands')
   await page.getByLabel('Delivery address').fill('Mpaka Road, Office 4')
   await page.getByRole('button', { name: 'Continue to payment' }).click()
-  // 32,999 + 200 Nairobi delivery, computed by the server quote
-  await expect(page.getByRole('button', { name: /Pay KSh 33,199 with M-Pesa/ })).toBeVisible()
+  // 32,999 from the server quote; courier delivery is agreed after the order, not charged here
+  await expect(page.getByRole('button', { name: /Pay KSh 32,999 with M-Pesa/ })).toBeVisible()
 
   // Payment (mock M-Pesa succeeds for numbers not ending in 1 or 2)
-  await page.getByRole('button', { name: /Pay KSh 33,199 with M-Pesa/ }).click()
+  await page.getByRole('button', { name: /Pay KSh 32,999 with M-Pesa/ }).click()
   await expect(page).toHaveURL(/\/order\/CISS-\d{8}-\d{4}\?t=/)
   await expect(page.getByText('Check your phone')).toBeVisible()
   await expect(page.getByText('Payment received. Thank you!')).toBeVisible({ timeout: 45_000 })

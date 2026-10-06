@@ -1,10 +1,14 @@
-# Deploys the Next.js store to the VPS (container ciss-store). Manual only:
-# Actions tab -> "Deploy store to VPS" -> Run workflow.
+# Deploys the Next.js store to the VPS (container ciss-store) on every push to main,
+# or manually: Actions tab -> "Deploy store to VPS" -> Run workflow.
+# The domain already proxies to ciss-store, so a push only replaces the container
+# (with rollback if the new one is unhealthy); it does not touch Caddy.
 # Uses the same repository secrets as deploy.yml: VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_KNOWN_HOSTS.
 # Production env values live on the server in /opt/ciss-store/.env, not in GitHub.
 name: Deploy store to VPS
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       switch_traffic:
