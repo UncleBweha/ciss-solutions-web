@@ -109,9 +109,6 @@ export function Hero({ slides, className }: { slides: HeroSlide[]; className?: s
           <button type="button" onClick={() => setIndex((index - 1 + count) % count)} className="glass-strong grid h-8 w-8 place-items-center rounded-full text-fg-secondary hover:text-fg" aria-label="Previous slide">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="px-1 font-mono text-xs text-fg-muted" aria-live="polite">
-            {index + 1}/{count}
-          </span>
           <button type="button" onClick={() => setIndex((index + 1) % count)} className="glass-strong grid h-8 w-8 place-items-center rounded-full text-fg-secondary hover:text-fg" aria-label="Next slide">
             <ChevronRight className="h-4 w-4" />
           </button>

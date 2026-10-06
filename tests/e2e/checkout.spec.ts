@@ -45,11 +45,11 @@ test('customer can find a printer and buy it with M-Pesa', async ({ page }) => {
 
   // Payment (mock M-Pesa succeeds for numbers not ending in 1 or 2)
   await page.getByRole('button', { name: /Pay KSh 32,999 with M-Pesa/ }).click()
-  await expect(page).toHaveURL(/\/order\/CISS-\d{8}-\d{4}\?t=/)
+  await expect(page).toHaveURL(/\/order\/CISS-[2-9A-HJ-NP-Z]{8}\?t=/)
   await expect(page.getByText('Check your phone')).toBeVisible()
-  await expect(page.getByText('Payment received. Thank you!')).toBeVisible({ timeout: 45_000 })
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Order Confirmed')
-  await expect(page.getByText('Payment confirmed')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Payment confirmed', { timeout: 45_000 })
+  // Straight from checkout the page is a confirmation; order progress lives on Track order.
+  await expect(page.getByRole('heading', { name: 'Order status' })).toHaveCount(0)
 })
 
 test('server rejects a tampered price: totals come from the database', async ({ page, request }) => {

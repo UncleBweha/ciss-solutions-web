@@ -34,7 +34,7 @@ begin
       'product_id', v_product, 'product_name', 'HP M404dn', 'sku', 'HP-M404DN', 'quantity', 2, 'unit_price', 52999))
   ));
   v_order_id := (v_order ->> 'id')::uuid;
-  assert (v_order ->> 'order_number') ~ '^CISS-\d{8}-\d{4}$', 'order number format';
+  assert (v_order ->> 'order_number') ~ '^CISS-[2-9A-HJ-NP-Z]{8}$', 'order number format';
   assert (select reserved_quantity from products where id = v_product) = 2, 'stock reserved';
   assert (select available_quantity from products where id = v_product) = 3, 'available reduced';
   assert (select order_status from orders where id = v_order_id) = 'PAYMENT_PENDING', 'awaiting payment';

@@ -9,7 +9,7 @@ export function TrackOrderForm({ defaultOrder }: { defaultOrder: string }) {
   return (
     <form action={action} className="mt-6 space-y-4">
       <Field label="Order number" htmlFor="orderNumber" required>
-        <Input id="orderNumber" name="orderNumber" defaultValue={defaultOrder} placeholder="CISS-20261004-0012" required autoCapitalize="characters" />
+        <Input id="orderNumber" name="orderNumber" defaultValue={defaultOrder} placeholder="CISS-7K3M9QXD" required autoCapitalize="characters" />
       </Field>
       <Field label="Phone number" htmlFor="track-phone" required>
         <Input id="track-phone" name="phone" type="tel" inputMode="tel" placeholder="0712345678" required />
