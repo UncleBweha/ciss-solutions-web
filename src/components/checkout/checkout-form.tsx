@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { useForm, type FieldPath } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Banknote, Building2, Check, Lock, Pencil, ShoppingCart, Smartphone } from 'lucide-react'
+import { Banknote, Building2, Check, Lock, Pencil, ShoppingCart, Smartphone, Store, Truck } from 'lucide-react'
 import { placeOrderAction } from '@/actions/checkout'
 import { useCart } from '@/components/cart/cart-provider'
 import { OrderSummary } from '@/components/cart/order-summary'
@@ -14,18 +14,18 @@ import { Button, LinkButton } from '@/components/ui/button'
 import { Checkbox, Field, FormMessage, Input, Select, Textarea } from '@/components/ui/form'
 import { EmptyState } from '@/components/ui/misc'
 import { track } from '@/lib/analytics'
+import { DELIVERY_TBC, DELIVERY_TBC_NOTE, PARCEL_DELIVERY, STORE_PICKUP } from '@/lib/ecommerce/delivery'
 import { KENYA_COUNTIES, formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { formatKES } from '@/lib/ecommerce/money'
 import { checkoutFormSchema, type CheckoutFormValues } from '@/lib/validation/checkout'
 import type { PaymentMethodsSettings } from '@/types/catalog'
 import { cn } from '@/lib/utils'
 
-type Zone = { name: string; counties: string[]; fee: number; isDefault: boolean; estimate: string; freeOver: number | null }
 type Address = { id: string; full_name: string; phone: string; county: string; town: string; address_line: string; instructions: string | null }
 
 const STEPS = [
   { title: 'Customer details', fields: ['fullName', 'email', 'phone'] },
-  { title: 'Delivery', fields: ['county', 'town', 'address', 'instructions'] },
+  { title: 'Delivery', fields: ['deliveryMethod', 'county', 'town', 'address', 'instructions'] },
   { title: 'Payment', fields: ['paymentMethod', 'mpesaPhone'] },
 ] as const
 
@@ -33,7 +33,7 @@ export function CheckoutForm({
   signedIn,
   defaults,
   addresses,
-  zones,
+  shop,
   methods,
   codCounties,
   bank,
@@ -42,7 +42,7 @@ export function CheckoutForm({
   signedIn: boolean
   defaults: { fullName: string; email: string; phone: string }
   addresses: Address[]
-  zones: Zone[]
+  shop: { address: string; hours: string }
   methods: Record<'mpesa' | 'mpesa_paybill' | 'bank_transfer' | 'cash_on_delivery' | 'card', boolean>
   codCounties: string[]
   bank: PaymentMethodsSettings['bank_transfer']
@@ -65,6 +65,7 @@ export function CheckoutForm({
       fullName: defaults.fullName,
       email: defaults.email,
       phone: defaults.phone,
+      deliveryMethod: 'delivery',
       county: '',
       town: '',
       address: '',
@@ -80,9 +81,11 @@ export function CheckoutForm({
   const county = watch('county')
   const method = watch('paymentMethod')
   const phone = watch('phone')
-  const codAllowed = methods.cash_on_delivery && (!codCounties.length || codCounties.includes(county))
+  const pickup = watch('deliveryMethod') === 'pickup'
+  // Cash is always accepted over the counter; for deliveries only in the listed counties.
+  const codAllowed = methods.cash_on_delivery && (pickup || !codCounties.length || codCounties.includes(county))
 
-  const { quote, loading } = useQuote({ county: county || null, couponCode: coupon })
+  const { quote, loading } = useQuote({ couponCode: coupon })
 
   useEffect(() => {
     if (ready && items.length) track('begin_checkout', { value: quote?.subtotal })
@@ -95,8 +98,8 @@ export function CheckoutForm({
   }, [phone, setValue, form])
 
   useEffect(() => {
-    if (method === 'cash_on_delivery' && county && !codAllowed) setValue('paymentMethod', fallbackMethod)
-  }, [county, codAllowed, method, fallbackMethod, setValue])
+    if (method === 'cash_on_delivery' && (pickup || county) && !codAllowed) setValue('paymentMethod', fallbackMethod)
+  }, [county, pickup, codAllowed, method, fallbackMethod, setValue])
 
   if (!ready) return <div className="skeleton h-96 rounded-[var(--radius-card)]" />
   if (!items.length) {
@@ -139,7 +142,6 @@ export function CheckoutForm({
     })
   })
 
-  const zoneForCounty = county ? zones.find((z) => z.counties.includes(county)) ?? zones.find((z) => z.isDefault) : null
   const values = watch()
 
   const stepHeader = (index: number) => (
@@ -185,7 +187,7 @@ export function CheckoutForm({
                 <Input id="fullName" autoComplete="name" aria-invalid={Boolean(errors.fullName)} {...register('fullName')} />
               </Field>
               <Field label="Phone number" htmlFor="phone" error={errors.phone?.message} hint="For delivery updates" required>
-                <Input id="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0712 345 678" aria-invalid={Boolean(errors.phone)} {...register('phone')} />
+                <Input id="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0712345678" aria-invalid={Boolean(errors.phone)} {...register('phone')} />
               </Field>
               <Field label="Email" htmlFor="email" error={errors.email?.message} hint="We send your receipt here" required>
                 <Input id="email" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} {...register('email')} />
@@ -206,7 +208,25 @@ export function CheckoutForm({
           {stepHeader(1)}
           {step === 1 ? (
             <div className="mt-5 space-y-4">
-              {addresses.length ? (
+              <fieldset>
+                <legend className="sr-only">How would you like to get your order?</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <DeliveryOption value="pickup" register={register} checked={pickup} icon={<Store className="h-5 w-5" />} title={STORE_PICKUP} price="Free" description="Collect from our shop" />
+                  <DeliveryOption value="delivery" register={register} checked={!pickup} icon={<Truck className="h-5 w-5" />} title={PARCEL_DELIVERY} price={DELIVERY_TBC} description="Sent by courier, anywhere in Kenya" />
+                </div>
+              </fieldset>
+              {pickup ? (
+                <div className="rounded-md bg-primary/10 px-4 py-3 text-sm text-primary-light">
+                  <p>
+                    <strong>Collect from:</strong> {shop.address}
+                  </p>
+                  {shop.hours ? <p className="mt-1">{shop.hours}</p> : null}
+                  <p className="mt-1">We will call you when your order is ready to collect.</p>
+                </div>
+              ) : (
+                <p className="rounded-md bg-primary/10 px-4 py-3 text-sm text-primary-light">{DELIVERY_TBC_NOTE}</p>
+              )}
+              {!pickup && addresses.length ? (
                 <fieldset>
                   <legend className="mb-2 text-sm font-medium text-fg-secondary">Saved addresses</legend>
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -230,6 +250,7 @@ export function CheckoutForm({
                   </div>
                 </fieldset>
               ) : null}
+              {pickup ? null : (
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="County" htmlFor="county" error={errors.county?.message} required>
                   <Select id="county" autoComplete="address-level1" aria-invalid={Boolean(errors.county)} {...register('county')}>
@@ -251,13 +272,8 @@ export function CheckoutForm({
                   <Textarea id="instructions" rows={2} className="min-h-0" placeholder="e.g. Call on arrival, gate code" {...register('instructions')} />
                 </Field>
               </div>
-              {zoneForCounty ? (
-                <p className="rounded-md bg-primary/10 px-4 py-3 text-sm text-primary-light">
-                  <strong>{zoneForCounty.name}</strong> delivery: {zoneForCounty.estimate} · {zoneForCounty.fee ? formatKES(zoneForCounty.fee) : 'Free'}
-                  {zoneForCounty.freeOver ? ` (free over ${formatKES(zoneForCounty.freeOver)})` : ''}
-                </p>
-              ) : null}
-              {signedIn ? (
+              )}
+              {signedIn && !pickup ? (
                 <label className="flex items-center gap-2 text-sm text-fg-secondary">
                   <Checkbox {...register('saveAddress')} /> Save this address to my account
                 </label>
@@ -266,7 +282,7 @@ export function CheckoutForm({
             </div>
           ) : step > 1 ? (
             <p className="mt-3 text-sm text-fg-secondary">
-              {values.address}, {values.town}, {values.county}
+              {pickup ? `${STORE_PICKUP} · ${shop.address}` : `${PARCEL_DELIVERY} · ${values.address}, ${values.town}, ${values.county}`}
             </p>
           ) : null}
         </section>
@@ -295,8 +311,8 @@ export function CheckoutForm({
                       checked={method === 'cash_on_delivery'}
                       disabled={!codAllowed}
                       icon={<Banknote className="h-5 w-5" />}
-                      title="Cash on delivery"
-                      description={codAllowed ? 'Pay cash or M-Pesa when your order arrives' : `Available in ${codCounties.join(', ')} only`}
+                      title={pickup ? 'Pay on collection' : 'Cash on delivery'}
+                      description={pickup ? 'Pay cash or M-Pesa when you collect your order' : codAllowed ? 'Pay cash or M-Pesa when your order arrives' : `Available in ${codCounties.join(', ')} only`}
                     />
                   ) : null}
                 </div>
@@ -333,8 +349,10 @@ export function CheckoutForm({
         <OrderSummary
           subtotal={quote?.subtotal ?? 0}
           discount={quote?.discount ?? 0}
-          deliveryFee={county && quote ? quote.deliveryFee : null}
-          deliveryLabel={quote?.zone ? `${quote.zone.name} · ${quote.zone.estimate}` : null}
+          deliveryFee={0}
+          deliveryLabel={pickup ? STORE_PICKUP : PARCEL_DELIVERY}
+          deliveryText={pickup ? 'Free' : DELIVERY_TBC}
+          totalNote={pickup ? null : 'Excludes delivery'}
           total={quote?.total ?? 0}
           couponCode={quote?.coupon?.code}
           loading={loading || !quote}
@@ -402,11 +420,44 @@ export function CheckoutForm({
             </Button>
           )}
           <p className="text-center text-xs text-fg-muted">
-            Prices and delivery are confirmed by our server when you place the order. Contact number: {phone ? formatKenyanPhone(phone) : '—'}
+            Prices are confirmed by our server when you place the order. Contact number: {phone ? formatKenyanPhone(phone) : '—'}
           </p>
         </OrderSummary>
       </div>
     </form>
+  )
+}
+
+function DeliveryOption({
+  value,
+  register,
+  checked,
+  icon,
+  title,
+  price,
+  description,
+}: {
+  value: CheckoutFormValues['deliveryMethod']
+  register: ReturnType<typeof useForm<CheckoutFormValues>>['register']
+  checked: boolean
+  icon: React.ReactNode
+  title: string
+  price: string
+  description: string
+}) {
+  return (
+    <label className={cn('flex cursor-pointer items-center gap-3 rounded-md border p-4 transition-colors', checked ? 'border-primary bg-primary/10' : 'border-border hover:border-border-strong')}>
+      <input type="radio" value={value} className="h-4 w-4 accent-[var(--primary)]" {...register('deliveryMethod')} />
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface text-primary-light" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-semibold">
+          {title} <span className="font-normal text-fg-muted">· {price}</span>
+        </span>
+        <span className="block text-sm text-fg-muted">{description}</span>
+      </span>
+    </label>
   )
 }
 

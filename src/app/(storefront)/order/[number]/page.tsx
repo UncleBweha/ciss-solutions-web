@@ -9,6 +9,7 @@ import { ProductImage } from '@/components/product/product-image'
 import { LinkButton } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getSettings } from '@/lib/catalog'
+import { DELIVERY_TBC_NOTE, deliveryFeeLabel, isStorePickup } from '@/lib/ecommerce/delivery'
 import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { formatKES } from '@/lib/ecommerce/money'
 import { isTerminalFailure, orderStatusLabels, orderStatusTone, paymentMethodLabels } from '@/lib/ecommerce/orders'
@@ -151,6 +152,8 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
             discount={Number(order.discount)}
             deliveryFee={Number(order.delivery_fee)}
             deliveryLabel={order.delivery_zone_name}
+            deliveryText={deliveryFeeLabel(order.delivery_fee, order.delivery_zone_name)}
+            totalNote={!isStorePickup(order.delivery_zone_name) && !Number(order.delivery_fee) ? 'Excludes delivery' : null}
             total={Number(order.total)}
             couponCode={order.coupon_code}
           >
@@ -160,9 +163,9 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
                 <dd>{paymentMethodLabels[order.payment_method]}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-fg-muted">Delivery</dt>
+                <dt className="text-fg-muted">{isStorePickup(order.delivery_zone_name) ? 'Collect from' : 'Delivery'}</dt>
                 <dd className="text-right">
-                  {order.delivery_town}, {order.delivery_county}
+                  {isStorePickup(order.delivery_zone_name) ? order.delivery_address : `${order.delivery_town}, ${order.delivery_county}`}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
@@ -174,6 +177,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
                 <dd>{formatDateTime(order.created_at)}</dd>
               </div>
             </dl>
+            {!isStorePickup(order.delivery_zone_name) && !Number(order.delivery_fee) ? <p className="text-xs text-fg-muted">{DELIVERY_TBC_NOTE}</p> : null}
           </OrderSummary>
           <div className="grid gap-2">
             {paid ? (

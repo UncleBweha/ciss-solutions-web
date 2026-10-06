@@ -91,7 +91,7 @@ export function CartView() {
             Proceed to Checkout <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
           <p className="flex items-center justify-center gap-2 text-xs text-fg-muted">
-            <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Delivery and coupons are calculated at checkout
+            <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Choose store pickup or courier delivery at checkout
           </p>
         </OrderSummary>
         <Link href="/shop" className="block text-center text-sm font-semibold text-primary-light hover:text-fg">

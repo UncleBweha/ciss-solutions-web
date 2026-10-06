@@ -1,3 +1,23 @@
+import { formatKES } from './money'
+
+// How an order reaches the customer. Stored on the order as its delivery_zone_name.
+export const STORE_PICKUP = 'Store pickup'
+export const PARCEL_DELIVERY = 'Parcel delivery'
+export type DeliveryMethod = 'pickup' | 'delivery'
+
+export const DELIVERY_TBC = 'To be confirmed'
+/** Why parcel orders carry no delivery charge at checkout. */
+export const DELIVERY_TBC_NOTE =
+  'We use third-party parcel couriers. The charge depends on your location, the weight of the products and the courier you prefer, so the delivery cost is confirmed after you place the order. Our representative will call you to arrange delivery.'
+
+export const isStorePickup = (zoneName: string | null | undefined) => zoneName === STORE_PICKUP
+
+/** What to show for an order's delivery charge: an amount once agreed, "Free" for pickup, otherwise "To be confirmed". */
+export function deliveryFeeLabel(fee: number | string, zoneName: string | null | undefined): string {
+  if (Number(fee) > 0) return formatKES(Number(fee))
+  return isStorePickup(zoneName) ? 'Free' : DELIVERY_TBC
+}
+
 export type DeliveryZone = {
   id: string
   name: string

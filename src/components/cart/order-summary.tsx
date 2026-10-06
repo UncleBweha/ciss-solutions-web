@@ -8,6 +8,8 @@ export function OrderSummary({
   deliveryFee,
   total,
   deliveryLabel,
+  deliveryText,
+  totalNote,
   couponCode,
   loading,
   children,
@@ -19,6 +21,10 @@ export function OrderSummary({
   deliveryFee: number | null
   total: number
   deliveryLabel?: string | null
+  /** Replaces the amount, e.g. "To be confirmed" for courier orders. */
+  deliveryText?: string | null
+  /** Small print under the total. */
+  totalNote?: string | null
   couponCode?: string | null
   loading?: boolean
   children?: ReactNode
@@ -40,7 +46,7 @@ export function OrderSummary({
           <dt className="text-fg-secondary">
             Delivery{deliveryLabel ? <span className="block text-xs text-fg-muted">{deliveryLabel}</span> : null}
           </dt>
-          <dd className="font-semibold">{deliveryFee === null ? <span className="text-fg-muted">At checkout</span> : deliveryFee === 0 ? 'Free' : formatKES(deliveryFee)}</dd>
+          <dd className="font-semibold">{deliveryText ?? (deliveryFee === null ? <span className="text-fg-muted">At checkout</span> : deliveryFee === 0 ? 'Free' : formatKES(deliveryFee))}</dd>
         </div>
         {discount > 0 ? (
           <div className={row}>
@@ -52,6 +58,7 @@ export function OrderSummary({
           <dt className="font-bold">Total</dt>
           <dd className="text-2xl font-bold">{formatKES(total)}</dd>
         </div>
+        {totalNote ? <p className="mt-1 text-right text-xs text-fg-muted">{totalNote}</p> : null}
       </dl>
       {children ? <div className="mt-5 space-y-3">{children}</div> : null}
     </section>
