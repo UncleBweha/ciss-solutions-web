@@ -254,7 +254,9 @@ export async function bulkProductsAction(input: BulkInput): Promise<ActionResult
 export async function addProductImageAction(productId: string, image: { url: string; storagePath: string | null; alt: string }): Promise<ActionResult> {
   return staffAction('products.manage', async (user) => {
     const pid = z.string().uuid().parse(productId)
-    const img = z.object({ url: z.string().url().or(z.string().startsWith('/')), storagePath: z.string().nullable(), alt: z.string().max(200) }).parse(image)
+    // A web address, or a path on this site ("//host" is another site, not a path).
+    const url = z.string().max(600).refine((v) => /^https?:\/\/[^\s/]+\/[^\s]*$/.test(v) || /^\/(?!\/)[^\s]*$/.test(v), 'Image address must be a web address or a path on this site')
+    const img = z.object({ url, storagePath: z.string().nullable(), alt: z.string().max(200) }).parse(image)
     const supabase = await createClient()
     const { count } = await supabase.from('product_images').select('id', { count: 'exact', head: true }).eq('product_id', pid)
     const { error } = await supabase.from('product_images').insert({

@@ -153,12 +153,13 @@ export async function moderateReviewAction(id: string, status: 'approved' | 'rej
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('reviews')
-      .update({ status: z.enum(['approved', 'rejected']).parse(status), admin_note: note || null })
+      .update({ status: z.enum(['approved', 'rejected']).parse(status) })
       .eq('id', z.string().uuid().parse(id))
       .select('product:products(slug)')
       .single()
     if (error) return { ok: false, message: dbError(error)! }
-    await audit(user, `review.${status}`, 'reviews', id)
+    // The moderator's note goes to the audit log, not onto the review: an approved review is a public row.
+    await audit(user, `review.${status}`, 'reviews', id, note ? { after: { note: z.string().max(1000).parse(note) } } : undefined)
     revalidateProducts([data?.product?.slug])
     revalidatePath('/admin/reviews')
     return { ok: true, message: `Review ${status}.` }
