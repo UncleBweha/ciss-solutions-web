@@ -23,7 +23,7 @@ test('staff can create a product and it is live immediately', async ({ page }) =
   // Nothing filled in: Publish points at what is missing instead of saving.
   await page.getByRole('button', { name: 'Publish product' }).click()
   await expect(page.getByText('Enter the product name')).toBeVisible()
-  await expect(page.getByText('Choose a category')).toBeVisible()
+  await expect(page.locator('#categoryId-error')).toHaveText('Choose a category')
 
   await page.getByLabel('Product name').fill(name)
   await page.getByLabel('Category').selectOption({ index: 1 })
