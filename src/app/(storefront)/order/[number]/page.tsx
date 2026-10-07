@@ -12,7 +12,7 @@ import { getSettings } from '@/lib/catalog'
 import { DELIVERY_TBC_NOTE, deliveryFeeLabel, isStorePickup } from '@/lib/ecommerce/delivery'
 import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { formatKES } from '@/lib/ecommerce/money'
-import { isTerminalFailure, orderStatusLabels, orderStatusTone, paymentMethodLabels } from '@/lib/ecommerce/orders'
+import { awaitsPaymentConfirmation, isTerminalFailure, orderStatusLabels, orderStatusTone, paymentMethodLabels } from '@/lib/ecommerce/orders'
 import { getOrderForViewer } from '@/lib/orders'
 import { refreshPaymentStatus } from '@/lib/payments/service'
 import { formatDateTime, param } from '@/lib/utils'
@@ -36,6 +36,8 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
       : await refreshPaymentStatus(order.id)
   const failed = isTerminalFailure(order.order_status)
   const paid = order.payment_status === 'PAID'
+  // Paybill / bank transfer: the customer says they paid; staff have not confirmed it yet.
+  const awaitingConfirmation = awaitsPaymentConfirmation(order.payment_method) && !paid && !failed
   const bank = settings.payment_methods.bank_transfer
   const paybill = settings.payment_methods.mpesa_paybill
   const tokenQs = token ? `?t=${token}` : ''
@@ -46,6 +48,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
         orderNumber={order.order_number}
         paid={paid}
         awaitingMpesa={isMpesa && !paid}
+        awaitingConfirmation={awaitingConfirmation}
         failedLabel={failed ? orderStatusLabels[order.order_status] : null}
         celebrate={justPlaced}
       />
@@ -104,7 +107,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
           <section className="glass-flat rounded-[var(--radius-card)] p-5 sm:p-6">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-bold">Order status</h2>
-              <Badge tone={orderStatusTone(order.order_status)}>{orderStatusLabels[order.order_status]}</Badge>
+              <Badge tone={orderStatusTone(order.order_status)}>{awaitingConfirmation ? 'Awaiting payment confirmation' : orderStatusLabels[order.order_status]}</Badge>
             </div>
             {failed ? <p className="text-sm text-fg-secondary">Status: {orderStatusLabels[order.order_status]}.</p> : <OrderTimeline order={order} />}
           </section>

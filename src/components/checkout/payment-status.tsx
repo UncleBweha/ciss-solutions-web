@@ -97,6 +97,7 @@ export function OrderHeading({
   orderNumber,
   paid: paidOnServer,
   awaitingMpesa,
+  awaitingConfirmation,
   failedLabel,
   celebrate,
 }: {
@@ -104,6 +105,8 @@ export function OrderHeading({
   paid: boolean
   /** An M-Pesa order that still has to be paid. */
   awaitingMpesa: boolean
+  /** A Paybill or bank transfer order whose payment staff have not confirmed yet. */
+  awaitingConfirmation: boolean
   /** Set when the order is cancelled, failed or refunded. */
   failedLabel: string | null
   /** Just placed (arrived from checkout): confetti once the payment is confirmed. */
@@ -111,13 +114,24 @@ export function OrderHeading({
 }) {
   const live = useContext(PaymentContext)
   const paid = paidOnServer || live?.view.state === 'paid'
-  const waiting = awaitingMpesa && !paid
-  const title = failedLabel ? `Order ${failedLabel.toLowerCase()}` : waiting ? 'Almost there' : awaitingMpesa || paid ? 'Payment confirmed' : 'Order confirmed'
+  const unconfirmed = awaitingConfirmation && !paid
+  const waiting = (awaitingMpesa || awaitingConfirmation) && !paid
+  const title = failedLabel
+    ? `Order ${failedLabel.toLowerCase()}`
+    : unconfirmed
+      ? 'Order placed'
+      : waiting
+        ? 'Almost there'
+        : awaitingMpesa || paid
+          ? 'Payment confirmed'
+          : 'Order confirmed'
   const text = failedLabel
     ? 'This order is no longer active.'
-    : waiting
-      ? 'Complete your M-Pesa payment to confirm your order.'
-      : 'Thank you for your order. A confirmation has been sent to your email.'
+    : unconfirmed
+      ? 'Awaiting payment confirmation. We will confirm your order, and email you, once we have checked your payment.'
+      : waiting
+        ? 'Complete your M-Pesa payment to confirm your order.'
+        : 'Thank you for your order. A confirmation has been sent to your email.'
 
   return (
     <header className="relative mb-8 text-center">

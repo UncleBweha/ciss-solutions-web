@@ -66,6 +66,14 @@ export function isManualPayment(method: PaymentMethod) {
   return method === 'bank_transfer' || method === 'cash_on_delivery' || method === 'mpesa_paybill'
 }
 
+/**
+ * Paid by the customer themselves, outside the site (Paybill, bank transfer): the order
+ * waits until staff have checked the money arrived and marked it Paid.
+ */
+export function awaitsPaymentConfirmation(method: PaymentMethod) {
+  return method === 'mpesa_paybill' || method === 'bank_transfer'
+}
+
 /** Next statuses staff may choose (mirrors update_order_status() in the database). */
 export function allowedTransitions(status: OrderStatus, method: PaymentMethod): OrderStatus[] {
   const manual = isManualPayment(method)

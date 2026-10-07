@@ -3,9 +3,10 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { staffAction, type ActionResult } from '@/lib/admin/action'
 import { audit } from '@/lib/admin/audit'
-import { background, notifyOrderStatus } from '@/lib/notifications'
+import { background, notifyOrderStatus, notifyPaymentConfirmed } from '@/lib/notifications'
 import { runOutbox, runTaskNow } from '@/lib/outbox'
 import { createClient } from '@/lib/supabase/server'
+import { awaitsPaymentConfirmation } from '@/lib/ecommerce/orders'
 
 const statuses = ['PENDING', 'PAYMENT_PENDING', 'PAID', 'PROCESSING', 'READY_FOR_DISPATCH', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'FAILED'] as const
 
@@ -22,6 +23,14 @@ export async function updateOrderStatusAction(orderId: string, status: (typeof s
     await audit(user, `order.${input.status.toLowerCase()}`, 'orders', input.orderId, { after: { status: input.status, note: input.note } })
     // The status email was queued by the database with the change; send it after the response.
     background('outbox:order_status', () => runTaskNow(input.orderId, 'order_status', () => notifyOrderStatus(input.orderId, input.status)))
+    // Staff confirmed a Paybill or bank transfer payment: only now are the customer and staff
+    // told the order is paid (queued by the database with the change; sent after the response).
+    if (input.status === 'PAID') {
+      const { data: order } = await supabase.from('orders').select('payment_method').eq('id', input.orderId).maybeSingle()
+      if (order && awaitsPaymentConfirmation(order.payment_method)) {
+        background('outbox:payment_confirmed', () => runTaskNow(input.orderId, 'payment_confirmed', () => notifyPaymentConfirmed(input.orderId)))
+      }
+    }
     // Marking an order paid (or refunded) also queued its sale (or void) for the POS.
     background('outbox:pos', () => runOutbox({ orderId: input.orderId, kinds: ['pos_sale', 'pos_void'] }))
     revalidatePath(`/admin/orders/${input.orderId}`)
