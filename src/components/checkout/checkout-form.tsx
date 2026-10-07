@@ -307,7 +307,7 @@ export function CheckoutForm({
                     <PaymentOption value="mpesa" register={register} checked={method === 'mpesa'} icon={<Smartphone className="h-5 w-5" />} title="M-Pesa" description="Pay instantly with an STK push to your phone" />
                   ) : null}
                   {methods.mpesa_paybill ? (
-                    <PaymentOption value="mpesa_paybill" register={register} checked={method === 'mpesa_paybill'} icon={<Smartphone className="h-5 w-5" />} title="M-Pesa Paybill" description={`Pay to Paybill ${paybill.paybill_number} from your phone; we confirm and dispatch`} />
+                    <PaymentOption value="mpesa_paybill" register={register} checked={method === 'mpesa_paybill'} icon={<Smartphone className="h-5 w-5" />} title="M-Pesa Paybill" description={`Pay to business number ${paybill.paybill_number} from your phone; we confirm and dispatch`} />
                   ) : null}
                   {methods.bank_transfer ? (
                     <PaymentOption value="bank_transfer" register={register} checked={method === 'bank_transfer'} icon={<Building2 className="h-5 w-5" />} title="Bank transfer" description="Transfer to our account; we dispatch once funds clear" />
@@ -334,8 +334,16 @@ export function CheckoutForm({
               ) : null}
               {method === 'mpesa_paybill' ? (
                 <div className="rounded-md border border-border p-4 text-sm text-fg-secondary">
-                  <p className="font-semibold text-fg">Place the order, then pay to Paybill {paybill.paybill_number}.</p>
-                  <p className="mt-1">Your order number is the account number; it is shown on the next page. {paybill.instructions}</p>
+                  <p className="font-semibold text-fg">Place the order, then pay with M-Pesa: Lipa na M-Pesa, Pay Bill.</p>
+                  <dl className="mt-3 grid grid-cols-[9rem_1fr] gap-y-1.5">
+                    <dt className="text-fg-muted">Business number</dt>
+                    <dd className="font-mono font-bold text-fg">{paybill.paybill_number}</dd>
+                    <dt className="text-fg-muted">Account number</dt>
+                    <dd className="font-mono font-bold text-fg">{paybill.account_number}</dd>
+                    <dt className="text-fg-muted">Amount</dt>
+                    <dd className="font-bold text-fg">{quote ? formatKES(quote.total) : '…'}</dd>
+                  </dl>
+                  {paybill.instructions ? <p className="mt-3">{paybill.instructions}</p> : null}
                 </div>
               ) : null}
               {method === 'bank_transfer' ? (

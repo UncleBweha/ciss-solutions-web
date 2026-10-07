@@ -45,7 +45,7 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   const method = settings.payment_methods[data.paymentMethod]
   if (!method?.enabled) return { ok: false, message: 'That payment method is not available. Please choose another.' }
   if (data.paymentMethod === 'card') return { ok: false, message: 'Card payments are not available yet. Please choose M-Pesa.' }
-  if (data.paymentMethod === 'mpesa_paybill' && !settings.payment_methods.mpesa_paybill.paybill_number) {
+  if (data.paymentMethod === 'mpesa_paybill' && !(settings.payment_methods.mpesa_paybill.paybill_number && settings.payment_methods.mpesa_paybill.account_number)) {
     return { ok: false, message: 'That payment method is not available. Please choose another.' }
   }
   const pickup = data.deliveryMethod === 'pickup'
