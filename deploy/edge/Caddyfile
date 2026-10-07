@@ -1,11 +1,10 @@
 # ---------------------------------------------------------------------------
 # Edge proxy for the whole VPS (see ../docker-compose.yml).
 #
-# This file holds only what must be global. Every site lives in its own file
-# under sites/, owned by that project's deploy:
+# This file holds only what must be global. Each business has one file under
+# sites/, holding its website and its POS and written only by its own deploy:
 #   sites/toolsman.caddy        toolsman.co.ke, www, pos.toolsman.co.ke
-#   sites/ciss-solutions.caddy  cisssolutions.co.ke, www
-#   sites/ciss-pos.caddy        pos.cisssolutions.co.ke
+#   sites/ciss-solutions.caddy  cisssolutions.co.ke, www, pos.cisssolutions.co.ke
 # After changing a site file:
 #   docker exec edge-caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 #   docker exec edge-caddy caddy reload   --config /etc/caddy/Caddyfile --adapter caddyfile

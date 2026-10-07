@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Remove the CISS Solutions site from the VPS: its site file in the edge proxy,
+# Remove the CISS Solutions site from the VPS: its site file in the edge proxy
+# (which also routes the POS; remove the POS itself with its repo's deploy/remove.sh),
 # its container and its files. Nothing else is touched.
 # Usage: deploy/remove.sh user@host [ssh_key]
 set -euo pipefail

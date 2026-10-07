@@ -46,22 +46,22 @@ if [ "$STEP" = prepare ]; then
     } > "$SITES/toolsman.caddy"
     echo "Wrote $SITES/toolsman.caddy"
   fi
-  # The CISS sites as they are served now. Their own deploys maintain these afterwards.
+  # CISS Solutions (website and POS) as served now. deploy/edge-site.sh maintains it afterwards.
   if [ ! -f "$SITES/ciss-solutions.caddy" ]; then
     if docker ps --format '{{.Names}}' | grep -qx ciss-store; then UP=ciss-store:3000; else UP=ciss-solutions:80; fi
     printf '%s\n' \
-      "# cisssolutions.co.ke. Written by deploy/edge-site.sh in the CISS Solutions repo:" \
-      "# switch with deploy/app-switch.sh, remove with deploy/remove.sh. Do not edit here." \
+      "# CISS Solutions: the website and the POS. Written by deploy/edge-site.sh in the" \
+      "# CISS Solutions web repo: switch the website with deploy/app-switch.sh, remove" \
+      "# both with deploy/remove.sh. Do not edit here." \
       "www.cisssolutions.co.ke {" "	redir https://cisssolutions.co.ke{uri} permanent" "}" "" \
-      "cisssolutions.co.ke {" "	reverse_proxy $UP" "	encode gzip" "}" > "$SITES/ciss-solutions.caddy"
-    echo "Wrote $SITES/ciss-solutions.caddy ($UP)"
-  fi
-  if [ ! -f "$SITES/ciss-pos.caddy" ] && docker ps --format '{{.Names}}' | grep -qx ciss-pos; then
-    printf '%s\n' \
-      "# pos.cisssolutions.co.ke. Written by deploy/deploy.sh in the CISS POS repo;" \
-      "# remove with its deploy/remove.sh. Do not edit here." \
-      "pos.cisssolutions.co.ke {" "	reverse_proxy ciss-pos:80" "	encode gzip" "}" > "$SITES/ciss-pos.caddy"
-    echo "Wrote $SITES/ciss-pos.caddy"
+      "cisssolutions.co.ke {" "	reverse_proxy $UP" "	encode gzip" "}" "" \
+      "# The POS (repo CISS Solutions POS) runs as container ciss-pos on the shared" \
+      "# web network. While that container does not exist this answers 502." \
+      "pos.cisssolutions.co.ke {" \
+      "	reverse_proxy ciss-pos:80" \
+      "	encode gzip" \
+      "}" > "$SITES/ciss-solutions.caddy"
+    echo "Wrote $SITES/ciss-solutions.caddy (website: $UP)"
   fi
 
   # Create the container (not started) so its volumes exist, then bring the

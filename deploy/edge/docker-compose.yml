@@ -1,6 +1,7 @@
 # The front door of the VPS: the only container on ports 80 and 443. It belongs
-# to no project. It serves every site file in conf/sites/, one per project, and
-# each project's deploy writes only its own file there (see conf/Caddyfile).
+# to no project. It serves every site file in conf/sites/, one per business
+# (toolsman.caddy, ciss-solutions.caddy), each holding that business's website
+# and POS and written only by its own deploy (see conf/Caddyfile).
 #
 # Lives on the server at /opt/edge. Set up once with deploy/edge/setup.sh;
 # no deploy of any project recreates it.
