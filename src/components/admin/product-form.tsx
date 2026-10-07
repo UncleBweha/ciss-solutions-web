@@ -56,6 +56,7 @@ export function ProductForm({
   const [moreOpen, setMoreOpen] = useState(false)
   const [brands, setBrands] = useState(initialBrands)
   const [addingBrand, setAddingBrand] = useState(false)
+  const [addedBrandId, setAddedBrandId] = useState<string | null>(null)
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([])
   const isNew = !initial.id
 
@@ -67,6 +68,12 @@ export function ProductForm({
   const variants = useFieldArray({ control: form.control, name: 'variants' })
   const hasVariants = variants.fields.length > 0
   const live = watch('status') === 'active'
+
+  // Select a brand added from here once its <option> is on the page: a <select> can't
+  // take a value it has no option for yet.
+  useEffect(() => {
+    if (addedBrandId) setValue('brandId', addedBrandId, { shouldDirty: true, shouldValidate: true })
+  }, [addedBrandId, setValue])
 
   // Free the previews' memory when the form goes away.
   const photosRef = useRef(photos)
@@ -401,7 +408,7 @@ export function ProductForm({
         onClose={() => setAddingBrand(false)}
         onAdded={(brand) => {
           setBrands((list) => (list.some((b) => b.id === brand.id) ? list : [...list, brand].sort((a, b) => a.name.localeCompare(b.name))))
-          setValue('brandId', brand.id, { shouldDirty: true, shouldValidate: true })
+          setAddedBrandId(brand.id)
           setAddingBrand(false)
         }}
       />
