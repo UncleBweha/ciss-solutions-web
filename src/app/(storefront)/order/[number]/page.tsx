@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { FileText } from 'lucide-react'
@@ -13,6 +14,7 @@ import { DELIVERY_TBC_NOTE, deliveryFeeLabel, isStorePickup } from '@/lib/ecomme
 import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { formatKES } from '@/lib/ecommerce/money'
 import { awaitsPaymentConfirmation, isTerminalFailure, orderStatusLabels, orderStatusTone, paymentMethodLabels } from '@/lib/ecommerce/orders'
+import { orderTokenCookie } from '@/lib/order-token'
 import { getOrderForViewer } from '@/lib/orders'
 import { refreshPaymentStatus } from '@/lib/payments/service'
 import { formatDateTime, param } from '@/lib/utils'
@@ -20,8 +22,9 @@ import { formatDateTime, param } from '@/lib/utils'
 export const metadata: Metadata = { title: 'Your order', robots: { index: false } }
 
 export default async function OrderPage({ params, searchParams }: PageProps<'/order/[number]'>) {
-  const [{ number }, sp] = await Promise.all([params, searchParams])
-  const token = param(sp.t) ?? null
+  const [{ number }, sp, jar] = await Promise.all([params, searchParams, cookies()])
+  // The proxy moves ?t= into a cookie and redirects, so the token is normally read from there.
+  const token = param(sp.t) ?? jar.get(orderTokenCookie(decodeURIComponent(number)))?.value ?? null
   // Straight from checkout: a payment confirmation. Order progress is for people tracking an order.
   const justPlaced = param(sp.placed) === '1'
   const order = await getOrderForViewer(decodeURIComponent(number), token)

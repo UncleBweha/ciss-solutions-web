@@ -89,8 +89,13 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
   A trigger stops users from changing their own role.
 - `SUPABASE_SERVICE_ROLE_KEY` is used only in server code (`lib/supabase/admin.ts`, `server-only`)
   for payment callbacks, cron, order lookups by token and notifications.
-- Column-level grants restrict what even an allowed update may touch (for example staff can edit
-  only `orders.admin_notes` directly; everything else goes through functions).
+- Nobody updates `orders` directly, staff included: every change goes through functions.
+  RLS decides which rows a person can read, not which columns, so anything a customer must not
+  see about their own order lives in its own table: staff notes are in `order_admin_notes`
+  (staff only), cost prices in `product_costs`.
+- A profile's `email` identifies the account (staff promotion, password reset). Only the server
+  can change it; a trigger refuses anyone else.
+- `confirm_payment()` can be run by the server only, not by a staff session.
 
 **Other controls**
 
@@ -101,13 +106,21 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
   Reviews require a signed-in account. Mobile networks share one address between thousands of
   customers, so the per-IP limits are loose flood ceilings; the tight limits are keyed on the
   email, phone or order number being tried.
+- Placing an order holds stock without any payment, so checkout also caps abuse directly: at
+  most 3 unpaid Paybill / bank / cash orders per phone number or email at once, and at most 8
+  M-Pesa prompts an hour to any one number, whoever asks for them.
 - Staff accounts manage the store and cannot buy from it: sign-in and `/account` send them to
   `/admin`, and checkout refuses them (page and `placeOrderAction`).
 - The logger (`lib/logger.ts`) redacts values under keys that look like passwords, PINs, tokens,
   secrets, API keys, cookies and authorisation headers.
 - Security headers in `next.config.ts`: `X-Frame-Options: SAMEORIGIN`, `nosniff`,
-  `Referrer-Policy`, `Permissions-Policy`, and HSTS when `NEXT_PUBLIC_SITE_URL` is https.
-- Guests view their order through an unguessable per-order token (`/order/<number>?t=<uuid>`).
+  `Referrer-Policy`, `Permissions-Policy`, a partial `Content-Security-Policy` (no plugins, no
+  `<base>` hijack, no framing by other sites; scripts are not restricted), and HSTS when
+  `NEXT_PUBLIC_SITE_URL` is https.
+- Guests view their order through an unguessable per-order token (`/order/<number>?t=<uuid>`,
+  the link in their emails). The proxy moves the token into an httpOnly cookie and redirects
+  to the address without it, so it does not stay in the address bar, in history, or in the
+  page address that analytics scripts report (`lib/order-token.ts`).
 - Every staff write is recorded in `audit_logs` with actor, action and resource.
 - `robots.ts` blocks indexing on any host that isn't `cisssolutions.co.ke` (unless
   `ALLOW_INDEXING=true`), so staging copies don't compete with the live site.
