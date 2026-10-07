@@ -121,6 +121,25 @@ export async function saveBrandAction(_prev: ActionResult | null, formData: Form
   })
 }
 
+/** Adds a brand by name only, from the product page. Returns it so the form can select it. */
+export async function quickAddBrandAction(name: string): Promise<ActionResult<{ id: string; name: string }>> {
+  return staffAction('catalog.manage', async (user) => {
+    const parsed = z.string().trim().min(1, 'Enter the brand name').max(80).safeParse(name)
+    if (!parsed.success) return { ok: false, message: parsed.error.issues[0].message }
+    const supabase = await createClient()
+    // Already there (whatever the capitals): use it instead of making a second one.
+    const { data: existing } = await supabase.from('brands').select('id, name').ilike('name', parsed.data.replace(/[%_\\]/g, '\\$&')).limit(1).maybeSingle()
+    if (existing) return { ok: true, message: `${existing.name} is already a brand.`, data: existing }
+    const row = { name: parsed.data, slug: slugify(parsed.data) || `brand-${Date.now().toString(36)}`, is_active: true }
+    const { data: created, error } = await supabase.from('brands').insert(row).select('id, name').single()
+    if (error) return { ok: false, message: dbError(error)! }
+    await audit(user, 'brand.created', 'brands', row.slug, { after: row })
+    revalidateBrands([row.slug])
+    revalidatePath('/admin/brands')
+    return { ok: true, message: 'Brand added.', data: created }
+  })
+}
+
 export async function deleteBrandAction(id: string): Promise<ActionResult> {
   return staffAction('catalog.manage', async (user) => {
     const supabase = await createClient()
