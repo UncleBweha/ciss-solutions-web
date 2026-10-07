@@ -18,13 +18,18 @@ export default async function EditProductPage({ params }: PageProps<'/admin/prod
   const [{ data: p }, options] = await Promise.all([
     supabase
       .from('products')
-      .select('*, cost:product_costs(cost_price), images:product_images(id, url, alt_text, sort_order, is_primary), variants:product_variants(*), compat:product_compatibility(printer_model_id)')
+      .select('*, cost:product_costs(cost_price), images:product_images(id, url, alt_text, sort_order, is_primary), variants:product_variants(*), compat:product_compatibility(model:printer_models(name))')
       .eq('id', id)
       .maybeSingle(),
     getAdminCatalogOptions(),
   ])
   if (!p) notFound()
   const s = (v: unknown) => (v == null ? '' : String(v))
+  // "Compatibility" is one list: what staff typed, plus printer models linked earlier (ticked in
+  // the old form). Saving links the entries that name a known model, so the list is all there is.
+  const typed = p.compatible_with ?? []
+  const known = new Set(typed.map((x) => x.toLowerCase()))
+  const linked = p.compat.map((c) => c.model?.name).filter((name): name is string => Boolean(name) && !known.has(name!.toLowerCase()))
 
   return (
     <div className="space-y-4">
@@ -67,6 +72,7 @@ export default async function EditProductPage({ params }: PageProps<'/admin/prod
           price: Number(p.price),
           compareAtPrice: s(p.compare_at_price),
           costPrice: s(p.cost?.cost_price),
+          stockQuantity: p.stock_quantity,
           lowStockThreshold: p.low_stock_threshold,
           weightKg: s(p.weight_kg),
           dimensions: s(p.dimensions),
@@ -77,7 +83,8 @@ export default async function EditProductPage({ params }: PageProps<'/admin/prod
           specifications: (Array.isArray(p.specifications) ? (p.specifications as Spec[]) : []).map((x) => ({ label: x.label, value: x.value })),
           features: p.features.join('\n'),
           whatsIncluded: p.whats_included.join('\n'),
-          compatibility: p.compat.map((c) => c.printer_model_id),
+          compatibleWith: [...typed, ...linked].join('\n'),
+          compatibility: [],
           variants: [...p.variants]
             .filter((v) => v.is_active)
             .sort((a, b) => a.sort_order - b.sort_order)

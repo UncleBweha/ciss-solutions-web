@@ -10,14 +10,14 @@ export default async function NewProductPage() {
   const options = await getAdminCatalogOptions()
   return (
     <div>
-      <AdminPageHeader title="New product" back={{ href: '/admin/products', label: 'Products' }} description="Save the product first, then add images." />
+      <AdminPageHeader title="New product" back={{ href: '/admin/products', label: 'Products' }} description="Add the photos and details, then publish. The product goes live in the shop straight away." />
       <ProductForm
         {...options}
         initial={{
-          name: '', slug: '', sku: '', barcode: '', brandId: '', categoryId: '', printerModelId: '', productType: 'simple', status: 'draft',
+          name: '', slug: '', sku: '', barcode: '', brandId: '', categoryId: '', printerModelId: '', productType: 'simple', status: 'active',
           shortDescription: '', description: '', partNumber: '', oemNumber: '', condition: '', warranty: '', price: '', compareAtPrice: '', costPrice: '',
-          initialStock: 0, lowStockThreshold: 5, weightKg: '', dimensions: '', isFeatured: false, isBestseller: false, isNew: true, isOnSale: false,
-          specifications: [], features: '', whatsIncluded: '', compatibility: [], variants: [], seoTitle: '', seoDescription: '', canonicalUrl: '',
+          initialStock: '', lowStockThreshold: 5, weightKg: '', dimensions: '', isFeatured: false, isBestseller: false, isNew: true, isOnSale: false,
+          specifications: [], features: '', whatsIncluded: '', compatibleWith: '', compatibility: [], variants: [], seoTitle: '', seoDescription: '', canonicalUrl: '',
           ogTitle: '', ogDescription: '', ogImageUrl: '',
         }}
       />

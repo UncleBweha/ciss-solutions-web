@@ -40,7 +40,10 @@ export const productSchema = z
     price: money,
     compareAtPrice: optionalMoney,
     costPrice: optionalMoney,
+    /** New product: the opening stock. */
     initialStock: z.coerce.number().int().min(0).max(1_000_000).optional(),
+    /** Existing product without variants: the quantity on hand; a change is recorded as a stock correction. */
+    stockQuantity: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().int('Enter a whole number').min(0, 'Must be 0 or more').max(1_000_000).optional()),
     lowStockThreshold: z.coerce.number().int().min(0).max(100_000),
     weightKg: optionalMoney,
     dimensions: optionalText(80),
@@ -51,6 +54,9 @@ export const productSchema = z
     specifications: z.array(z.object({ label: z.string().trim().max(80), value: z.string().trim().max(300) })).max(60),
     features: z.array(z.string().trim().max(300)).max(40),
     whatsIncluded: z.array(z.string().trim().max(200)).max(40),
+    /** Typed by staff, one printer model (or range) per entry. Entries that name a known model are linked to it. */
+    compatibleWith: z.array(z.string().trim().max(120)).max(200),
+    /** Links to printer models that aren't named in compatibleWith (kept as they are). */
     compatibility: z.array(z.string().uuid()).max(500),
     variants: z.array(variantSchema).max(50),
     seoTitle: optionalText(70),

@@ -2,22 +2,21 @@
 import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 import { ArrowDown, ArrowUp, ImagePlus, Star, Trash2 } from 'lucide-react'
-import { addProductImageAction, deleteProductImageAction, updateProductImagesAction } from '@/actions/admin/products'
+import { deleteProductImageAction, updateProductImagesAction } from '@/actions/admin/products'
 import { ProductImage } from '@/components/product/product-image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/form'
 import { useToast } from '@/components/ui/toast'
-import { createClient } from '@/lib/supabase/client'
+import { PRODUCT_IMAGE_ACCEPT, productImageProblem, uploadProductImage } from '@/lib/admin/product-image-upload'
 import { cn } from '@/lib/utils'
 import { Panel } from './admin-ui'
 
 type Img = { id: string; url: string; alt: string; isPrimary: boolean }
-const MAX = 5 * 1024 * 1024
 
 /**
- * Uploads go straight from the browser to the product-images bucket using the
- * staff member's session (storage RLS checks products.manage). Delivery is
- * optimised to AVIF/WebP by next/image.
+ * A product's photos: upload, order, main photo, alt text. Uploads go straight from the
+ * browser to storage (lib/admin/product-image-upload). Delivery is optimised to AVIF/WebP
+ * by next/image.
  */
 export function ImageManager({ productId, productName, initial }: { productId: string; productName: string; initial: Img[] }) {
   const [images, setImages] = useState(initial)
@@ -42,27 +41,10 @@ export function ImageManager({ productId, productName, initial }: { productId: s
     if (!files?.length) return
     setUploading(true)
     let uploaded = 0
-    const supabase = createClient()
     for (const file of Array.from(files)) {
-      if (!['image/jpeg', 'image/png', 'image/webp', 'image/avif'].includes(file.type)) {
-        toast(`${file.name}: use JPG, PNG, WebP or AVIF`, 'error')
-        continue
-      }
-      if (file.size > MAX) {
-        toast(`${file.name} is larger than 5 MB`, 'error')
-        continue
-      }
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-      const path = `${productId}/${crypto.randomUUID()}.${ext}`
-      const { error } = await supabase.storage.from('product-images').upload(path, file, { contentType: file.type, cacheControl: '31536000' })
-      if (error) {
-        toast(`Upload failed: ${error.message}`, 'error')
-        continue
-      }
-      const { data } = supabase.storage.from('product-images').getPublicUrl(path)
-      const result = await addProductImageAction(productId, { url: data.publicUrl, storagePath: path, alt: productName })
-      if (result.ok) uploaded++
-      else toast(result.message, 'error')
+      const problem = productImageProblem(file) ?? (await uploadProductImage(productId, file, productName))
+      if (problem) toast(problem, 'error')
+      else uploaded++
     }
     setUploading(false)
     if (input.current) input.current.value = ''
@@ -81,10 +63,10 @@ export function ImageManager({ productId, productName, initial }: { productId: s
 
   return (
     <Panel
-      title={`Images (${images.length})`}
+      title={`Photos (${images.length})`}
       actions={
         <>
-          <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="sr-only" id="image-upload" onChange={(e) => upload(e.target.files)} />
+          <input ref={input} type="file" accept={PRODUCT_IMAGE_ACCEPT} multiple className="sr-only" id="image-upload" onChange={(e) => upload(e.target.files)} />
           <Button size="sm" variant="glass" loading={uploading} onClick={() => input.current?.click()}>
             <ImagePlus className="h-4 w-4" aria-hidden="true" /> Upload
           </Button>
@@ -127,7 +109,7 @@ export function ImageManager({ productId, productName, initial }: { productId: s
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-fg-muted">No images yet. Upload clear product photos on a plain background (square works best).</p>
+        <p className="text-sm text-fg-muted">No photos yet. Upload clear product photos on a plain background (square works best).</p>
       )}
       {dirty ? (
         <Button className="mt-3" size="sm" loading={pending} onClick={() => start(async () => {
