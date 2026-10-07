@@ -67,11 +67,14 @@ needs a rebuild. Everything else is read at runtime.
 
 The server is shared with other sites. Ports 80 and 443 belong to one small proxy that is part
 of no project: the container `edge-caddy` (Caddy), set up from [`deploy/edge`](../deploy/edge) and
-living in `/opt/edge` on the server. It reads one site file per project from
-`/opt/edge/conf/sites/`, and each project's deploy writes only its own file, so a deploy of one
-site cannot change the routing of another. Site containers join the Docker network `web`.
+living in `/opt/edge` on the server. It reads one site file per business from
+`/opt/edge/conf/sites/` (`toolsman.caddy`, `ciss-solutions.caddy`), each holding that business's
+website and POS and written only by its own deploy, so a deploy of one business cannot change the
+routing of another. Site containers join the Docker network `web`.
 
-This project's file is `ciss-solutions.caddy` (`deploy/edge-site.sh`). The coming-soon container is
+`ciss-solutions.caddy` is written by this repo (`deploy/edge-site.sh`). It routes the website and
+`pos.cisssolutions.co.ke` (container `ciss-pos`, from the POS repo, whose deploy only replaces
+that container). The coming-soon container is
 `ciss-solutions`; the store runs beside it as `ciss-store`.
 
 The proxy is set up once per server (`prepare` causes no downtime; `switch` moves the ports over
