@@ -2,6 +2,7 @@ import 'server-only'
 import { logger } from '@/lib/logger'
 import { notifyOrderPlaced, notifyOrderStatus, notifyPaymentConfirmed } from '@/lib/notifications'
 import { initiateMpesaPayment } from '@/lib/payments/service'
+import { registerPosSale, voidPosSale } from '@/lib/pos/service'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { OrderStatus } from '@/lib/ecommerce/orders'
 import type { Database } from '@/types/database'
@@ -10,10 +11,11 @@ import type { Database } from '@/types/database'
 // Tasks are committed together with the change that caused them, then run here:
 // straight away by the request that created them, and by the cron sweep for
 // anything left behind (crash, deploy, provider outage). Handlers must be safe to
-// repeat: emails are de-duplicated per order, the STK push checks for earlier attempts.
+// repeat: emails are de-duplicated per order, the STK push checks for earlier attempts,
+// the POS keeps one sale per order number.
 
 type Task = Database['public']['Tables']['outbox']['Row']
-export type OutboxKind = 'order_placed' | 'mpesa_stk_push' | 'payment_confirmed' | 'order_status'
+export type OutboxKind = 'order_placed' | 'mpesa_stk_push' | 'payment_confirmed' | 'order_status' | 'pos_sale' | 'pos_void'
 
 export type TaskResult = {
   id: string
@@ -43,6 +45,10 @@ async function handle(task: Task): Promise<{ note?: string; message?: string }> 
     }
     case 'mpesa_stk_push':
       return sendStkPush(task)
+    case 'pos_sale':
+      return { note: await registerPosSale(task.order_id) }
+    case 'pos_void':
+      return { note: await voidPosSale(task.order_id) }
     default:
       return { note: `unknown kind ${task.kind}` }
   }

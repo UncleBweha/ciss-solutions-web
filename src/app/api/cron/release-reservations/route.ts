@@ -6,7 +6,7 @@ import { safeEqual } from '@/lib/security'
 import { serverEnv } from '@/lib/server-env'
 
 // Reconciles M-Pesa pushes still awaiting a result, releases stock held by unpaid
-// orders whose payment window has passed, and sweeps the outbox (emails, STK pushes).
+// orders whose payment window has passed, and sweeps the outbox (emails, STK pushes, POS sales).
 // Schedule every 5-10 minutes (Vercel Cron, GitHub Actions, or crontab + curl):
 //   curl -H "Authorization: Bearer $CRON_SECRET" https://<site>/api/cron/release-reservations
 export async function GET(request: NextRequest) {

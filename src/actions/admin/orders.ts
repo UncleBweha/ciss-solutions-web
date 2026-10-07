@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { staffAction, type ActionResult } from '@/lib/admin/action'
 import { audit } from '@/lib/admin/audit'
 import { background, notifyOrderStatus } from '@/lib/notifications'
-import { runTaskNow } from '@/lib/outbox'
+import { runOutbox, runTaskNow } from '@/lib/outbox'
 import { createClient } from '@/lib/supabase/server'
 
 const statuses = ['PENDING', 'PAYMENT_PENDING', 'PAID', 'PROCESSING', 'READY_FOR_DISPATCH', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'FAILED'] as const
@@ -22,6 +22,8 @@ export async function updateOrderStatusAction(orderId: string, status: (typeof s
     await audit(user, `order.${input.status.toLowerCase()}`, 'orders', input.orderId, { after: { status: input.status, note: input.note } })
     // The status email was queued by the database with the change; send it after the response.
     background('outbox:order_status', () => runTaskNow(input.orderId, 'order_status', () => notifyOrderStatus(input.orderId, input.status)))
+    // Marking an order paid (or refunded) also queued its sale (or void) for the POS.
+    background('outbox:pos', () => runOutbox({ orderId: input.orderId, kinds: ['pos_sale', 'pos_void'] }))
     revalidatePath(`/admin/orders/${input.orderId}`)
     revalidatePath('/admin/orders')
     return { ok: true, message: 'Order updated.' }

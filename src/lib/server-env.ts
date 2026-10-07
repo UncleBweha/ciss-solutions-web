@@ -45,5 +45,12 @@ export const serverEnv = {
     clientId: optional('GOOGLE_CLIENT_ID'),
     clientSecret: optional('GOOGLE_CLIENT_SECRET'),
   },
+  // The POS (a separate Supabase project) where paid orders are registered as sales.
+  // All three unset: website sales simply aren't copied.
+  pos: {
+    url: optional('POS_SUPABASE_URL'),
+    key: optional('POS_SUPABASE_KEY'),
+    secret: optional('POS_SYNC_SECRET'),
+  },
   cronSecret: optional('CRON_SECRET'),
 }

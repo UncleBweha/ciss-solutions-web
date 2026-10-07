@@ -86,6 +86,7 @@ begin
   assert (select count(*) from outbox where order_id = v_mpesa and kind = 'payment_confirmed') = 1, 'payment_confirmed queued';
   perform confirm_payment(v_payment, 'OUTBOXTEST1', 10000, '{}'::jsonb);
   assert (select count(*) from outbox where order_id = v_mpesa and kind = 'payment_confirmed') = 1, 'repeat callback queues nothing';
+  assert (select count(*) from outbox where order_id = v_mpesa and kind = 'pos_sale') = 1, 'paid order queued one POS sale';
 
   -- 6. Status emails only for changes made by staff, not by automatic expiry ---------------
   update orders set reservation_expires_at = now() - interval '1 minute'
@@ -99,11 +100,19 @@ begin
   perform update_order_status(v_mpesa, 'PROCESSING', null);
   assert (select payload ->> 'status' from outbox where order_id = v_mpesa and kind = 'order_status') = 'PROCESSING',
     'staff status change queued an email';
+
+  -- Bank transfer marked paid by staff: no receipt task (staff were alerted at placement),
+  -- but the sale goes to the POS, and a refund voids it there.
+  assert not exists (select 1 from outbox where order_id = v_bank and kind = 'pos_sale'), 'unpaid order: nothing for the POS';
+  perform update_order_status(v_bank, 'PAID', null);
+  assert not exists (select 1 from outbox where order_id = v_bank and kind = 'payment_confirmed'), 'manual method: no receipt task';
+  assert (select count(*) from outbox where order_id = v_bank and kind = 'pos_sale') = 1, 'staff-confirmed payment queued a POS sale';
+  assert not exists (select 1 from outbox where order_id = v_bank and kind = 'pos_void'), 'no void while paid';
+  perform update_order_status(v_bank, 'REFUNDED', null);
+  assert (select count(*) from outbox where order_id = v_bank and kind = 'pos_void') = 1, 'refund queued a POS void';
+  assert (select count(*) from outbox where order_id = v_bank and kind = 'pos_sale') = 1, 'refund queued no second sale';
   perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
   perform set_config('request.jwt.claim.role', 'service_role', true);
-
-  -- Bank transfer marked paid by staff: no receipt task (staff were alerted at placement).
-  assert not exists (select 1 from outbox where order_id = v_bank and kind = 'payment_confirmed'), 'manual method: no receipt task';
 end $$;
 
 -- 7. Customers and anonymous users cannot see or run the outbox -------------------------
