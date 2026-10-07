@@ -54,7 +54,7 @@ export default async function CheckoutPage() {
           mpesa: pm.mpesa.enabled,
           bank_transfer: pm.bank_transfer.enabled,
           cash_on_delivery: pm.cash_on_delivery.enabled,
-          mpesa_paybill: pm.mpesa_paybill.enabled && Boolean(pm.mpesa_paybill.paybill_number),
+          mpesa_paybill: pm.mpesa_paybill.enabled && Boolean(pm.mpesa_paybill.paybill_number) && Boolean(pm.mpesa_paybill.account_number),
           card: false,
         }}
         codCounties={pm.cash_on_delivery.counties ?? []}
