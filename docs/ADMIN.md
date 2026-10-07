@@ -41,6 +41,12 @@ support requests, and "Task failed" when an email or M-Pesa prompt still failed 
 `orders@cisssolutions.co.ke` and to the addresses in Settings → Checkout, SEO & alerts (plus any in
 the server's `ADMIN_ALERT_EMAILS`).
 
+**POS.** When an order becomes paid (staff mark it Paid, M-Pesa confirms it, or a cash-on-delivery
+order is delivered), it appears in the POS as a sale of the "Website" shop, with the order number
+next to the customer's name. Refunding the order voids that sale. This usually takes a few
+seconds and at most a few minutes. POS stock does not change, and the POS shows no profit for
+these sales. If the POS can't be reached after several tries, a "Task failed" notification appears.
+
 ## Products
 
 **Products → New product.** Required: name, SKU, price and product type; a category is optional
