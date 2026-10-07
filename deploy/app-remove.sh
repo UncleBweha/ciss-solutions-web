@@ -14,4 +14,4 @@ SSH=(ssh)
 if [ -n "${2:-}" ]; then SSH+=(-i "$2"); fi
 "${SSH[@]}" "$TARGET" 'set -e
   docker rm -f ciss-store >/dev/null 2>&1 && echo "Removed container ciss-store" || echo "No ciss-store container"
-  rm -f /etc/cron.d/ciss-store'
+  rm -f /etc/cron.d/ciss-store /opt/ciss-store/cron.curl'

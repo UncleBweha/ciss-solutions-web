@@ -69,9 +69,14 @@ else
 fi
 
 # Every 5 minutes: release stock held by unpaid orders whose payment window has passed.
+# The secret is read by curl from a root-only file, not passed on the command line, where
+# every user of this shared server could see it in the process list.
+CRON_CURL=$APP/cron.curl
+( umask 077; printf 'header = "Authorization: Bearer %s"\n' "$(grep -E '^CRON_SECRET=' "$ENV_FILE" | cut -d= -f2- | tr -d '"')" > "$CRON_CURL" )
+chmod 600 "$CRON_CURL"
 cat > /etc/cron.d/ciss-store <<CRON
 # Installed by deploy/app-deploy.sh (CISS Solutions repo). Remove with deploy/app-remove.sh.
-*/5 * * * * root curl -fsS -m 30 -H "Authorization: Bearer \$(grep -E '^CRON_SECRET=' $ENV_FILE | cut -d= -f2- | tr -d '"')" http://127.0.0.1:3100/api/cron/release-reservations >/dev/null 2>&1
+*/5 * * * * root curl -fsS -m 30 -K $CRON_CURL http://127.0.0.1:3100/api/cron/release-reservations >/dev/null 2>&1
 CRON
 chmod 644 /etc/cron.d/ciss-store
 

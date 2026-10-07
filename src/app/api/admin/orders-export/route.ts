@@ -4,8 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 
 const cell = (v: unknown) => {
   const s = v == null ? '' : String(v)
-  // Quote, and neutralise spreadsheet formula injection.
-  const safe = /^[=+\-@]/.test(s) ? `'${s}` : s
+  // Quote, and neutralise spreadsheet formula injection (a leading tab, return or space
+  // is skipped by spreadsheets, so it can hide the = that follows).
+  const safe = /^\s*[=+\-@]/.test(s) ? `'${s}` : s
   return `"${safe.replace(/"/g, '""')}"`
 }
 

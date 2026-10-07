@@ -49,6 +49,8 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 - `orders`: number (`CISS-` plus 8 random characters), customer or guest contact, delivery address,
   delivery zone, money columns (subtotal, discount, delivery fee, total), `payment_method`,
   `payment_status`, `order_status`, `stock_state`, `reservation_expires_at`, guest access token.
+- `order_admin_notes`: staff's internal notes on an order, one row per order. A table of its own
+  because customers can read every column of their own `orders` row.
 - `order_items`: snapshot of name, SKU, unit price and quantity at the time of purchase.
 - `order_status_history`: every status change with who made it and a note.
 - `payments`: one row per payment attempt: provider, amount, phone, `merchant_request_id`,
@@ -114,7 +116,7 @@ Views: `product_cards` (listing data with availability across variants), `catego
 | Draft/archived products, `product_costs` | – | – | `products.manage` |
 | Approved reviews | read | read; write own (pending) | moderate with `reviews.moderate` |
 | Public settings, homepage, delivery zones | read | read | write with `settings.manage` / `content.manage` |
-| Orders, items, history, payments | – | own (read) | read with `orders.manage` or `customers.view`; only `admin_notes` is directly writable |
+| Orders, items, history, payments | – | own (read) | read with `orders.manage` or `customers.view`; nothing is directly writable (internal notes are in `order_admin_notes`, readable and writable with `orders.manage` only) |
 | Profiles, addresses, carts, wishlists | – | own | `customers.view` (read) |
 | Support requests | via server action | via server action; read own | `support.manage` |
 | Audit logs | – | – | read with `reports.view` or `admins.manage` |

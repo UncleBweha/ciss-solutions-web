@@ -200,7 +200,8 @@ export async function setStaffRoleAction(_prev: ActionResult | null, formData: F
   return staffAction('admins.manage', async (user) => {
     const d = z.object({ email: z.string().trim().toLowerCase().email(), role: z.enum(roles) }).parse(formObject(formData))
     const supabase = await createClient()
-    const { data: profile } = await supabase.from('profiles').select('id, role, email').ilike('email', d.email).maybeSingle()
+    // Exact match (the pattern characters _ and % are valid in emails and must not act as wildcards).
+    const { data: profile } = await supabase.from('profiles').select('id, role, email').ilike('email', d.email.replace(/[\\%_]/g, '\\$&')).maybeSingle()
     if (!profile) return { ok: false, message: 'No account with that email. Ask them to create an account first.' }
     if (profile.id === user.id) return { ok: false, message: 'You cannot change your own role.' }
     const { error } = await supabase.from('profiles').update({ role: d.role }).eq('id', profile.id)

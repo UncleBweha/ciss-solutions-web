@@ -45,7 +45,8 @@ test('customer can find a printer and buy it with M-Pesa', async ({ page }) => {
 
   // Payment (mock M-Pesa succeeds for numbers not ending in 1 or 2)
   await page.getByRole('button', { name: /Pay KSh 32,999 with M-Pesa/ }).click()
-  await expect(page).toHaveURL(/\/order\/CISS-[2-9A-HJ-NP-Z]{8}\?t=/)
+  // The access token is moved out of the address into a cookie (lib/order-token).
+  await expect(page).toHaveURL(/\/order\/CISS-[2-9A-HJ-NP-Z]{8}\?placed=1$/)
   await expect(page.getByText('Check your phone')).toBeVisible()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Payment confirmed', { timeout: 45_000 })
   // Straight from checkout the page is a confirmation; order progress lives on Track order.

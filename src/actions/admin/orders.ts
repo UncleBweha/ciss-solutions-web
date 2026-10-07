@@ -39,11 +39,14 @@ export async function updateOrderStatusAction(orderId: string, status: (typeof s
   })
 }
 
+/** Internal notes live in their own staff-only table: customers can read their own orders row. */
 export async function updateOrderNotesAction(orderId: string, notes: string): Promise<ActionResult> {
   return staffAction('orders.manage', async (user) => {
     const id = z.string().uuid().parse(orderId)
     const supabase = await createClient()
-    const { error } = await supabase.from('orders').update({ admin_notes: z.string().max(2000).parse(notes) }).eq('id', id)
+    const { error } = await supabase
+      .from('order_admin_notes')
+      .upsert({ order_id: id, notes: z.string().max(2000).parse(notes), updated_by: user.id, updated_at: new Date().toISOString() })
     if (error) return { ok: false, message: error.message }
     await audit(user, 'order.notes_updated', 'orders', id)
     revalidatePath(`/admin/orders/${id}`)

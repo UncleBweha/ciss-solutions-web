@@ -17,11 +17,11 @@ export default async function AdminOrderPage({ params }: PageProps<'/admin/order
   const user = await requireStaff('orders.manage')
   const { id } = await params
   const supabase = await createClient()
-  const { data: order } = await supabase
-    .from('orders')
-    .select('*, items:order_items(*), history:order_status_history(*), payments(*)')
-    .eq('id', id)
-    .maybeSingle()
+  const [{ data: order }, { data: internal }] = await Promise.all([
+    supabase.from('orders').select('*, items:order_items(*), history:order_status_history(*), payments(*)').eq('id', id).maybeSingle(),
+    // Staff-only table, not a column of orders: customers can read their own orders row.
+    supabase.from('order_admin_notes').select('notes').eq('order_id', id).maybeSingle(),
+  ])
   if (!order) notFound()
 
   const allowed = allowedTransitions(order.order_status, order.payment_method).filter((s) => s !== 'REFUNDED' || can(user, 'orders.refund'))
@@ -108,7 +108,7 @@ export default async function AdminOrderPage({ params }: PageProps<'/admin/order
             {order.customer_notes ? <p className="mt-2 text-sm text-fg-secondary">Customer note: {order.customer_notes}</p> : null}
           </Panel>
           <Panel title="Internal notes">
-            <OrderNotes orderId={order.id} initial={order.admin_notes ?? ''} />
+            <OrderNotes orderId={order.id} initial={internal?.notes ?? ''} />
           </Panel>
           <Panel title="History">
             <ol className="space-y-3 text-sm">

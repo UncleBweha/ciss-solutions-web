@@ -13,6 +13,8 @@ values ('TEST-OWN', '00000000-0000-4000-8000-000000000002', 'Wanjiku', 'customer
         'mpesa', 'Nairobi', 'CBD', 'x');
 insert into payments (order_id, method, provider, amount, raw_response)
 select id, 'mpesa', 'mpesa_mock', 100, '{"secret":"x"}' from orders where order_number = 'TEST-OWN';
+insert into order_admin_notes (order_id, notes)
+select id, 'Customer disputes the amount' from orders where order_number = 'TEST-OWN';
 
 -- Anonymous visitor ------------------------------------------------------------
 set local role anon;
@@ -78,6 +80,27 @@ begin
   end;
   assert v_failed, 'customer cannot change order status';
 
+  -- Staff notes about the customer's own order are not theirs to read.
+  assert (select count(*) from order_admin_notes) = 0, 'customer cannot read staff notes on their order';
+  assert (select admin_notes from orders where order_number = 'TEST-OWN') is null, 'no staff notes left on the orders row';
+
+  -- The profile email identifies the account: only the server changes it.
+  v_failed := false;
+  begin
+    update profiles set email = 'someone-else@example.com' where id = auth.uid();
+  exception when insufficient_privilege then v_failed := true;
+  end;
+  assert v_failed, 'customer cannot change the profile email';
+  update profiles set full_name = 'Wanjiku K.' where id = auth.uid();
+  assert (select full_name from profiles where id = auth.uid()) = 'Wanjiku K.', 'customer can still edit their name';
+
+  v_failed := false;
+  begin
+    perform confirm_payment(gen_random_uuid(), 'X', 1, null, null);
+  exception when insufficient_privilege then v_failed := true;
+  end;
+  assert v_failed, 'customer cannot confirm payments';
+
   begin
     insert into products (name, slug, sku, price) values ('x', 'x-test', 'X-TEST', 1);
     v_failed := false;
@@ -106,6 +129,14 @@ begin
   assert (select count(*) from orders where order_number like 'TEST-%') = 2, 'order manager sees all orders';
   assert (select count(*) from payments) >= 1, 'order manager sees payments';
   assert (select count(*) from product_costs) = 0, 'order manager cannot read costs';
+  assert (select count(*) from order_admin_notes) = 1, 'order manager reads staff notes';
+  -- Payments are confirmed by the server (M-Pesa callback), never by a staff session.
+  begin
+    perform confirm_payment((select id from payments limit 1), 'X', 100, null, null);
+  exception when insufficient_privilege then v_failed := true;
+  end;
+  assert v_failed, 'staff cannot confirm a payment themselves';
+  v_failed := false;
   begin
     update settings set value = '{}' where key = 'payment_methods';
     assert not found, 'order manager cannot change payment settings';

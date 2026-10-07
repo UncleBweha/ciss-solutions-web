@@ -20,6 +20,12 @@ export type PlaceOrderResult =
   | { ok: true; orderNumber: string; redirectTo: string; paymentMessage?: string }
   | { ok: false; message: string; errors?: Record<string, string>; quote?: Quote }
 
+/** Unpaid Paybill / bank transfer / cash orders one phone number or email may have open at once. */
+const MAX_UNPAID_ORDERS = 3
+/** M-Pesa prompts one number may receive per hour, across all orders and whoever asks. */
+const STK_PER_NUMBER = 8
+const stkLimitKey = (phone: string) => `stk-number:${phone}`
+
 const stockMessage = (sqlMessage: string) => {
   const name = sqlMessage.split('INSUFFICIENT_STOCK:')[1]?.split('\n')[0]?.trim()
   return name ? `Sorry, “${name}” just sold out or has less stock than you requested. Please review your cart.` : 'Some items are no longer available.'
@@ -40,6 +46,11 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   const [settings, user] = await Promise.all([getSettings(), getSessionUser()])
   if (user && user.role !== 'customer') return { ok: false, message: 'Staff accounts cannot place orders. Sign in with a customer account to buy.' }
   if (!(await rateLimit(`checkout-phone:${data.phone}`, 10, 600))) return tooMany
+  // An M-Pesa prompt lands on the number typed here, which need not be the buyer's own:
+  // limit how often any one number can be prompted, whoever is asking.
+  if (data.paymentMethod === 'mpesa' && !(await rateLimit(stkLimitKey(data.mpesaPhone ? kenyanPhone.parse(data.mpesaPhone) : data.phone), STK_PER_NUMBER, 3600))) {
+    return { ok: false, message: 'Too many M-Pesa prompts have been sent to that number. Please wait an hour, or pay with another method.' }
+  }
 
   // Payment method must be enabled (and COD only where offered).
   const method = settings.payment_methods[data.paymentMethod]
@@ -85,6 +96,15 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
         : null
 
   const db = createAdminClient()
+  // Every order holds stock until it is paid or expires, and nothing is paid when an order
+  // is placed: without a cap, fake orders could make the whole shop look sold out.
+  if (data.paymentMethod !== 'mpesa') {
+    const unpaid = () => db.from('orders').select('id', { count: 'exact', head: true }).eq('payment_status', 'PENDING').eq('order_status', 'PENDING')
+    const [byPhone, byEmail] = await Promise.all([unpaid().eq('customer_phone', data.phone), unpaid().eq('customer_email', data.email.toLowerCase())])
+    if (Math.max(byPhone.count ?? 0, byEmail.count ?? 0) >= MAX_UNPAID_ORDERS) {
+      return { ok: false, message: `You already have ${MAX_UNPAID_ORDERS} orders waiting for payment. Please pay for those first, or contact us and we will help.` }
+    }
+  }
   const { data: placed, error } = await db.rpc('place_order', {
     p_order: {
       user_id: user?.id ?? null,
@@ -185,5 +205,6 @@ export async function retryMpesaPaymentAction(orderNumber: string, token: string
   if (!order) return { ok: false, message: 'Order not found.' }
   const phone = kenyanPhone.safeParse(phoneInput)
   if (!phone.success) return { ok: false, message: 'Enter a valid Safaricom number.' }
+  if (!(await rateLimit(stkLimitKey(phone.data), STK_PER_NUMBER, 3600))) return { ok: false, message: 'Too many M-Pesa prompts have been sent to that number. Please wait an hour.' }
   return initiateMpesaPayment(order.id, phone.data)
 }
