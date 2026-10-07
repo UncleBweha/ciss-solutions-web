@@ -128,7 +128,7 @@ export function OrderHeading({
   const text = failedLabel
     ? 'This order is no longer active.'
     : unconfirmed
-      ? 'Awaiting payment confirmation. We will confirm your order, and email you, once we have checked your payment.'
+      ? 'Awaiting payment confirmation by the admin. We will email you as soon as your payment has been checked.'
       : waiting
         ? 'Complete your M-Pesa payment to confirm your order.'
         : 'Thank you for your order. A confirmation has been sent to your email.'
@@ -136,7 +136,7 @@ export function OrderHeading({
   return (
     <header className="relative mb-8 text-center">
       {celebrate && paid && !failedLabel ? <Confetti /> : null}
-      {failedLabel || waiting ? (
+      {failedLabel || (waiting && !unconfirmed) ? (
         <span className={`mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full ${failedLabel ? 'bg-danger/15 text-danger' : 'bg-primary/15 text-primary-light'}`}>
           <Clock className="h-8 w-8" aria-hidden="true" />
         </span>

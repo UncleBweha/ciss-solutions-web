@@ -1,10 +1,11 @@
 'use client'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { useForm, type FieldPath } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Banknote, Building2, Check, Loader2, Lock, Pencil, ShoppingCart, Smartphone, Store, Truck } from 'lucide-react'
+import { Banknote, Building2, Check, CheckCircle2, Clock, Loader2, Lock, Pencil, ShoppingCart, Smartphone, Store, Truck } from 'lucide-react'
 import { placeOrderAction } from '@/actions/checkout'
 import { useCart } from '@/components/cart/cart-provider'
 import { OrderSummary } from '@/components/cart/order-summary'
@@ -22,6 +23,9 @@ import type { PaymentMethodsSettings } from '@/types/catalog'
 import { cn } from '@/lib/utils'
 
 type Address = { id: string; full_name: string; phone: string; county: string; town: string; address_line: string; instructions: string | null }
+
+const MPESA_LOGO = { src: '/images/payments/mpesa.webp', width: 320, height: 188 }
+const KCB_LOGO = { src: '/images/payments/kcb.webp', width: 240, height: 162 }
 
 const STEPS = [
   { title: 'Customer details', fields: ['fullName', 'email', 'phone'] },
@@ -304,10 +308,10 @@ export function CheckoutForm({
                 <legend className="sr-only">Payment method</legend>
                 <div className="space-y-2">
                   {methods.mpesa ? (
-                    <PaymentOption value="mpesa" register={register} checked={method === 'mpesa'} icon={<Smartphone className="h-5 w-5" />} title="M-Pesa" description="Pay instantly with an STK push to your phone" />
+                    <PaymentOption value="mpesa" register={register} checked={method === 'mpesa'} icon={<Smartphone className="h-5 w-5" />} logo={MPESA_LOGO} title="M-Pesa Express" description="Pay instantly with a prompt sent to your phone" />
                   ) : null}
                   {methods.mpesa_paybill ? (
-                    <PaymentOption value="mpesa_paybill" register={register} checked={method === 'mpesa_paybill'} icon={<Smartphone className="h-5 w-5" />} title="M-Pesa Paybill" description={`Pay to business number ${paybill.paybill_number} from your phone; we confirm and dispatch`} />
+                    <PaymentOption value="mpesa_paybill" register={register} checked={method === 'mpesa_paybill'} icon={<Building2 className="h-5 w-5" />} logo={KCB_LOGO} title="M-Pesa Paybill" description="Pay via Paybill on your own phone, then tell us you have paid" />
                   ) : null}
                   {methods.bank_transfer ? (
                     <PaymentOption value="bank_transfer" register={register} checked={method === 'bank_transfer'} icon={<Building2 className="h-5 w-5" />} title="Bank transfer" description="Transfer to our account; we dispatch once funds clear" />
@@ -332,20 +336,6 @@ export function CheckoutForm({
                   <Input id="mpesaPhone" type="tel" inputMode="tel" {...register('mpesaPhone')} />
                 </Field>
               ) : null}
-              {method === 'mpesa_paybill' ? (
-                <div className="rounded-md border border-border p-4 text-sm text-fg-secondary">
-                  <p className="font-semibold text-fg">Place the order, then pay with M-Pesa: Lipa na M-Pesa, Pay Bill.</p>
-                  <dl className="mt-3 grid grid-cols-[9rem_1fr] gap-y-1.5">
-                    <dt className="text-fg-muted">Business number</dt>
-                    <dd className="font-mono font-bold text-fg">{paybill.paybill_number}</dd>
-                    <dt className="text-fg-muted">Account number</dt>
-                    <dd className="font-mono font-bold text-fg">{paybill.account_number}</dd>
-                    <dt className="text-fg-muted">Amount</dt>
-                    <dd className="font-bold text-fg">{quote ? formatKES(quote.total) : '…'}</dd>
-                  </dl>
-                  {paybill.instructions ? <p className="mt-3">{paybill.instructions}</p> : null}
-                </div>
-              ) : null}
               {method === 'bank_transfer' ? (
                 <div className="rounded-md border border-border p-4 text-sm text-fg-secondary">
                   <p className="font-semibold text-fg">Bank details are shown after you place the order.</p>
@@ -353,9 +343,53 @@ export function CheckoutForm({
                 </div>
               ) : null}
 
-              <Field label="Order notes (optional)" htmlFor="notes">
-                <Textarea id="notes" rows={2} className="min-h-0" {...register('notes')} />
-              </Field>
+              {/* Paybill: the customer pays on their own phone first, then places the order by saying so. */}
+              {method === 'mpesa_paybill' ? (
+                <div className="rounded-[var(--radius-card)] bg-surface p-4 sm:p-5">
+                  <dl className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[var(--radius-control)] bg-surface-solid p-4">
+                      <dt className="text-xs font-semibold tracking-wide text-fg-muted uppercase">Paybill number</dt>
+                      <dd className="mt-1 text-xl font-bold">{paybill.paybill_number}</dd>
+                    </div>
+                    {paybill.account_number ? (
+                      <div className="rounded-[var(--radius-control)] bg-surface-solid p-4">
+                        <dt className="text-xs font-semibold tracking-wide text-fg-muted uppercase">Account number</dt>
+                        <dd className="mt-1 text-xl font-bold">{paybill.account_number}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  <ol className="mt-5 list-decimal space-y-2.5 pl-5 text-sm text-fg-secondary">
+                    <li>Go to M-Pesa on your phone.</li>
+                    <li>Select <strong className="text-fg">Lipa na M-Pesa</strong>.</li>
+                    <li>Select <strong className="text-fg">Pay Bill</strong>.</li>
+                    <li>Enter Business Number <strong className="text-fg">{paybill.paybill_number}</strong>.</li>
+                    {paybill.account_number ? (
+                      <li>Enter Account Number <strong className="text-fg">{paybill.account_number}</strong>.</li>
+                    ) : null}
+                    <li>Enter the amount: <strong className="text-fg">{quote ? formatKES(quote.total) : '…'}</strong>.</li>
+                    <li>Enter your M-Pesa PIN and confirm.</li>
+                  </ol>
+                  <p className="mt-5 flex gap-2 text-sm text-fg-muted">
+                    <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>Once paid, tap the button below to place your order. We will check your payment and email you as soon as it is confirmed.</span>
+                  </p>
+                  {paybill.instructions ? <p className="mt-2 pl-6 text-sm text-fg-muted">{paybill.instructions}</p> : null}
+                  <Field label="Order notes (optional)" htmlFor="notes" className="mt-5">
+                    <Textarea id="notes" rows={2} className="min-h-0 bg-surface-solid" {...register('notes')} />
+                  </Field>
+                  <Button type="submit" variant="success" size="lg" className="mt-5 w-full" loading={placing} disabled={!quote || Boolean(quote.issues.length)}>
+                    <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                    I have completed the payment
+                  </Button>
+                </div>
+              ) : null}
+
+              {/* Paybill places the order from its own button above, so its notes come first. */}
+              {method === 'mpesa_paybill' ? null : (
+                <Field label="Order notes (optional)" htmlFor="notes">
+                  <Textarea id="notes" rows={2} className="min-h-0" {...register('notes')} />
+                </Field>
+              )}
             </div>
           ) : null}
         </section>
@@ -405,9 +439,9 @@ export function CheckoutForm({
               Continue
             </Button>
           ) : (
-            <Button type="submit" size="lg" className="w-full" loading={placing} disabled={!quote || Boolean(quote.issues.length)}>
-              <Lock className="h-4 w-4" aria-hidden="true" />
-              {method === 'mpesa' ? `Pay ${quote ? formatKES(quote.total) : ''} with M-Pesa` : 'Place order'}
+            <Button type="submit" variant={method === 'mpesa_paybill' ? 'success' : undefined} size="lg" className="w-full" loading={placing} disabled={!quote || Boolean(quote.issues.length)}>
+              {method === 'mpesa_paybill' ? <CheckCircle2 className="h-5 w-5" aria-hidden="true" /> : <Lock className="h-4 w-4" aria-hidden="true" />}
+              {method === 'mpesa' ? `Pay ${quote ? formatKES(quote.total) : ''} with M-Pesa` : method === 'mpesa_paybill' ? 'I have completed the payment' : 'Place order'}
             </Button>
           )}
           <p className="text-center text-xs text-fg-muted">
@@ -458,6 +492,7 @@ function PaymentOption({
   checked,
   disabled,
   icon,
+  logo,
   title,
   description,
 }: {
@@ -466,6 +501,8 @@ function PaymentOption({
   checked: boolean
   disabled?: boolean
   icon: React.ReactNode
+  /** The brand the customer pays through, shown at the end of the row. */
+  logo?: { src: string; width: number; height: number }
   title: string
   description: string
 }) {
@@ -481,10 +518,13 @@ function PaymentOption({
       <span className="grid h-10 w-10 place-items-center rounded-lg bg-surface text-primary-light" aria-hidden="true">
         {icon}
       </span>
-      <span>
+      <span className="min-w-0 flex-1">
         <span className="block font-semibold">{title}</span>
         <span className="block text-sm text-fg-muted">{description}</span>
       </span>
+      {logo ? (
+        <Image src={logo.src} alt="" width={logo.width} height={logo.height} className="h-8 w-auto shrink-0 rounded-md border border-border bg-white" />
+      ) : null}
     </label>
   )
 }
