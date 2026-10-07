@@ -3,6 +3,7 @@ import type { PaymentMethod } from '@/lib/ecommerce/orders'
 
 // What the POS is told about a paid website order (register_web_sale() in the POS project).
 // The POS keeps its own catalogue and stock: lines are recorded by name and move no stock there.
+// Each line carries the product's cost price, which is what the POS works the profit out from.
 
 /** Values of sales.payment_method in the POS. */
 export type PosPaymentMethod = 'mpesa' | 'paybill' | 'bank' | 'cash'
@@ -25,7 +26,8 @@ export type PosSaleOrder = {
   total: number
   deliveryZone: string | null
   paidAt: string | null
-  items: { name: string; variantName: string | null; quantity: number; unitPrice: number }[]
+  /** unitCost: the product's cost price, null when none has been entered. */
+  items: { name: string; variantName: string | null; quantity: number; unitPrice: number; unitCost: number | null }[]
 }
 
 export type PosSalePayload = {
@@ -36,18 +38,20 @@ export type PosSalePayload = {
   discount: number
   total: number
   paid_at: string | null
-  items: { name: string; quantity: number; unit_price: number }[]
+  /** buying_price null: the POS records the line with no profit. */
+  items: { name: string; quantity: number; unit_price: number; buying_price: number | null }[]
 }
 
-/** The POS has no delivery field, so a delivery fee travels as a line of its own. */
+/** The POS has no delivery field, so a delivery fee travels as a line of its own (at cost: no profit). */
 export function posSalePayload(order: PosSaleOrder): PosSalePayload {
   const items = order.items.map((i) => ({
     name: i.variantName ? `${i.name} (${i.variantName})` : i.name,
     quantity: i.quantity,
     unit_price: i.unitPrice,
+    buying_price: i.unitCost,
   }))
   if (toCents(order.deliveryFee) > 0) {
-    items.push({ name: order.deliveryZone ? `Delivery (${order.deliveryZone})` : 'Delivery', quantity: 1, unit_price: order.deliveryFee })
+    items.push({ name: order.deliveryZone ? `Delivery (${order.deliveryZone})` : 'Delivery', quantity: 1, unit_price: order.deliveryFee, buying_price: order.deliveryFee })
   }
   return {
     order_number: order.orderNumber,

@@ -26,14 +26,23 @@ async function posRpc<T>(fn: string, args: Record<string, unknown>): Promise<T |
 
 /** Registers a paid order as a sale in the POS. Returns a note for the outbox task. */
 export async function registerPosSale(orderId: string): Promise<string> {
-  const { data: o } = await createAdminClient()
+  const db = createAdminClient()
+  const { data: o } = await db
     .from('orders')
-    .select('order_number, customer_name, customer_phone, total, discount, delivery_fee, payment_method, payment_status, paid_at, delivery_zone_name, items:order_items(product_name, variant_name, quantity, unit_price)')
+    .select('order_number, customer_name, customer_phone, total, discount, delivery_fee, payment_method, payment_status, paid_at, delivery_zone_name, items:order_items(product_id, product_name, variant_name, quantity, unit_price)')
     .eq('id', orderId)
     .maybeSingle()
   if (!o) return 'skipped: no order'
   // Refunded before this task ran: there is nothing to sell.
   if (o.payment_status !== 'PAID') return 'skipped: order is not paid'
+
+  // Cost prices as they are now (the POS, too, uses the buying price at the time of sale).
+  const productIds = [...new Set(o.items.map((i) => i.product_id).filter((id): id is string => !!id))]
+  const { data: costs, error } = productIds.length
+    ? await db.from('product_costs').select('product_id, cost_price').in('product_id', productIds)
+    : { data: [], error: null }
+  if (error) throw new Error(`product_costs: ${error.message}`)
+  const costOf = new Map((costs ?? []).map((c) => [c.product_id, c.cost_price === null ? null : Number(c.cost_price)]))
 
   const result = await posRpc<{ receipt_number: string; existing: boolean }>('register_web_sale', {
     p_order: posSalePayload({
@@ -46,7 +55,7 @@ export async function registerPosSale(orderId: string): Promise<string> {
       total: Number(o.total),
       deliveryZone: o.delivery_zone_name,
       paidAt: o.paid_at,
-      items: o.items.map((i) => ({ name: i.product_name, variantName: i.variant_name, quantity: i.quantity, unitPrice: Number(i.unit_price) })),
+      items: o.items.map((i) => ({ name: i.product_name, variantName: i.variant_name, quantity: i.quantity, unitPrice: Number(i.unit_price), unitCost: (i.product_id ? costOf.get(i.product_id) : null) ?? null })),
     }),
   })
   if (!result) return 'skipped: POS not configured'
