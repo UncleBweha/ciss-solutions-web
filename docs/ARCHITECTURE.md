@@ -133,7 +133,9 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
 - **POS sales** (`src/lib/pos`). The shop's POS is a separate Supabase project with its own
   catalogue and stock. A paid order is registered there as a sale of its "Website" shop
   (`register_web_sale()` in the POS database; `void_web_sale()` on refund): lines by name,
-  the delivery fee as a line of its own, no stock moved and no profit recorded in the POS. The
+  the delivery fee as a line of its own, no stock moved. Each line carries the product's cost
+  price (`product_costs`), from which the POS works out the profit; a product with no cost
+  price is recorded with no profit. The
   store calls with the POS's public key plus `POS_SYNC_SECRET`, whose hash the POS stores, so
   it can do nothing else there. With the `POS_*` variables unset the tasks complete as skipped.
 - `expire_stale_orders()` cancels unpaid orders after their payment window
