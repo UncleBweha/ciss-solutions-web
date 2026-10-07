@@ -29,7 +29,8 @@ export default async function PaymentSettings() {
           </fieldset>
           <fieldset className="grid gap-3 sm:grid-cols-2">
             <legend className="mb-1 text-sm font-semibold">M-Pesa Paybill details (shown at checkout and after ordering)</legend>
-            <Field label="Paybill number" htmlFor="paybill_number" hint="Customers use their order number as the account number"><Input id="paybill_number" name="paybill_number" inputMode="numeric" defaultValue={pm?.mpesa_paybill?.paybill_number} /></Field>
+            <Field label="Business number (Paybill)" htmlFor="paybill_number"><Input id="paybill_number" name="paybill_number" inputMode="numeric" defaultValue={pm?.mpesa_paybill?.paybill_number} /></Field>
+            <Field label="Account number" htmlFor="paybill_account" hint="The account number customers enter when paying"><Input id="paybill_account" name="paybill_account" defaultValue={pm?.mpesa_paybill?.account_number} /></Field>
             <Field label="Instructions" htmlFor="paybill_instructions" className="sm:col-span-2"><Textarea id="paybill_instructions" name="paybill_instructions" rows={2} className="min-h-0" defaultValue={pm?.mpesa_paybill?.instructions} /></Field>
           </fieldset>
           <fieldset className="grid gap-3 sm:grid-cols-2">
