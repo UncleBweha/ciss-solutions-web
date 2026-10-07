@@ -64,7 +64,7 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 - `homepage_sections`, `homepage_banners`.
 - `support_requests` (contact and part-request forms), `notifications` (staff inbox).
 - `audit_logs`: staff actions. `rate_limits`: counters used by `check_rate_limit()`.
-- `outbox`: follow-up tasks (emails, STK push) written in the same transaction as the order or
+- `outbox`: follow-up tasks (emails, STK push, POS sale and void) written in the same transaction as the order or
   payment change; status `pending` / `processing` / `failed` / `done` / `dead`, attempts, next
   attempt time and last error. Server-only (staff can read).
 
@@ -134,7 +134,7 @@ staff permission (customers may upload review images into their own folder).
   mismatch, expiry and release, transitions, refunds and restock.
 - `tests/db/rls.sql`: impersonates anon, customers and staff roles and checks what each can read and write.
 - `tests/db/outbox.sql`: tasks are committed (and rolled back) with the order, claimed once,
-  retried with back-off, marked dead with a staff notification; receipt and status tasks fire
-  only when they should; customers can't see or run them.
+  retried with back-off, marked dead with a staff notification; receipt, status and POS tasks
+  fire only when they should; customers can't see or run them.
 
 Run them with `npm run test:db` (it resets the local database first).
