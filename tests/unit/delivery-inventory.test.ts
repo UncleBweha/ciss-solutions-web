@@ -116,7 +116,7 @@ describe('product validation', () => {
   const base = {
     name: 'Test printer', slug: 'test-printer', sku: 'T-1', brandId: '', categoryId: '', printerModelId: '', productType: 'printer', status: 'active',
     price: '1000', compareAtPrice: '', costPrice: '', lowStockThreshold: '3', isFeatured: false, isBestseller: false, isNew: false, isOnSale: false,
-    specifications: [], features: [], whatsIncluded: [], compatibility: [], variants: [],
+    specifications: [], features: [], whatsIncluded: [], compatibleWith: [], compatibility: [], variants: [],
   } as const
   it('accepts a valid product', () => {
     expect(productSchema.safeParse(base).success).toBe(true)

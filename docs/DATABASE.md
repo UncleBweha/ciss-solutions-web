@@ -35,7 +35,8 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 - `products`: name, slug, SKU, brand, category, `product_type`, price, `compare_at_price`,
   `discount_percent`, `stock_quantity`, `reserved_quantity`, generated `available_quantity`,
   low-stock threshold, `status` (`draft` / `active` / `archived`), flags (featured, best seller,
-  new), specs JSON, SEO fields, rating aggregates, and `search_text` / `search_vector` for search.
+  new), specs JSON, `compatible_with` (the printers it fits, as typed by staff), SEO fields, rating
+  aggregates, and `search_text` / `search_vector` for search.
 - `product_costs`: cost price, kept apart so only staff with `products.manage` can read it.
 - `product_variants`: optional variants (e.g. colour or capacity) with their own SKU, price and stock.
 - `product_images`: ordered images with alt text.
