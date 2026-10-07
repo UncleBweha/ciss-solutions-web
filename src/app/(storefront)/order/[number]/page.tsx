@@ -79,7 +79,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
 
           {order.payment_method === 'mpesa_paybill' && !paid && !failed ? (
             <section className="glass-flat rounded-[var(--radius-card)] p-5">
-              <h2 className="mb-3 font-bold">Pay with M-Pesa Paybill</h2>
+              <h2 className="mb-3 font-bold">Not paid yet? Pay with M-Pesa Paybill</h2>
               {paybill.paybill_number && paybill.account_number ? (
                 <>
                   <ol className="mb-4 list-decimal space-y-1 pl-5 text-sm text-fg-secondary">
