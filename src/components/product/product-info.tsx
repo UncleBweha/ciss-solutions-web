@@ -37,7 +37,11 @@ function Compatibility({ product }: { product: ProductDetail }) {
       </p>
     )
   }
-  if (!product.compatibility.length) {
+  // Typed by staff on the product page. Entries that name a printer model we list are
+  // already among the linked models, so they are shown once, as the link.
+  const linked = new Set(product.compatibility.flatMap((m) => [m.name.toLowerCase(), m.model_number.toLowerCase()]))
+  const typed = product.compatible_with.filter((entry) => !linked.has(entry.toLowerCase()))
+  if (!product.compatibility.length && !typed.length) {
     return <p className="text-fg-secondary">Compatibility information is not listed for this product. Contact us to confirm it fits your printer.</p>
   }
   return (
@@ -53,6 +57,12 @@ function Compatibility({ product }: { product: ProductDetail }) {
               </Link>
               {m.notes ? <span className="block text-xs text-fg-muted">{m.notes}</span> : null}
             </span>
+          </li>
+        ))}
+        {typed.map((entry) => (
+          <li key={entry} className="flex items-start gap-2 text-sm">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+            <span>{entry}</span>
           </li>
         ))}
       </ul>

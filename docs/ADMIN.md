@@ -49,23 +49,35 @@ product's cost price, so enter one on every product; a product without it shows 
 
 ## Products
 
-**Products → New product.** Required: name, SKU, price and product type; a category is optional
-but recommended. Also available:
-brand, compare-at price (shows a strike-through and discount badge), cost price (internal only,
-never shown to customers), opening stock and low-stock threshold, short and full description,
-specifications (name/value rows), features, what's included, warranty, condition, part/OEM number,
-barcode, weight and dimensions, SEO and social fields, and the URL slug.
+**Products → New product.** The page is filled from top to bottom and the product goes live in
+the shop as soon as you press **Publish product**:
 
-- **Status:** *Draft* is invisible to customers; *Active* is live immediately; *Archived* hides it
-  but keeps it on past orders.
-- **Images:** upload JPG, PNG, WebP or AVIF up to 5 MB. Reorder with the arrows, choose the main
-  image with the star, write alt text that describes the product, then click **Save image order &
-  alt text**. Use your own photos or images you have
-  rights to; do not copy manufacturer images.
+1. **Photos** first: JPG, PNG, WebP or AVIF up to 5 MB each. The first photo is the main one.
+   Use your own photos or images you have rights to; do not copy manufacturer images.
+2. **Product:** name, category, brand, SKU and description. If the brand is not in the list,
+   **Add brand** adds it by name and selects it (a logo can be added later under Brands).
+3. **Specifications** (name/value rows), **features**, **what's in the box** and
+   **compatibility**: the printers the product fits, one per line. Fill compatibility in for
+   spare parts, ink and toner. It is shown on the product page and customers can search by it;
+   a line that names a printer model listed under Printer models also puts the product in the
+   parts finder for that model.
+4. **Prices and quantity:** buying price (never shown to customers; it is what the POS works the
+   profit out from), selling price and the quantity in stock.
+
+Name, category, brand, SKU, both prices and the quantity are required. Everything else is under
+**More options** and can be left alone: product type, old price (shown crossed out with the
+discount), low stock alert, short description, part/OEM number, condition, warranty, weight and
+dimensions, labels (Featured, Best seller, New, On sale), variants and SEO. The SEO title,
+description and image are taken from the name, description and main photo when left empty.
+
+**Editing a product.** The same page, with the photos at the top: reorder with the arrows, choose
+the main photo with the star, write alt text, then click **Save image order & alt text**. Typing
+a new **quantity in stock** records the difference as a stock correction (see Stock). **Show in
+the shop** hides a product from customers without deleting it.
+
 - **Variants:** for options such as colour or pack size, each with its own SKU, price and stock.
-- **Compatibility:** for parts and supplies, tick the printer models they fit. This powers the
-  parts finder and the "Compatible with" list. For a printer, "This printer is model" links the
-  product to its model so compatible supplies appear on its page.
+- For a printer, "This printer is model" (More options) links the product to its model so
+  compatible supplies appear on its page.
 - **Duplicate** creates a draft copy of the product's details (new SKU and slug, stock 0). Add
   images, variants and compatibility to the copy yourself.
 

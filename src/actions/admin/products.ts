@@ -24,6 +24,13 @@ export async function saveProductAction(input: ProductInput): Promise<ActionResu
     const d = parsed.data
     const supabase = await createClient()
 
+    // A new product's address comes from its name; if that address is taken, the SKU makes it unique.
+    if (!d.id) {
+      const { count } = await supabase.from('products').select('id', { count: 'exact', head: true }).eq('slug', d.slug)
+      if (count) d.slug = `${d.slug}-${slugify(d.sku)}`.slice(0, 140)
+    }
+    const compatibleWith = [...new Set(d.compatibleWith.filter(Boolean))]
+
     const row = {
       name: d.name,
       slug: d.slug,
@@ -52,6 +59,7 @@ export async function saveProductAction(input: ProductInput): Promise<ActionResu
       specifications: d.specifications.filter((s) => s.label && s.value),
       features: d.features.filter(Boolean),
       whats_included: d.whatsIncluded.filter(Boolean),
+      compatible_with: compatibleWith,
       seo_title: d.seoTitle,
       seo_description: d.seoDescription,
       canonical_url: d.canonicalUrl,
@@ -61,12 +69,20 @@ export async function saveProductAction(input: ProductInput): Promise<ActionResu
     }
 
     let productId = d.id
-    let before: { slug: string; price: number; compare_at_price: number | null; status: string } | null = null
+    let before: { slug: string; price: number; compare_at_price: number | null; status: string; stock_quantity: number } | null = null
     if (productId) {
-      const { data: existing } = await supabase.from('products').select('slug, price, compare_at_price, status').eq('id', productId).single()
+      const { data: existing } = await supabase.from('products').select('slug, price, compare_at_price, status, stock_quantity').eq('id', productId).single()
       before = existing
       const { error } = await supabase.from('products').update(row).eq('id', productId)
       if (error) return { ok: false, message: dbError(error)! }
+      // Quantity typed on the product page: record the difference as a stock correction.
+      if (before && d.stockQuantity != null && !d.variants.length && d.stockQuantity !== before.stock_quantity) {
+        const { error: stockError } = await supabase.rpc('adjust_stock', { p_product_id: productId, p_variant_id: null as unknown as string, p_change: d.stockQuantity - before.stock_quantity, p_reason: 'correction', p_note: 'Quantity set on the product page' })
+        if (stockError) {
+          const reserved = stockError.message.includes('STOCK_BELOW_RESERVED')
+          return { ok: false, message: reserved ? 'Product saved, but the quantity was not changed: it cannot go below what unpaid orders are holding.' : `Product saved, but the quantity was not changed: ${stockError.message}`, errors: { stockQuantity: reserved ? 'Cannot go below the quantity held by open orders' : 'Not changed' } }
+        }
+      }
     } else {
       const { data: created, error } = await supabase.from('products').insert(row).select('id').single()
       if (error) return { ok: false, message: dbError(error)! }
@@ -80,10 +96,24 @@ export async function saveProductAction(input: ProductInput): Promise<ActionResu
     // Internal cost price
     await supabase.from('product_costs').upsert({ product_id: productId, cost_price: d.costPrice, updated_at: new Date().toISOString() })
 
-    // Compatibility: replace the set
+    // Compatibility: entries that name a known printer model (by name or model number) are
+    // linked to it, so the parts finder lists this product. Replace the set.
+    const wanted = new Set(d.compatibility)
+    if (compatibleWith.length) {
+      const { data: models } = await supabase.from('printer_models').select('id, name, model_number')
+      const key = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
+      const byName = new Map<string, string>()
+      for (const m of models ?? []) {
+        byName.set(key(m.name), m.id)
+        byName.set(key(m.model_number), m.id)
+      }
+      for (const entry of compatibleWith) {
+        const id = byName.get(key(entry))
+        if (id) wanted.add(id)
+      }
+    }
     const { data: currentCompat } = await supabase.from('product_compatibility').select('printer_model_id').eq('product_id', productId)
     const current = new Set((currentCompat ?? []).map((c) => c.printer_model_id))
-    const wanted = new Set(d.compatibility)
     const toRemove = [...current].filter((id) => !wanted.has(id))
     const toAdd = [...wanted].filter((id) => !current.has(id))
     if (toRemove.length) await supabase.from('product_compatibility').delete().eq('product_id', productId).in('printer_model_id', toRemove)

@@ -20,16 +20,29 @@ test('staff can create a product and it is live immediately', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
 
   await page.goto('/admin/products/new')
+  // Nothing filled in: Publish points at what is missing instead of saving.
+  await page.getByRole('button', { name: 'Publish product' }).click()
+  await expect(page.getByText('Enter the product name')).toBeVisible()
+  await expect(page.getByText('Choose a category')).toBeVisible()
+
   await page.getByLabel('Product name').fill(name)
+  await page.getByLabel('Category').selectOption({ index: 1 })
+  // A brand that isn't in the list yet is added from here and selected.
+  await page.getByRole('button', { name: 'Add brand' }).click()
+  await page.getByLabel('Brand name').fill(`Brand ${sku}`)
+  await page.getByRole('dialog').getByRole('button', { name: 'Add brand' }).click()
+  await expect(page.locator('#brandId option:checked')).toHaveText(`Brand ${sku}`)
   await page.getByLabel('SKU').fill(sku)
-  await page.getByLabel('Price (KES)').fill('4321')
-  await page.getByLabel('Opening stock').fill('7')
-  await page.getByLabel('Short description').fill('Approx. 1,000 pages')
-  await page.getByLabel('Status').selectOption('active')
-  await page.getByLabel('Product type').selectOption('ink_toner')
-  await page.getByRole('button', { name: 'Create product' }).click()
+  await page.getByLabel('Compatibility').fill(`Printer ${sku}
+Another Model 2000`)
+  await page.getByLabel('Buying price (KES)').fill('3000')
+  await page.getByLabel('Selling price (KES)').fill('4321')
+  await page.getByLabel('Quantity in stock').fill('7')
+  await page.getByRole('button', { name: 'Publish product' }).click()
   await expect(page).toHaveURL(/\/admin\/products\/[0-9a-f-]{36}$/)
-  await expect(page.getByText('7 on hand')).toBeVisible()
+  await expect(page.getByLabel('Quantity in stock')).toHaveValue('7')
+  await expect(page.getByLabel('Compatibility')).toHaveValue(`Printer ${sku}
+Another Model 2000`)
 
   // Storefront search reflects the new product right away (targeted cache invalidation)
   await page.goto(`/search?q=${sku}`)
