@@ -65,8 +65,22 @@ needs a rebuild. Everything else is read at runtime.
 
 ## 3. VPS with Docker (current server)
 
-The server already runs Caddy (container `toolsman-next-caddy-1`, on a Docker network ending in
-`web`) and the coming-soon container `ciss-solutions`. The store runs beside them as `ciss-store`.
+The server is shared with other sites. Ports 80 and 443 belong to one small proxy that is part
+of no project: the container `edge-caddy` (Caddy), set up from [`deploy/edge`](../deploy/edge) and
+living in `/opt/edge` on the server. It reads one site file per project from
+`/opt/edge/conf/sites/`, and each project's deploy writes only its own file, so a deploy of one
+site cannot change the routing of another. Site containers join the Docker network `web`.
+
+This project's file is `ciss-solutions.caddy` (`deploy/edge-site.sh`). The coming-soon container is
+`ciss-solutions`; the store runs beside it as `ciss-store`.
+
+The proxy is set up once per server (`prepare` causes no downtime; `switch` moves the ports over
+in a few seconds and goes back by itself if any site stops answering as before):
+
+```bash
+deploy/edge/setup.sh user@server prepare [ssh_key]
+deploy/edge/setup.sh user@server switch [ssh_key]
+```
 
 **One-time setup on the server:**
 
@@ -91,7 +105,7 @@ server (`deploy/app-remote.sh`):
 1. builds the image `ciss-store:<commit>` with the `NEXT_PUBLIC_*` values from the env file as
    build args (the build reads the catalogue from Supabase, so the project must be reachable);
 2. replaces the container: `--restart unless-stopped`, `--env-file /opt/ciss-store/.env`, port
-   `127.0.0.1:3100` only, and joins Caddy's `web` network;
+   `127.0.0.1:3100` only, and joins the proxy's `web` network;
 3. waits for the health check and **rolls back** to the previous image if it fails;
 4. installs `/etc/cron.d/ciss-store`, which calls the cron endpoint every 5 minutes;
 5. keeps the three most recent images for manual rollback.
@@ -105,9 +119,9 @@ deploy/app-switch.sh user@server app       # cisssolutions.co.ke -> ciss-store:3
 deploy/app-switch.sh user@server static    # back to the coming-soon page
 ```
 
-This edits only the upstream inside the `# >>> ciss-solutions` block in Caddy's config (created by
-`deploy/caddy-add.sh`), validates the config, reloads Caddy, and restores the backup if validation
-fails. Later pushes to `main` still redeploy the static container but leave the switch alone.
+This rewrites this project's site file in the edge proxy, validates the config, reloads the proxy,
+and puts the previous file back if validation fails. A deploy of the static container leaves the
+switch alone.
 The GitHub workflow can do the switch too (tick "Point cisssolutions.co.ke at the store").
 
 Once the store is live:
