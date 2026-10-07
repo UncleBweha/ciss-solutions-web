@@ -23,13 +23,12 @@ tar -czf - index.html assets | "${SSH[@]}" "$TARGET" "set -e
   docker rm -f ciss-solutions >/dev/null 2>&1 || true
   docker run -d --name ciss-solutions --restart unless-stopped \
     -p $PORT:80 -v /var/www/ciss-solutions:/usr/share/nginx/html:ro nginx:alpine >/dev/null
-  # rejoin Caddy's shared network (see caddy-add.sh) so the domain keeps working after a redeploy
-  NET=\$(docker network ls --format '{{.Name}}' | grep -E '(^|_)web\$' | head -1 || true)
-  [ -n \"\$NET\" ] && docker network connect \"\$NET\" ciss-solutions && echo \"Joined network \$NET\"
+  # rejoin the edge proxy's shared network so the domain keeps working after a redeploy
+  docker network connect web ciss-solutions && echo 'Joined network web'
   docker ps --filter name=ciss-solutions --format '{{.Names}}  {{.Status}}  {{.Ports}}'"
 
-# Re-add the Caddy route every deploy: a toolsman redeploy rewrites its Caddyfile
-# and drops our block. caddy-add.sh is idempotent.
-bash "$HERE/caddy-add.sh" "$TARGET" ${3:+"$3"}
+# Route the domain here only if nothing routes it yet: once the store is live
+# (deploy/app-switch.sh ... app), a deploy of this page must not take the domain back.
+bash "$HERE/edge-site.sh" "$TARGET" ensure ciss-solutions:80 ${3:+"$3"}
 
 echo "Done. Live at https://cisssolutions.co.ke"

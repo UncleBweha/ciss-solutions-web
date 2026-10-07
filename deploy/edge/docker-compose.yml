@@ -1,0 +1,42 @@
+# The front door of the VPS: the only container on ports 80 and 443. It belongs
+# to no project. It serves every site file in conf/sites/, one per project, and
+# each project's deploy writes only its own file there (see conf/Caddyfile).
+#
+# Lives on the server at /opt/edge. Set up once with deploy/edge/setup.sh;
+# no deploy of any project recreates it.
+name: edge
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: edge-caddy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # The directory, not the file: a replaced file is seen without a restart.
+      - ./conf:/etc/caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - web
+      - toolsman
+
+networks:
+  # Shared by every site container (ciss-store, ciss-pos, toolsman-pos ...).
+  web:
+    external: true
+  # Toolsman's shop is reached by its compose service name (app:3000).
+  toolsman:
+    external: true
+    name: toolsman-next_default
+
+volumes:
+  caddy_data:
+  caddy_config:
