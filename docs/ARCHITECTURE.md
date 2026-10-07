@@ -8,7 +8,8 @@ Browser ──► Caddy / Vercel ──► Next.js 16 (App Router, Node runtime)
                                    ├──► Supabase Postgres (PostgREST) ── RLS + SECURITY DEFINER functions
                                    ├──► Supabase Auth (cookies via @supabase/ssr)
                                    ├──► Supabase Storage (product, brand, category, banner images)
-                                   └──► Safaricom Daraja (OAuth, STK Push, STK Query)
+                                   ├──► Safaricom Daraja (OAuth, STK Push, STK Query)
+                                   └──► POS (separate Supabase project): paid orders become sales
 Safaricom ──► POST /api/mpesa/callback?secret=…
 Cron      ──► GET  /api/cron/release-reservations (Bearer CRON_SECRET)
 ```
@@ -118,15 +119,25 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
   "order saved" and "work done":
   - `place_order()` queues `order_placed` (confirmation and staff alert) and, for M-Pesa,
     `mpesa_stk_push` with the number entered at checkout;
-  - a trigger on `orders` queues `payment_confirmed` when an online payment is confirmed and
-    `order_status` when staff change an order's status.
+  - a trigger on `orders` queues `payment_confirmed` when an online payment is confirmed,
+    `order_status` when staff change an order's status, `pos_sale` when an order becomes paid
+    (by any method) and `pos_void` when a paid order is refunded.
 - The request that created a task runs it straight away (the STK push before the response, so
   the prompt reaches the phone immediately; emails after it with Next's `after()`). The cron
   endpoint sweeps up anything left: a crash, a deploy, or an email or M-Pesa outage.
 - Failed tasks retry with back-off (1, 4, 16, 60 minutes …). After 6 attempts a task is marked
   dead and staff see a "Task failed" entry in Admin → Notifications.
-- Handlers are safe to repeat: an email already sent for an order is never re-sent, and the STK
-  push is skipped if the order already has a payment attempt or is more than 10 minutes old.
+- Handlers are safe to repeat: an email already sent for an order is never re-sent, the STK
+  push is skipped if the order already has a payment attempt or is more than 10 minutes old,
+  and the POS keeps one sale per order number.
+- **POS sales** (`src/lib/pos`). The shop's POS is a separate Supabase project with its own
+  catalogue and stock. A paid order is registered there as a sale of its "Website" shop
+  (`register_web_sale()` in the POS database; `void_web_sale()` on refund): lines by name,
+  the delivery fee as a line of its own, no stock moved. Each line carries the product's cost
+  price (`product_costs`), from which the POS works out the profit; a product with no cost
+  price is recorded with no profit. The
+  store calls with the POS's public key plus `POS_SYNC_SECRET`, whose hash the POS stores, so
+  it can do nothing else there. With the `POS_*` variables unset the tasks complete as skipped.
 - `expire_stale_orders()` cancels unpaid orders after their payment window
   (`checkout.mpesa_reservation_minutes`, default 30) and releases their reserved stock. It runs
   from the cron endpoint and opportunistically when an order page polls for status.
