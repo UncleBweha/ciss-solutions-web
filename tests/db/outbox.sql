@@ -101,11 +101,11 @@ begin
   assert (select payload ->> 'status' from outbox where order_id = v_mpesa and kind = 'order_status') = 'PROCESSING',
     'staff status change queued an email';
 
-  -- Bank transfer marked paid by staff: no receipt task (staff were alerted at placement),
-  -- but the sale goes to the POS, and a refund voids it there.
-  assert not exists (select 1 from outbox where order_id = v_bank and kind = 'pos_sale'), 'unpaid order: nothing for the POS';
+  -- Bank transfer: nothing says "paid" until staff confirm the money. Marking it Paid queues
+  -- the payment emails and the POS sale; a refund voids the sale there.
+  assert not exists (select 1 from outbox where order_id = v_bank and kind in ('pos_sale', 'payment_confirmed')), 'unconfirmed payment: no paid email, nothing for the POS';
   perform update_order_status(v_bank, 'PAID', null);
-  assert not exists (select 1 from outbox where order_id = v_bank and kind = 'payment_confirmed'), 'manual method: no receipt task';
+  assert (select count(*) from outbox where order_id = v_bank and kind = 'payment_confirmed') = 1, 'staff-confirmed payment queued the paid emails';
   assert (select count(*) from outbox where order_id = v_bank and kind = 'pos_sale') = 1, 'staff-confirmed payment queued a POS sale';
   assert not exists (select 1 from outbox where order_id = v_bank and kind = 'pos_void'), 'no void while paid';
   perform update_order_status(v_bank, 'REFUNDED', null);

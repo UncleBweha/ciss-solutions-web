@@ -107,8 +107,10 @@ export async function notifyOrderPlaced(orderId: string) {
 }
 
 /**
- * The only emails an M-Pesa order sends: one to the customer (order and payment
- * together) and one to staff, both once the payment has cleared.
+ * Payment confirmed. For an M-Pesa order these are its only emails: one to the customer
+ * (order and payment together) and one to staff, once Safaricom confirms. For Paybill and
+ * bank transfer they follow the "awaiting payment confirmation" emails sent at placement,
+ * once staff have checked the money and marked the order Paid.
  */
 export async function notifyPaymentConfirmed(orderId: string) {
   const o = await loadOrderEmailData(orderId)

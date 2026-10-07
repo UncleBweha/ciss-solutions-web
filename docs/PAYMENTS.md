@@ -10,6 +10,11 @@ Supported methods (each can be switched on or off in Admin, Settings, Payments):
 | Cash on delivery (chosen counties only) | By staff, on delivery |
 | Card | Not implemented; the toggle exists but stays off until a card provider is integrated |
 
+Paybill and bank transfer orders are **placed, awaiting payment confirmation** until staff mark
+them Paid: the order page and the emails sent at placement (customer and staff) say exactly that.
+The "order confirmed & paid" email to the customer, the "payment confirmed" alert to staff and
+the POS sale all happen when staff mark the order Paid, never before.
+
 **Rule:** an order is never marked paid because of anything the browser says. The order page
 only displays the state stored in the database.
 

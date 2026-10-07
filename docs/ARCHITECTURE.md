@@ -119,7 +119,8 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
   "order saved" and "work done":
   - `place_order()` queues `order_placed` (confirmation and staff alert) and, for M-Pesa,
     `mpesa_stk_push` with the number entered at checkout;
-  - a trigger on `orders` queues `payment_confirmed` when an online payment is confirmed,
+  - a trigger on `orders` queues `payment_confirmed` when a payment is confirmed (by Safaricom,
+    or by staff marking a Paybill or bank transfer order Paid),
     `order_status` when staff change an order's status, `pos_sale` when an order becomes paid
     (by any method) and `pos_void` when a paid order is refunded.
 - The request that created a task runs it straight away (the STK push before the response, so

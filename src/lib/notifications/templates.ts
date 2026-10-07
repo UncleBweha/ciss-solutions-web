@@ -2,7 +2,7 @@ import { siteUrl } from '@/lib/env'
 import { DELIVERY_TBC_NOTE, deliveryFeeLabel, isStorePickup } from '@/lib/ecommerce/delivery'
 import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { formatKES } from '@/lib/ecommerce/money'
-import { orderStatusLabels, paymentMethodLabels, type OrderStatus, type PaymentMethod } from '@/lib/ecommerce/orders'
+import { awaitsPaymentConfirmation, orderStatusLabels, paymentMethodLabels, type OrderStatus, type PaymentMethod } from '@/lib/ecommerce/orders'
 
 export type OrderEmailData = {
   orderNumber: string
@@ -129,32 +129,47 @@ const textSummary = (o: OrderEmailData) =>
   [...o.items.map((i) => `- ${i.name}${i.sku ? ` (${i.sku})` : ''} x${i.quantity}: ${formatKES(i.total)}`), `Total: ${formatKES(o.total)}`].join('\n')
 const textFooter = `\n\nThis is an automated email. Please do not reply; replies are not read.\nQuestions? Email ${EMAIL_CONTACT}`
 
+/**
+ * Sent when a non-M-Pesa order is placed. Paybill and bank transfer orders are not paid
+ * yet as far as we know: the email says the payment is still to be confirmed, never "paid".
+ */
 export function orderConfirmationEmail(o: OrderEmailData) {
-  const subject = `Order received: ${o.orderNumber} | Ciss Solutions`
   const awaitingMpesa = o.paymentMethod === 'mpesa'
+  const awaitingConfirmation = awaitsPaymentConfirmation(o.paymentMethod)
+  const method = esc(paymentMethodLabels[o.paymentMethod])
+  const subject = `${awaitingConfirmation ? 'Order placed, awaiting payment confirmation' : 'Order received'}: ${o.orderNumber} | Ciss Solutions`
   const payment = awaitingMpesa
     ? 'Complete the M&#8209;Pesa prompt on your phone to confirm it.'
-    : `Payment: ${esc(paymentMethodLabels[o.paymentMethod])}.`
+    : awaitingConfirmation
+      ? `It is not confirmed yet: we will confirm it, and email you, once we have checked your ${method} payment. If you have not paid yet, the payment details are on your order page.`
+      : `Payment: ${method}.`
   const html = layout(subject, {
-    tone: awaitingMpesa ? 'warning' : 'info',
-    label: awaitingMpesa ? 'Order received · awaiting payment' : 'Order received',
+    tone: awaitingMpesa || awaitingConfirmation ? 'warning' : 'info',
+    label: awaitingMpesa ? 'Order received · awaiting payment' : awaitingConfirmation ? 'Order placed · awaiting payment confirmation' : 'Order received',
     heading: `Thanks, ${o.customerName.trim().split(/\s+/)[0]}`,
     intro: `<p style="margin:0">We've received your order ${strong(o.orderNumber)}. ${payment} ${fulfilment(o)}</p>`,
     order: o,
-    button: { href: orderLink(o), label: 'Track your order' },
+    button: { href: orderLink(o), label: awaitingConfirmation ? 'View your order' : 'Track your order' },
   })
-  return { subject, html, text: `Thanks for your order ${o.orderNumber}.\n\n${textSummary(o)}\n\nTrack: ${orderLink(o)}${textFooter}` }
+  const textPayment = awaitingConfirmation ? `\n\nAwaiting payment confirmation: we will email you once we have checked your ${paymentMethodLabels[o.paymentMethod]} payment.` : ''
+  return { subject, html, text: `Thanks for your order ${o.orderNumber}.${textPayment}\n\n${textSummary(o)}\n\nTrack: ${orderLink(o)}${textFooter}` }
 }
 
-/** The customer's one email for an M-Pesa order: order received and payment cleared. */
+/**
+ * Sent once the money is confirmed: by Safaricom for an M-Pesa order (its one email:
+ * order received and payment cleared), by staff for a Paybill or bank transfer order.
+ */
 export function paymentConfirmationEmail(o: OrderEmailData) {
   const subject = `Order confirmed: ${o.orderNumber} | Ciss Solutions`
   const receipt = o.receipt ? `, M&#8209;Pesa receipt ${strong(o.receipt)}` : ''
+  const intro = awaitsPaymentConfirmation(o.paymentMethod)
+    ? `We have confirmed your ${esc(paymentMethodLabels[o.paymentMethod])} payment for order ${strong(o.orderNumber)}${receipt}. Your order is now confirmed.`
+    : `We've received your order ${strong(o.orderNumber)} and your payment has cleared${receipt}.`
   const html = layout(subject, {
     tone: 'success',
     label: 'Order confirmed & paid',
     heading: `Thanks, ${o.customerName.trim().split(/\s+/)[0]}`,
-    intro: `<p style="margin:0">We've received your order ${strong(o.orderNumber)} and your payment has cleared${receipt}. ${fulfilment(o)}</p>`,
+    intro: `<p style="margin:0">${intro} ${fulfilment(o)}</p>`,
     order: o,
     button: { href: orderLink(o), label: 'Track your order' },
   })
@@ -190,20 +205,31 @@ export function orderStatusEmail(o: OrderEmailData & { status: OrderStatus }) {
   return { subject, html, text: `${c.text} Order ${o.orderNumber}.\n\n${orderLink(o)}${textFooter}` }
 }
 
-/** Staff alert, one per order: 'placed' as soon as a non-M-Pesa order comes in, 'paid' once an M-Pesa payment clears. */
+/**
+ * Staff alert. 'placed' as soon as a non-M-Pesa order comes in: for Paybill and bank
+ * transfer it asks staff to check the money and mark the order Paid. 'paid' once the
+ * payment is confirmed (by Safaricom for M-Pesa, by staff for Paybill and bank transfer).
+ */
 export function adminNewOrderEmail(o: OrderEmailData, stage: 'placed' | 'paid' = 'placed') {
   const method = paymentMethodLabels[o.paymentMethod]
-  const subject = `New order ${o.orderNumber} – ${formatKES(o.total)}${stage === 'paid' ? ' (paid)' : ''}`
-  const intro =
-    stage === 'paid'
+  const awaiting = stage === 'placed' && awaitsPaymentConfirmation(o.paymentMethod)
+  const confirmedByStaff = stage === 'paid' && awaitsPaymentConfirmation(o.paymentMethod)
+  const subject = confirmedByStaff
+    ? `Payment confirmed: order ${o.orderNumber} – ${formatKES(o.total)}`
+    : `New order ${o.orderNumber} – ${formatKES(o.total)}${stage === 'paid' ? ' (paid)' : awaiting ? ' (awaiting payment confirmation)' : ''}`
+  const intro = confirmedByStaff
+    ? `The ${esc(method)} payment for ${esc(o.customerName)}'s order has been confirmed. The order is now paid.`
+    : stage === 'paid'
       ? `${esc(o.customerName)} placed an order and has paid by ${esc(method)}${o.receipt ? ` (ref ${strong(o.receipt)})` : ''}.`
-      : `${esc(o.customerName)} placed an order paid by ${esc(method)}.`
+      : awaiting
+        ? `${esc(o.customerName)} placed an order to be paid by ${esc(method)}. It is NOT confirmed as paid: check that ${strong(formatKES(o.total))} has arrived, then open the order and mark it Paid. The customer is told it is paid only then.`
+        : `${esc(o.customerName)} placed an order. Payment: ${esc(method)}.`
   const pickup = isStorePickup(o.deliveryZone)
   const contact = [o.customerPhone ? `Phone: ${formatKenyanPhone(o.customerPhone)}` : null, o.customerEmail ? `Email: ${o.customerEmail}` : null].filter((l): l is string => Boolean(l))
   const delivery = pickup ? `${o.deliveryZone}: the customer will collect from the shop.` : `${o.deliveryZone ?? 'Delivery'}: ${o.deliveryAddress}. Call the customer to agree the courier and delivery cost.`
   const html = layout(subject, {
-    tone: stage === 'paid' ? 'success' : 'info',
-    label: stage === 'paid' ? 'New order · paid' : 'New order',
+    tone: stage === 'paid' ? 'success' : awaiting ? 'warning' : 'info',
+    label: confirmedByStaff ? 'Payment confirmed' : stage === 'paid' ? 'New order · paid' : awaiting ? 'New order · awaiting payment confirmation' : 'New order',
     heading: o.orderNumber,
     intro: `<p style="margin:0 0 12px">${intro}</p><p style="margin:0 0 12px">${contact.map(esc).join('<br>')}</p><p style="margin:0">${esc(delivery)}</p>`,
     order: o,
