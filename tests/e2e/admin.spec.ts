@@ -110,3 +110,27 @@ test('a narrow staff role cannot reach other admin modules', async ({ page, requ
   await page.getByRole('button', { name: 'Apply role' }).click()
   await expect(page.getByText('amina@ciss.local is now customer.')).toBeVisible()
 })
+
+test('staff change their own password from Settings', async ({ page }) => {
+  await signIn(page, 'admin@ciss.local', 'Admin12345!')
+  await page.goto('/admin/settings/password')
+  const change = async (current: string, next: string) => {
+    await page.getByLabel('Current password').fill(current)
+    await page.getByLabel('New password', { exact: true }).fill(next)
+    await page.getByLabel('Confirm new password').fill(next)
+    await page.getByRole('button', { name: 'Change password' }).click()
+  }
+
+  await change('not-my-password', 'Changed12345!')
+  await expect(page.getByText('Your current password is incorrect.')).toBeVisible()
+
+  await change('Admin12345!', 'Changed12345!')
+  await expect(page.getByText('Your password has been changed.')).toBeVisible()
+  // Still signed in on this device.
+  await page.goto('/admin/settings/password')
+  await expect(page.getByRole('heading', { name: 'Change your password' })).toBeVisible()
+
+  // Put the seed password back for the other tests.
+  await change('Changed12345!', 'Admin12345!')
+  await expect(page.getByText('Your password has been changed.')).toBeVisible()
+})
