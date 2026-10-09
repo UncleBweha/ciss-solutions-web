@@ -11,6 +11,7 @@ export default async function SettingsLayout({ children }: { children: React.Rea
     can(user, 'content.manage') && { href: '/admin/homepage', label: 'Homepage' },
     can(user, 'content.manage') && { href: '/admin/settings/pages', label: 'Content pages' },
     can(user, 'admins.manage') && { href: '/admin/settings/staff', label: 'Staff & roles' },
+    { href: '/admin/settings/password', label: 'My password' },
   ].filter((t): t is { href: string; label: string } => Boolean(t))
   return (
     <div>
