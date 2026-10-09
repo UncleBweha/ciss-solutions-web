@@ -100,7 +100,7 @@ The sidebar has one entry per area; related pages are tabs inside it:
 - **Catalog:** Categories, Brands, Printer models
 - **Customers**
 - **Support requests**
-- **Settings:** Business, Payments, Checkout/SEO/alerts, Homepage, Content pages, Staff & roles
+- **Settings:** Business, Payments, Checkout/SEO/alerts, Homepage, Content pages, Staff & roles, My password
 
 **Log out** is at the bottom of the sidebar and in the top bar. Coupons, product reviews and delivery
 zones are switched off: they have no admin page and customers do not see them.
@@ -186,6 +186,7 @@ accounting and reconciliation (see [PAYMENTS.md](PAYMENTS.md#reconciliation)).
 | Checkout, SEO & alerts | M-Pesa and bank-transfer reservation windows, maximum quantity per item, default SEO title/description, staff alert emails |
 | Content pages | Page text and the Reviewed flag |
 | Staff & roles | Add staff, change roles |
+| My password | Change your own password (every staff member; the current password is required) |
 
 M-Pesa API credentials are **not** in the admin: they are server environment variables, so they
 can't leak through the browser or a staff account (see [DEPLOYMENT.md](DEPLOYMENT.md)).
