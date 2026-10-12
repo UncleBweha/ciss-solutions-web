@@ -12,7 +12,7 @@ export function TrackOrderForm({ defaultOrder }: { defaultOrder: string }) {
         <Input id="orderNumber" name="orderNumber" defaultValue={defaultOrder} placeholder="CISS-7K3M9QXD" required autoCapitalize="characters" />
       </Field>
       <Field label="Phone number" htmlFor="track-phone" required>
-        <Input id="track-phone" name="phone" type="tel" inputMode="tel" placeholder="0712345678" required />
+        <Input id="track-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="0712345678" required />
       </Field>
       <FormMessage>{state.message}</FormMessage>
       <Button type="submit" size="lg" className="w-full" loading={pending}>

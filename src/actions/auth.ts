@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { getSessionUser } from '@/lib/auth'
 import { siteUrl } from '@/lib/env'
 import { GOOGLE_OAUTH_COOKIE, GOOGLE_OAUTH_COOKIE_PATH, googleRedirectUri } from '@/lib/google-oauth'
 import { logger } from '@/lib/logger'
@@ -98,10 +99,12 @@ export async function signUpAction(_prev: FormState, formData: FormData): Promis
     logger.warn('auth.sign_up_failed', { reason: error.code ?? error.message })
     return { message: error.code === 'weak_password' ? 'Choose a stronger password.' : 'We could not create your account. If you already have one, sign in instead.' }
   }
+  // An address that still has to be confirmed is welcomed once it is (see /auth/callback):
+  // until then it is only something somebody typed, and may not be theirs.
+  if (!data.session) return { ok: true, message: 'Check your email to confirm your account, then sign in.' }
   getEmailProvider()
     .send({ to: parsed.data.email, ...welcomeEmail(parsed.data.fullName.split(' ')[0]) })
     .catch((e) => logger.warn('auth.welcome_email_failed', { error: e }))
-  if (!data.session) return { ok: true, message: 'Check your email to confirm your account, then sign in.' }
   redirect(safeNext(formData.get('next')))
 }
 
@@ -176,6 +179,8 @@ export async function completePasswordResetAction(_prev: FormState, formData: Fo
     .refine((v) => v.password === v.confirm, { message: 'Passwords do not match', path: ['confirm'] })
     .safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
+  // Only for a session the emailed code has just opened, not any signed-in session.
+  if ((await readResetFlow())?.stage !== 'password') return { message: 'That reset has expired. Request a new code and try again.' }
   const supabase = await createClient()
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
   if (error) return { message: 'We could not save that password. Request a new code and try again.' }
@@ -190,12 +195,22 @@ export async function restartPasswordResetAction() {
 }
 
 export async function updatePasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await getSessionUser()
+  if (!user) return { message: 'Sign in again to change your password.' }
+  if (!(await rateLimit(`password-change:${user.id}`, 10, 600))) return { message: 'Too many attempts. Please wait 10 minutes.' }
   const parsed = z
-    .object({ password, confirm: z.string() })
+    .object({ current: z.string().optional(), password, confirm: z.string() })
     .refine((v) => v.password === v.confirm, { message: 'Passwords do not match', path: ['confirm'] })
     .safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
   const supabase = await createClient()
+  // An open session does not prove who is at the keyboard: ask for the password being
+  // replaced. (An account made through Google alone has none to ask for.)
+  if (user.hasPassword) {
+    if (!parsed.data.current) return { errors: { current: 'Enter your current password' } }
+    const { error: wrong } = user.email ? await supabase.auth.signInWithPassword({ email: user.email, password: parsed.data.current }) : { error: true }
+    if (wrong) return { errors: { current: 'That is not your current password' } }
+  }
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
   if (error) return { message: 'We could not update your password. Sign in again and retry.' }
   return { ok: true, message: 'Your password has been updated.' }

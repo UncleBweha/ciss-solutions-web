@@ -44,6 +44,9 @@ PREV=$(docker inspect ciss-store --format '{{.Config.Image}}' 2>/dev/null || tru
 NET=$(docker network ls --format '{{.Name}}' | grep -E '(^|_)web$' | head -1 || true)
 
 start() {
+  # Let requests in flight finish (an M-Pesa prompt being sent, emails queued after a
+  # response) before the container goes: rm -f alone kills it mid-request.
+  docker stop -t 30 ciss-store >/dev/null 2>&1 || true
   docker rm -f ciss-store >/dev/null 2>&1 || true
   docker run -d --name ciss-store --restart unless-stopped \
     --env-file "$ENV_FILE" -e NODE_ENV=production \
@@ -83,5 +86,8 @@ chmod 644 /etc/cron.d/ciss-store
 # Keep the three most recent images for quick manual rollback.
 docker images ciss-store --format '{{.CreatedAt}}\t{{.Tag}}' | sort -r | cut -f2 | grep -v '^latest$' \
   | tail -n +4 | xargs -r -I{} docker rmi "ciss-store:{}" >/dev/null 2>&1 || true
+
+# Every deploy is a fresh build; without this the build cache grows until the disk is full.
+docker builder prune -f --filter until=168h >/dev/null 2>&1 || true
 
 docker ps --filter name=ciss-store --format '{{.Names}}  {{.Status}}  {{.Ports}}'

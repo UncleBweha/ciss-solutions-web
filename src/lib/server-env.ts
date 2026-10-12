@@ -5,27 +5,38 @@ function optional(name: string) {
   return process.env[name]?.trim() || undefined
 }
 
+/** A mistyped value must stop the server, not quietly select another payment setup. */
+function oneOf<T extends string>(name: string, allowed: readonly T[], fallback: T): T {
+  const value = optional(name)?.toLowerCase()
+  if (value === undefined) return fallback
+  if (!allowed.includes(value as T)) throw new Error(`${name} must be one of: ${allowed.join(', ')}`)
+  return value as T
+}
+
 /** Every email shows the same sender name, whatever name (if any) the env value carries. */
 const sender = (value: string) => `Ciss Solutions <${(value.match(/<([^>]+)>/)?.[1] ?? value).trim()}>`
 
 export const serverEnv = {
   serviceRoleKey: optional('SUPABASE_SERVICE_ROLE_KEY'),
   mpesa: {
-    env: (optional('MPESA_ENV') ?? 'mock') as 'mock' | 'sandbox' | 'production',
+    env: oneOf('MPESA_ENV', ['mock', 'sandbox', 'production'], 'mock'),
     allowMockInProduction: optional('MPESA_ALLOW_MOCK') === 'true',
-    consumerKey: optional('MPESA_CONSUMER_KEY'),
-    consumerSecret: optional('MPESA_CONSUMER_SECRET'),
-    shortcode: optional('MPESA_SHORTCODE'),
-    passkey: optional('MPESA_PASSKEY'),
-    transactionType: (optional('MPESA_TRANSACTION_TYPE') ?? 'CustomerPayBillOnline') as
-      | 'CustomerPayBillOnline'
-      | 'CustomerBuyGoodsOnline',
-    partyB: optional('MPESA_PARTY_B'),
     callbackUrl: optional('MPESA_CALLBACK_URL'),
     callbackSecret: optional('MPESA_CALLBACK_SECRET'),
   },
+  // KCB Buni sends the M-Pesa STK push when MPESA_ENV is sandbox or production.
+  kcb: {
+    consumerKey: optional('KCB_CONSUMER_KEY'),
+    consumerSecret: optional('KCB_CONSUMER_SECRET'),
+    baseUrl: optional('KCB_BASE_URL'),
+    tokenUrl: optional('KCB_TOKEN_URL'),
+    orgShortCode: optional('KCB_ORG_SHORTCODE'),
+    orgPassKey: optional('KCB_ORG_PASSKEY'),
+    sharedShortCode: oneOf('KCB_SHARED_SHORTCODE', ['true', 'false'], 'true') === 'true',
+    invoicePrefix: optional('KCB_INVOICE_PREFIX'),
+  },
   email: {
-    provider: (optional('EMAIL_PROVIDER') ?? 'log') as 'log' | 'resend' | 'smtp',
+    provider: oneOf('EMAIL_PROVIDER', ['log', 'resend', 'smtp'], 'log'),
     apiKey: optional('EMAIL_API_KEY'),
     // EMAIL_PROVIDER=smtp: send through a mailbox (for example the orders mailbox itself).
     smtp: {

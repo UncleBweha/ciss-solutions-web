@@ -31,9 +31,11 @@
   --accent: #6d28d9;
   --text-primary: #0f172a;
   --text-secondary: #334155;
-  --text-muted: #556274;
-  --success: #15803d;
-  --warning: #b45309;
+  /* These three are used as text on the tinted page and on their own 10-15% tints: the
+     shades keep at least 4.5:1 there (the previous ones were about 4.1 to 4.3). */
+  --text-muted: #475569;
+  --success: #166534;
+  --warning: #92400e;
   --danger: #c81e1e;
   /* CMYK brand inks */
   --ink-cyan: #0891b2;

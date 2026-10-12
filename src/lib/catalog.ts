@@ -369,20 +369,14 @@ export const getProduct = cache(async (slug: string): Promise<ProductDetail | nu
  *  - fallback: same category, then same brand
  */
 export async function getRecommendations(product: ProductDetail, limit = 8) {
-  const compatible: ProductCardData[] = []
-  if (product.printerModel) {
-    const r = await searchCatalog({ printerModelId: product.printerModel.id, perPage: limit + 1, sort: 'best-selling' })
-    compatible.push(...r.items.filter((p) => p.id !== product.id))
-  } else if (product.compatibility.length) {
-    const r = await searchCatalog({ printerModelId: product.compatibility[0].id, perPage: limit + 1, sort: 'best-selling' })
-    compatible.push(...r.items.filter((p) => p.id !== product.id))
-  }
-
-  const related: ProductCardData[] = []
-  if (product.category) {
-    const r = await searchCatalog({ category: product.category.slug, perPage: limit + 1, sort: 'best-selling' })
-    related.push(...r.items.filter((p) => p.id !== product.id))
-  }
+  // The two searches do not depend on each other: run them together.
+  const modelId = product.printerModel?.id ?? product.compatibility[0]?.id
+  const [forModel, inCategory] = await Promise.all([
+    modelId ? searchCatalog({ printerModelId: modelId, perPage: limit + 1, sort: 'best-selling' }) : null,
+    product.category ? searchCatalog({ category: product.category.slug, perPage: limit + 1, sort: 'best-selling' }) : null,
+  ])
+  const compatible: ProductCardData[] = (forModel?.items ?? []).filter((p) => p.id !== product.id)
+  const related: ProductCardData[] = (inCategory?.items ?? []).filter((p) => p.id !== product.id)
   if (related.length < limit && product.brand) {
     const r = await searchCatalog({ brands: [product.brand.slug], perPage: limit + 1, sort: 'best-selling' })
     for (const p of r.items) if (p.id !== product.id && !related.some((x) => x.id === p.id)) related.push(p)

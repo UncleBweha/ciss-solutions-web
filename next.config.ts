@@ -21,6 +21,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
+  experimental: {
+    // Forms that upload a file (part requests 5 MB, banners 8 MB) need more than the 1 MB default.
+    serverActions: { bodySizeLimit: '9mb' },
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: supabaseHost

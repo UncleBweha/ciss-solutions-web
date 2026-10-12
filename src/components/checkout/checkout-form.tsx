@@ -127,7 +127,8 @@ export function CheckoutForm({
   }
 
   const next = async (index: number) => {
-    const ok = await trigger(STEPS[index].fields as unknown as FieldPath<CheckoutFormValues>[])
+    // On a mistake, focus goes to the first field that needs fixing.
+    const ok = await trigger(STEPS[index].fields as unknown as FieldPath<CheckoutFormValues>[], { shouldFocus: true })
     if (ok) setStep(index + 1)
   }
 
@@ -170,7 +171,7 @@ export function CheckoutForm({
         {STEPS[index].title}
       </h2>
       {step > index ? (
-        <button type="button" onClick={() => setStep(index)} className="flex items-center gap-1 text-sm font-semibold text-primary-light hover:text-fg">
+        <button type="button" onClick={() => setStep(index)} aria-label={`Edit ${STEPS[index].title}`} className="flex items-center gap-1 text-sm font-semibold text-primary-light hover:text-fg">
           <Pencil className="h-3.5 w-3.5" aria-hidden="true" /> Edit
         </button>
       ) : null}
@@ -333,7 +334,7 @@ export function CheckoutForm({
 
               {method === 'mpesa' ? (
                 <Field label="M-Pesa phone number" htmlFor="mpesaPhone" error={errors.mpesaPhone?.message} hint="You will receive a prompt on this phone to enter your M-Pesa PIN">
-                  <Input id="mpesaPhone" type="tel" inputMode="tel" {...register('mpesaPhone')} />
+                  <Input id="mpesaPhone" type="tel" inputMode="tel" autoComplete="tel" {...register('mpesaPhone')} />
                 </Field>
               ) : null}
               {method === 'bank_transfer' ? (

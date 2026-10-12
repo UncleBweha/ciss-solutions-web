@@ -13,13 +13,13 @@ export function AddressForm() {
         <Input id="label" name="label" />
       </Field>
       <Field label="Contact name" htmlFor="fullName" error={state.errors?.fullName} required>
-        <Input id="fullName" name="fullName" required />
+        <Input id="fullName" name="fullName" autoComplete="name" required />
       </Field>
       <Field label="Phone" htmlFor="phone" error={state.errors?.phone} required>
-        <Input id="phone" name="phone" type="tel" required />
+        <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" required />
       </Field>
       <Field label="County" htmlFor="county" error={state.errors?.county} required>
-        <Select id="county" name="county" required defaultValue="">
+        <Select id="county" name="county" autoComplete="address-level1" required defaultValue="">
           <option value="">Select county</option>
           {KENYA_COUNTIES.map((c) => (
             <option key={c}>{c}</option>
@@ -27,10 +27,10 @@ export function AddressForm() {
         </Select>
       </Field>
       <Field label="Town / City" htmlFor="town" error={state.errors?.town} required>
-        <Input id="town" name="town" required />
+        <Input id="town" name="town" autoComplete="address-level2" required />
       </Field>
       <Field label="Address" htmlFor="addressLine" error={state.errors?.addressLine} required>
-        <Input id="addressLine" name="addressLine" required />
+        <Input id="addressLine" name="addressLine" autoComplete="street-address" required />
       </Field>
       <Field label="Instructions" htmlFor="instructions" className="sm:col-span-2">
         <Input id="instructions" name="instructions" />

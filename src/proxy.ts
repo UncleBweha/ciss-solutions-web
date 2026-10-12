@@ -13,18 +13,27 @@ export async function proxy(request: NextRequest) {
     const token = request.nextUrl.searchParams.get('t')
     const number = (request.nextUrl.pathname.split('/')[2] ?? '').replace(/%2D/gi, '-')
     // Order numbers are plain (CISS-XXXXXXXX): anything needing decoding is not one.
-    if (!token || !/^[A-Za-z0-9_-]+$/.test(number) || !isOrderToken(token)) return NextResponse.next({ request })
+    if (!/^[A-Za-z0-9_-]+$/.test(number)) return NextResponse.next({ request })
+    const cookie = {
+      httpOnly: true,
+      sameSite: 'lax' as const,
+      // Behind the reverse proxy the request itself arrives over http: go by the site's address.
+      secure: process.env.NEXT_PUBLIC_SITE_URL?.startsWith('https://') ?? false,
+      // The whole site, so the status and invoice routes under /api/orders receive it too.
+      path: '/',
+      maxAge: 60 * 60 * 24 * 90,
+    }
+    if (!token || !isOrderToken(token)) {
+      const next = NextResponse.next({ request })
+      // Cookies set before the path covered /api/orders: issue them again for the whole site.
+      const held = request.cookies.get(orderTokenCookie(number))?.value
+      if (held && isOrderToken(held)) next.cookies.set(orderTokenCookie(number), held, cookie)
+      return next
+    }
     const clean = request.nextUrl.clone()
     clean.searchParams.delete('t')
     const redirect = NextResponse.redirect(clean)
-    redirect.cookies.set(orderTokenCookie(number), token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      // Behind the reverse proxy the request itself arrives over http: go by the site's address.
-      secure: process.env.NEXT_PUBLIC_SITE_URL?.startsWith('https://') ?? false,
-      path: '/order',
-      maxAge: 60 * 60 * 24 * 90,
-    })
+    redirect.cookies.set(orderTokenCookie(number), token, cookie)
     return redirect
   }
 

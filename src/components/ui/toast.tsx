@@ -21,7 +21,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (message: ReactNode, tone: ToastTone = 'success') => {
       const id = nextId++
       setToasts((t) => [...t.slice(-2), { id, tone, message }])
-      setTimeout(() => dismiss(id), 4500)
+      // Long enough to reach a link in the message ("View cart") with a keyboard or screen reader.
+      setTimeout(() => dismiss(id), 9000)
     },
     [dismiss],
   )
@@ -42,7 +43,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             >
               <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', t.tone === 'success' ? 'text-success' : t.tone === 'error' ? 'text-danger' : 'text-primary-light')} aria-hidden="true" />
               <div className="flex-1">{t.message}</div>
-              <button type="button" onClick={() => dismiss(t.id)} className="text-fg-muted hover:text-fg" aria-label="Dismiss">
+              <button type="button" onClick={() => dismiss(t.id)} className="-m-1 p-1 text-fg-muted hover:text-fg" aria-label="Dismiss">
                 <X className="h-4 w-4" />
               </button>
             </div>

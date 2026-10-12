@@ -188,7 +188,7 @@ export function ResetPasswordForm() {
   )
 }
 
-export function UpdatePasswordForm() {
+export function UpdatePasswordForm({ hasPassword }: { hasPassword: boolean }) {
   const [state, action, pending] = useActionState(updatePasswordAction, {})
   if (state.ok) {
     return (
@@ -202,6 +202,11 @@ export function UpdatePasswordForm() {
   }
   return (
     <form action={action} className="space-y-4">
+      {hasPassword ? (
+        <Field label="Current password" htmlFor="current" error={state.errors?.current} required>
+          <Input id="current" name="current" type="password" autoComplete="current-password" required />
+        </Field>
+      ) : null}
       <Field label="New password" htmlFor="password" error={state.errors?.password} required>
         <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
       </Field>

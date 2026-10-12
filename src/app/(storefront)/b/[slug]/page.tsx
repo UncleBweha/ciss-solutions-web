@@ -7,7 +7,7 @@ import { CatalogListing } from '@/components/storefront/catalog-listing'
 import { Breadcrumbs, SectionHeading } from '@/components/ui/misc'
 import { getBrand, getFacets, searchCatalog } from '@/lib/catalog'
 import { parseCatalogParams } from '@/lib/catalog-params'
-import { listingRobots } from '@/lib/seo/metadata'
+import { isFilteredListing, listingRobots } from '@/lib/seo/metadata'
 import { breadcrumbSchema, collectionSchema } from '@/lib/seo/schema'
 
 export async function generateMetadata({ params, searchParams }: PageProps<'/b/[slug]'>): Promise<Metadata> {
@@ -27,7 +27,7 @@ export default async function BrandPage({ params, searchParams }: PageProps<'/b/
   const brand = await getBrand(slug)
   if (!brand) notFound()
 
-  const filtered = Object.keys(sp).length > 0
+  const filtered = isFilteredListing(sp) || sp.page !== undefined
   const [result, featured, facets] = await Promise.all([
     searchCatalog(parseCatalogParams(sp, { brands: [brand.slug] })),
     filtered ? Promise.resolve(null) : searchCatalog({ brands: [brand.slug], sort: 'best-selling', perPage: 5 }),

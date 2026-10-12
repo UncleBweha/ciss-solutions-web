@@ -17,19 +17,33 @@ const isoDay = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Africa/Na
 export default async function ReportsPage({ searchParams }: PageProps<'/admin/reports'>) {
   const user = await requireStaff('reports.view')
   const sp = await searchParams
-  const to = param(sp.to) ?? isoDay(new Date(nowMs()))
-  const from = param(sp.from) ?? isoDay(new Date(nowMs() - 29 * 86400_000))
+  // A date typed into the address that is not a real day falls back to the default range.
+  const day = (value: string | undefined, fallback: string) => (value && !Number.isNaN(new Date(`${value}T00:00:00+03:00`).getTime()) ? value : fallback)
+  const to = day(param(sp.to), isoDay(new Date(nowMs())))
+  const from = day(param(sp.from), isoDay(new Date(nowMs() - 29 * 86400_000)))
   const fromTs = new Date(`${from}T00:00:00+03:00`).toISOString()
   const toTs = new Date(`${to}T23:59:59.999+03:00`).toISOString()
   const supabase = await createClient()
 
-  const [{ data: orders }, { data: logs }] = await Promise.all([
-    can(user, 'orders.manage') || can(user, 'customers.view')
-      ? supabase.from('orders').select('total, discount, delivery_fee, payment_status, order_status, payment_method').gte('created_at', fromTs).lte('created_at', toTs).limit(10000)
-      : Promise.resolve({ data: [] as { total: number; discount: number; delivery_fee: number; payment_status: string; order_status: OrderStatus; payment_method: PaymentMethod }[] }),
-    supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50),
-  ])
-  const list = orders ?? []
+  // The API returns at most 1,000 rows per request: read every page, or the totals below
+  // would quietly cover only the first thousand orders of the range.
+  const page = (offset: number) =>
+    supabase
+      .from('orders')
+      .select('total, discount, delivery_fee, payment_status, order_status, payment_method')
+      .gte('created_at', fromTs)
+      .lte('created_at', toTs)
+      .order('created_at')
+      .order('order_number')
+      .range(offset, offset + 999)
+  const list: NonNullable<Awaited<ReturnType<typeof page>>['data']> = []
+  while (can(user, 'orders.manage') || can(user, 'customers.view')) {
+    const { data, error } = await page(list.length)
+    if (error) throw new Error(`report orders: ${error.message}`)
+    list.push(...data)
+    if (data.length < 1000) break
+  }
+  const { data: logs } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50)
   const paid = list.filter((o) => o.payment_status === 'PAID')
   const revenue = paid.reduce((s, o) => s + Number(o.total), 0)
   const byMethod = Object.entries(

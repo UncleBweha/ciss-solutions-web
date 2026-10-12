@@ -24,7 +24,7 @@ export default async function AdminOrderPage({ params }: PageProps<'/admin/order
   ])
   if (!order) notFound()
 
-  const allowed = allowedTransitions(order.order_status, order.payment_method).filter((s) => s !== 'REFUNDED' || can(user, 'orders.refund'))
+  const allowed = allowedTransitions(order.order_status, order.payment_method, order.payment_status).filter((s) => s !== 'REFUNDED' || can(user, 'orders.refund'))
   const history = [...order.history].sort((a, b) => a.created_at.localeCompare(b.created_at))
   const payments = [...order.payments].sort((a, b) => b.created_at.localeCompare(a.created_at))
 

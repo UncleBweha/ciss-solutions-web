@@ -31,7 +31,7 @@ export function ProductCard({ product, priority, className }: { product: Product
       <div className="flex flex-1 flex-col px-3.5 pb-3.5 pt-1">
         {product.brand_name ? <p className="text-xs text-fg-muted">{product.brand_name}</p> : null}
         <h3 className="mt-0.5 line-clamp-2 text-sm leading-snug text-fg">
-          <Link href={href} className="after:absolute after:inset-0 after:content-[''] hover:text-primary-light focus-visible:outline-none">
+          <Link href={href} className="after:absolute after:inset-0 after:content-[''] hover:text-primary-light">
             {product.name}
           </Link>
         </h3>

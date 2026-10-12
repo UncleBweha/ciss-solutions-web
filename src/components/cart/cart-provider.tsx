@@ -184,8 +184,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ready) return
     store(CART_KEY, items)
-    if (!signedInRef.current) return
+    // Any save still waiting was for the cart as it was (and, after a sign-out, for whoever
+    // was signed in then): drop it before deciding whether to queue a new one.
     if (saveTimer.current) clearTimeout(saveTimer.current)
+    if (!signedInRef.current) return
     saveTimer.current = setTimeout(() => {
       void saveCartAction(items.map(({ productId, variantId, quantity }) => ({ productId, variantId, quantity })))
     }, 700)
