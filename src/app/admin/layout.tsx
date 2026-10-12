@@ -19,7 +19,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     (can(user, 'settings.manage') && '/admin/settings') ||
     (can(user, 'payments.settings') && '/admin/settings/payments') ||
     (can(user, 'content.manage') && '/admin/homepage') ||
-    '/admin/settings/staff'
+    (can(user, 'admins.manage') && '/admin/settings/staff') ||
+    '/admin/settings/password'
   // One entry per area; related pages are tabs inside it (see the route-group layouts).
   const all: (AdminNavItem & { allowed: boolean })[] = [
     { href: '/admin', label: 'Dashboard', icon: 'dashboard', match: ['/admin/reports'], allowed: true },
