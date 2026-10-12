@@ -127,7 +127,7 @@ when needed. The customer is emailed when the order moves to Processing, Ready f
 Shipped, Delivered, Cancelled or Refunded. Notes you add are internal (they appear in the order
 history, not in the email).
 
-- **M-Pesa orders** become Paid only when Safaricom confirms; staff cannot mark them paid.
+- **M-Pesa orders** become Paid only when KCB confirms the payment; staff cannot mark them paid.
 - **Bank transfer:** when the money shows in the bank account, set the order to Paid.
 - **Cash on delivery:** move it through Processing → Shipped → Delivered and collect payment on
   delivery.
@@ -174,7 +174,7 @@ discount is always calculated on the server, at checkout, from the current cart.
 ## Reports
 
 For a date range: paid revenue, order count, average order, discounts, revenue by payment method and
-orders by status, plus the latest audit-log entries. **Export orders (CSV)** downloads every order in the range, including the M-Pesa receipt, for
+orders by status, plus the latest audit-log entries. **Export orders (CSV)** downloads the orders in the range (up to 20,000: a longer range ends with a line saying the file is incomplete, so export it in shorter ranges), including the M-Pesa receipt, for
 accounting and reconciliation (see [PAYMENTS.md](PAYMENTS.md#reconciliation)).
 
 ## Settings

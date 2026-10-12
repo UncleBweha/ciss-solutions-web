@@ -4,7 +4,7 @@ Online store for CISS Solutions (Nairobi): printers, spare parts, ink and toner,
 paper and accessories, with M-Pesa checkout, a spare-part compatibility finder and a staff admin.
 
 - **Stack:** Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS v4, Supabase
-  (Postgres + Auth + Storage, Row Level Security), M-Pesa Daraja STK Push.
+  (Postgres + Auth + Storage, Row Level Security), M-Pesa STK Push through KCB Buni.
 - **Currency:** KES. **Locale:** en-KE.
 
 The repository also still contains the static coming-soon page (`index.html`, `assets/`) and the
@@ -86,7 +86,7 @@ The seed and reference data deliberately leave these blank rather than invent th
 
 - Business phone, WhatsApp, email and street address (Admin, Settings, Business), and
   `NEXT_PUBLIC_WHATSAPP_NUMBER`.
-- M-Pesa Paybill/Till and Daraja credentials (see [docs/PAYMENTS.md](docs/PAYMENTS.md)).
+- KCB till number and KCB Buni credentials (see [docs/PAYMENTS.md](docs/PAYMENTS.md)).
 - Bank transfer details, if you offer it (Admin, Settings, Payments).
 - Delivery fees: the seeded zones are examples (Admin, Settings, Delivery zones).
 - Legal pages (privacy, terms, returns, warranty, delivery): the seeded text is a neutral draft.

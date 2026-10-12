@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getSessionUser } from '@/lib/auth'
 import { quoteCart, type Quote } from '@/lib/ecommerce/quote'
 import { logger } from '@/lib/logger'
+import { clientIp, rateLimit } from '@/lib/security'
 import { createClient } from '@/lib/supabase/server'
 import { cartItemsSchema, type CartItemInput } from '@/lib/validation/cart'
 
@@ -15,6 +16,11 @@ export async function quoteCartAction(items: CartItemInput[], options: z.input<t
   const parsed = cartItemsSchema.parse(items)
   const opts = quoteOptions.parse(options)
   const user = await getSessionUser()
+  // A loose ceiling (many customers share one address) that still stops guessing coupon codes.
+  if (opts.couponCode && !(await rateLimit(`coupon:${await clientIp()}`, 300, 600))) {
+    const quote = await quoteCart(parsed, { customer: { userId: user?.id, email: user?.email } })
+    return { ...quote, couponMessage: 'Too many coupon attempts. Please wait a few minutes and try again.' }
+  }
   return quoteCart(parsed, { ...opts, customer: { userId: user?.id, email: user?.email } })
 }
 
@@ -87,7 +93,8 @@ export async function saveCartAction(items: CartItemInput[]): Promise<void> {
   const parsed = cartItemsSchema.parse(items)
   try {
     const { supabase, cartId } = await getOrCreateCartId(user.id)
-    await writeCart(supabase, cartId, parsed)
+    // One line per product: the same line twice in one write is refused by the database.
+    await writeCart(supabase, cartId, mergeItems(parsed, []))
   } catch (error) {
     logger.error('cart.save_failed', { userId: user.id, error })
   }

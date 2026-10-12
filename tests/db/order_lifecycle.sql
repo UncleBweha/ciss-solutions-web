@@ -148,6 +148,91 @@ begin
   end;
   assert v_failed, 'delivered -> processing rejected';
 
+  -- 11. A second payment for a paid order is recorded but changes nothing else ---------------
+  update products set stock_quantity = 5, reserved_quantity = 0 where id = v_product;
+  v_order := place_order(jsonb_build_object(
+    'customer_name', 'Twice', 'customer_email', 'twice@example.com', 'customer_phone', '254700000005',
+    'payment_method', 'mpesa', 'subtotal', 52999, 'total', 52999, 'delivery_zone_name', 'Nairobi',
+    'delivery_county', 'Nairobi', 'delivery_town', 'CBD', 'delivery_address', 'x', 'reservation_minutes', 30,
+    'items', jsonb_build_array(jsonb_build_object(
+      'product_id', v_product, 'product_name', 'HP M404dn', 'sku', 'HP-M404DN', 'quantity', 1, 'unit_price', 52999))
+  ));
+  v_order_id := (v_order ->> 'id')::uuid;
+  insert into payments (order_id, method, provider, amount, checkout_request_id)
+  values (v_order_id, 'mpesa', 'mpesa_mock', 52999, 'ws_CO_test_4') returning id into v_payment;
+  v_result := confirm_payment(v_payment, 'QAB1CD2EF6', 52999, null);
+  assert v_result ->> 'status' = 'confirmed' and (v_result ->> 'duplicate')::boolean is false, 'first payment confirmed';
+  insert into payments (order_id, method, provider, amount, checkout_request_id)
+  values (v_order_id, 'mpesa', 'mpesa_mock', 52999, 'ws_CO_test_5') returning id into v_payment;
+  v_result := confirm_payment(v_payment, 'QAB1CD2EF7', 52999, null);
+  assert v_result ->> 'status' = 'confirmed' and (v_result ->> 'duplicate')::boolean, 'second payment flagged as a duplicate';
+  assert (select status from payments where id = v_payment) = 'PAID', 'the second payment is recorded as received';
+  assert (select stock_quantity from products where id = v_product) = 4, 'stock deducted once for the order';
+  assert (select count(*) from order_status_history where order_id = v_order_id and status = 'PAID') = 1, 'one paid entry in the history';
+
+  -- 12. A paid order that was cancelled can be refunded ------------------------------------------
+  perform update_order_status(v_order_id, 'CANCELLED', 'Customer cancelled');
+  assert (select payment_status from orders where id = v_order_id) = 'PAID', 'cancelling does not unpay';
+  perform update_order_status(v_order_id, 'REFUNDED', 'Money returned');
+  assert (select payment_status from orders where id = v_order_id) = 'REFUNDED', 'cancelled paid order refunded';
+
+  -- 13. Short stock on a late payment: flagged, and a cancel returns only what was taken ----------
+  v_order := place_order(jsonb_build_object(
+    'customer_name', 'Short', 'customer_email', 'short@example.com', 'customer_phone', '254700000006',
+    'payment_method', 'mpesa', 'subtotal', 52999, 'total', 52999, 'delivery_zone_name', 'Nairobi',
+    'delivery_county', 'Nairobi', 'delivery_town', 'CBD', 'delivery_address', 'x', 'reservation_minutes', 30,
+    'items', jsonb_build_array(jsonb_build_object(
+      'product_id', v_product, 'product_name', 'HP M404dn', 'sku', 'HP-M404DN', 'quantity', 1, 'unit_price', 52999))
+  ));
+  v_order_id := (v_order ->> 'id')::uuid;
+  update orders set reservation_expires_at = now() - interval '1 minute' where id = v_order_id;
+  perform expire_stale_orders();
+  update products set stock_quantity = 0, reserved_quantity = 0 where id = v_product;
+  insert into payments (order_id, method, provider, amount, checkout_request_id)
+  values (v_order_id, 'mpesa', 'mpesa_mock', 52999, 'ws_CO_test_6') returning id into v_payment;
+  v_result := confirm_payment(v_payment, 'QAB1CD2EF8', 52999, null);
+  assert v_result ->> 'stock' = 'shortage', 'late payment with no stock is a shortage';
+  assert (select stock_state from orders where id = v_order_id) = 'shortage', 'order marked short';
+  assert exists (select 1 from notifications where kind = 'stock_shortage' and order_id = v_order_id), 'staff told about the shortage';
+  perform update_order_status(v_order_id, 'CANCELLED', 'No stock');
+  assert (select stock_quantity from products where id = v_product) = 0, 'nothing put back that was never taken';
+  assert (select stock_state from orders where id = v_order_id) = 'restocked', 'short order closed out';
+
+  -- 14. Money that arrives after a bank transfer order expired can be recorded -------------------
+  update products set stock_quantity = 5, reserved_quantity = 0 where id = v_product;
+  update coupons set usage_limit = null, usage_count = 0, per_customer_limit = null, is_active = true where code = 'CISS10';
+  v_order := place_order(jsonb_build_object(
+    'customer_name', 'Bank', 'customer_email', 'bank@example.com', 'customer_phone', '254700000007',
+    'payment_method', 'bank_transfer', 'subtotal', 52999, 'discount', 5000, 'total', 47999,
+    'coupon_id', (select id from coupons where code = 'CISS10'), 'coupon_code', 'CISS10',
+    'delivery_zone_name', 'Nairobi', 'delivery_county', 'Nairobi', 'delivery_town', 'CBD', 'delivery_address', 'x',
+    'reservation_minutes', 2880,
+    'items', jsonb_build_array(jsonb_build_object(
+      'product_id', v_product, 'product_name', 'HP M404dn', 'sku', 'HP-M404DN', 'quantity', 1, 'unit_price', 52999))
+  ));
+  v_order_id := (v_order ->> 'id')::uuid;
+  assert (select usage_count from coupons where code = 'CISS10') = 1, 'coupon used by the order';
+  update orders set reservation_expires_at = now() - interval '1 minute' where id = v_order_id;
+  perform expire_stale_orders();
+  assert (select order_status from orders where id = v_order_id) = 'FAILED', 'bank transfer order expired';
+  assert (select usage_count from coupons where code = 'CISS10') = 0, 'coupon use returned on expiry';
+  perform update_order_status(v_order_id, 'PAID', 'Transfer received late');
+  assert (select payment_status from orders where id = v_order_id) = 'PAID', 'late bank transfer recorded';
+  assert (select stock_quantity from products where id = v_product) = 4, 'late bank transfer took stock';
+  assert (select usage_count from coupons where code = 'CISS10') = 1, 'coupon counted again once paid';
+
+  -- 15. Categories cannot be arranged in a loop ---------------------------------------------------
+  select id, parent_id into v_rec from categories where parent_id is not null order by id limit 1;
+  if v_rec.id is not null then
+    v_failed := false;
+    begin
+      update categories set parent_id = v_rec.id where id = v_rec.parent_id;
+    exception when others then
+      v_failed := sqlstate = '23514';
+    end;
+    assert v_failed, 'a category cannot move under its own subcategory';
+  end if;
+
   raise notice 'order_lifecycle: all assertions passed';
 end;
 $$;

@@ -6,9 +6,12 @@ import { audit } from '@/lib/admin/audit'
 import { background, notifyOrderStatus, notifyPaymentConfirmed } from '@/lib/notifications'
 import { runOutbox, runTaskNow } from '@/lib/outbox'
 import { createClient } from '@/lib/supabase/server'
-import { awaitsPaymentConfirmation } from '@/lib/ecommerce/orders'
+import { awaitsPaymentConfirmation, type OrderStatus } from '@/lib/ecommerce/orders'
 
-const statuses = ['PENDING', 'PAYMENT_PENDING', 'PAID', 'PROCESSING', 'READY_FOR_DISPATCH', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'FAILED'] as const
+// Checked against the database's own list: a status added there and not here stops the build.
+const statuses = ['PENDING', 'PAYMENT_PENDING', 'PAID', 'PROCESSING', 'READY_FOR_DISPATCH', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'FAILED'] as const satisfies readonly OrderStatus[]
+const allStatusesListed: Exclude<OrderStatus, (typeof statuses)[number]> extends never ? true : never = true
+void allStatusesListed
 
 /** Status changes run through update_order_status(), which enforces transitions and stock effects. */
 export async function updateOrderStatusAction(orderId: string, status: (typeof statuses)[number], note?: string): Promise<ActionResult> {

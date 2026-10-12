@@ -9,6 +9,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 const optional = (max: number) => z.string().trim().max(max).optional().transform((v) => v || null)
+/** Where a button goes: a page on this site, or an https, email or phone link (as in page text). */
+const link = z
+  .string()
+  .trim()
+  .max(300)
+  .optional()
+  .refine((v) => !v || /^\/(?![/\\])/.test(v) || /^(https:\/\/|mailto:|tel:)/i.test(v), 'Links must start with / or https://')
+  .transform((v) => v || null)
 
 // ---- Homepage sections ----------------------------------------------------------
 
@@ -22,7 +30,7 @@ export async function saveSectionAction(_prev: ActionResult | null, formData: Fo
         isEnabled: z.boolean(),
         limit: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().int().min(1).max(20).optional()),
         ctaText: optional(60),
-        ctaUrl: optional(300),
+        ctaUrl: link,
       })
       .parse(formObject(formData, ['isEnabled']))
     const supabase = await createClient()
@@ -70,9 +78,9 @@ const bannerSchema = z.object({
   imageUrl: optional(500),
   imageAlt: optional(150),
   ctaText: optional(40),
-  ctaUrl: optional(300),
+  ctaUrl: link,
   secondaryCtaText: optional(40),
-  secondaryCtaUrl: optional(300),
+  secondaryCtaUrl: link,
   background: optional(300),
   featuredProductId: z.string().uuid().optional().or(z.literal('')),
   startsAt: z.preprocess((v) => (v ? new Date(String(v)).toISOString() : null), z.string().nullable()),
@@ -188,7 +196,7 @@ export async function respondSupportAction(_prev: ActionResult | null, formData:
 /** Short-lived signed URL for a private support attachment. */
 export async function supportAttachmentUrlAction(path: string): Promise<ActionResult<{ url: string }>> {
   return staffAction('support.manage', async () => {
-    const { data, error } = await createAdminClient().storage.from('support-attachments').createSignedUrl(z.string().max(300).parse(path), 300)
+    const { data, error } = await createAdminClient().storage.from('support-attachments').createSignedUrl(z.string().max(300).regex(/^[\w-]+(\/[\w-]+)*\.[A-Za-z0-9]+$/).parse(path), 300)
     if (error || !data) return { ok: false, message: 'Could not open the attachment.' }
     return { ok: true, data: { url: data.signedUrl } }
   })

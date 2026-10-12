@@ -27,11 +27,13 @@ async function posRpc<T>(fn: string, args: Record<string, unknown>): Promise<T |
 /** Registers a paid order as a sale in the POS. Returns a note for the outbox task. */
 export async function registerPosSale(orderId: string): Promise<string> {
   const db = createAdminClient()
-  const { data: o } = await db
+  const { data: o, error: orderError } = await db
     .from('orders')
     .select('order_number, customer_name, customer_phone, total, discount, delivery_fee, payment_method, payment_status, paid_at, delivery_zone_name, items:order_items(product_id, product_name, variant_name, quantity, unit_price)')
     .eq('id', orderId)
     .maybeSingle()
+  // A failed read is not a missing order: throw, so the outbox retries.
+  if (orderError) throw new Error(`order for POS: ${orderError.message}`)
   if (!o) return 'skipped: no order'
   // Refunded before this task ran: there is nothing to sell.
   if (o.payment_status !== 'PAID') return 'skipped: order is not paid'
@@ -64,7 +66,8 @@ export async function registerPosSale(orderId: string): Promise<string> {
 
 /** Voids a refunded order's sale in the POS. Returns a note for the outbox task. */
 export async function voidPosSale(orderId: string): Promise<string> {
-  const { data: o } = await createAdminClient().from('orders').select('order_number').eq('id', orderId).maybeSingle()
+  const { data: o, error } = await createAdminClient().from('orders').select('order_number').eq('id', orderId).maybeSingle()
+  if (error) throw new Error(`order for POS: ${error.message}`)
   if (!o) return 'skipped: no order'
   const result = await posRpc<{ found: boolean; receipt_number: string | null }>('void_web_sale', { p_order_number: o.order_number })
   if (!result) return 'skipped: POS not configured'

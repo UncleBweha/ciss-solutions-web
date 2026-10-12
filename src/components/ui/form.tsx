@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from 'react'
+import { cloneElement, isValidElement, type ComponentProps, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 const control =
@@ -36,13 +36,24 @@ type FieldProps = {
 
 /** Label + control + accessible error/hint wiring. */
 export function Field({ label, htmlFor, error, hint, required, className, children }: FieldProps) {
+  // The control names its own error or hint and says it is required: the text below it and
+  // the * in the label are otherwise only next to it on screen.
+  const describedBy = error ? `${htmlFor}-error` : hint ? `${htmlFor}-hint` : undefined
+  const field =
+    isValidElement<Record<string, unknown>>(children) && children.props.id === htmlFor
+      ? cloneElement(children, {
+          'aria-describedby': children.props['aria-describedby'] ?? describedBy,
+          'aria-invalid': children.props['aria-invalid'] ?? (error ? true : undefined),
+          'aria-required': children.props['aria-required'] ?? (required || undefined),
+        })
+      : children
   return (
     <div className={cn('space-y-1.5', className)}>
       <label htmlFor={htmlFor} className="block text-sm font-medium text-fg-secondary">
         {label}
         {required ? <span className="text-danger" aria-hidden="true"> *</span> : null}
       </label>
-      {children}
+      {field}
       {error ? (
         <p id={`${htmlFor}-error`} role="alert" className="text-xs font-medium text-danger">
           {error}

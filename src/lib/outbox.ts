@@ -50,7 +50,9 @@ async function handle(task: Task): Promise<{ note?: string; message?: string }> 
     case 'pos_void':
       return { note: await voidPosSale(task.order_id) }
     default:
-      return { note: `unknown kind ${task.kind}` }
+      // Queued by a newer database than this code knows: retry (and alert staff if it never
+      // succeeds) rather than marking work done that nobody did.
+      throw new Error(`unknown outbox kind ${task.kind}`)
   }
 }
 
@@ -59,7 +61,9 @@ async function sendStkPush(task: Task): Promise<{ note?: string; message?: strin
   const orderId = task.order_id!
   // Any earlier attempt (sent, failed or paid) means this task already ran or the
   // customer retried themselves: never send a second prompt from here.
-  const { count } = await db.from('payments').select('id', { count: 'exact', head: true }).eq('order_id', orderId)
+  const { count, error } = await db.from('payments').select('id', { count: 'exact', head: true }).eq('order_id', orderId)
+  // Without the count we cannot tell whether a prompt already went out.
+  if (error) throw new Error(`payments for STK push: ${error.message}`)
   if (count) return { note: 'skipped: payment already attempted' }
   if (Date.now() - new Date(task.created_at).getTime() > STK_MAX_AGE_MS) return { note: 'skipped: too late to prompt' }
 
@@ -89,11 +93,15 @@ export async function runOutbox(opts: { orderId?: string; kinds?: OutboxKind[]; 
   for (const task of tasks ?? []) {
     try {
       const { note, message } = await handle(task)
-      await db.rpc('complete_outbox', { p_id: task.id, p_note: note ?? (null as unknown as string) })
+      // The work is done either way; if this is not saved the task runs again when its lock
+      // expires, which the handlers tolerate.
+      const { error: doneError } = await db.rpc('complete_outbox', { p_id: task.id, p_note: note ?? (null as unknown as string) })
+      if (doneError) logger.error('outbox.complete_not_saved', { taskId: task.id, kind: task.kind, error: doneError.message })
       results.push({ id: task.id, kind: task.kind, orderId: task.order_id, outcome: 'done', message })
     } catch (e) {
       const reason = (e as Error).message ?? String(e)
-      const { data: outcome } = await db.rpc('fail_outbox', { p_id: task.id, p_error: reason })
+      const { data: outcome, error: failError } = await db.rpc('fail_outbox', { p_id: task.id, p_error: reason })
+      if (failError) logger.error('outbox.fail_not_saved', { taskId: task.id, kind: task.kind, error: failError.message })
       const final = outcome === 'dead' ? 'dead' : 'retry'
       logger[final === 'dead' ? 'error' : 'warn']('outbox.task_failed', { taskId: task.id, kind: task.kind, attempt: task.attempts, outcome: final, error: e })
       results.push({ id: task.id, kind: task.kind, orderId: task.order_id, outcome: final })

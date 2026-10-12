@@ -15,6 +15,7 @@ export default async function PaymentSettings() {
   const { payment_methods } = await readSettings<PaymentMethodsSettings>(['payment_methods'])
   const pm = payment_methods as unknown as PaymentMethodsSettings
   const m = serverEnv.mpesa
+  const k = serverEnv.kcb
   return (
     <div className="grid max-w-5xl gap-4 xl:grid-cols-[1fr_20rem]">
       <Panel title="Payment methods">
@@ -51,12 +52,13 @@ export default async function PaymentSettings() {
       <Panel title="M-Pesa connection">
         <dl className="space-y-2 text-sm">
           <div><dt className="text-fg-muted">Environment</dt><dd className="font-semibold">{m.env}</dd></div>
-          <div><dt className="text-fg-muted">Shortcode</dt><dd>{m.shortcode ?? 'not set'}</dd></div>
-          <div><dt className="text-fg-muted">Transaction type</dt><dd>{m.transactionType}</dd></div>
-          <div><dt className="text-fg-muted">Credentials</dt><dd>{m.consumerKey && m.consumerSecret && m.passkey ? 'Configured' : 'Missing'}</dd></div>
+          <div><dt className="text-fg-muted">Provider</dt><dd>{m.env === 'mock' ? 'Simulator' : 'KCB Buni'}</dd></div>
+          <div><dt className="text-fg-muted">Shortcode</dt><dd>{k.sharedShortCode ? 'KCB shared' : (k.orgShortCode ?? 'not set')}</dd></div>
+          <div><dt className="text-fg-muted">Till</dt><dd>{k.invoicePrefix ?? 'not set'}</dd></div>
+          <div><dt className="text-fg-muted">Credentials</dt><dd>{k.consumerKey && k.consumerSecret ? 'Configured' : 'Missing'}</dd></div>
           <div><dt className="text-fg-muted">Callback URL</dt><dd className="break-all text-xs">{m.callbackUrl ?? 'not set'}</dd></div>
         </dl>
-        <p className="mt-3 text-xs text-fg-muted">Daraja credentials are server environment variables (never stored in the database or sent to browsers). See PAYMENTS.md.</p>
+        <p className="mt-3 text-xs text-fg-muted">M-Pesa credentials are server environment variables (never stored in the database or sent to browsers). See PAYMENTS.md.</p>
       </Panel>
     </div>
   )

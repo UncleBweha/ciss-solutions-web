@@ -54,13 +54,27 @@ class SmtpEmailProvider implements EmailProvider {
   }
 }
 
+/**
+ * A real provider was chosen but its settings are incomplete. Every send fails, so the
+ * email is recorded as failed and retried; writing it to the log instead would record
+ * it as sent when nothing went out.
+ */
+class UnconfiguredEmailProvider implements EmailProvider {
+  constructor(private readonly missing: string) {}
+  async send(): Promise<never> {
+    throw new Error(`Email is not configured: missing ${this.missing}`)
+  }
+}
+
 let smtpProvider: SmtpEmailProvider | undefined
 
 export function getEmailProvider(): EmailProvider {
   const { provider, apiKey, from, smtp } = serverEnv.email
-  if (provider === 'resend' && apiKey) return new ResendEmailProvider(apiKey, from)
-  if (provider === 'smtp' && smtp.host && smtp.user && smtp.password) {
-    // One transport for the life of the server, so connections are reused.
+  if (provider === 'resend') return apiKey ? new ResendEmailProvider(apiKey, from) : new UnconfiguredEmailProvider('EMAIL_API_KEY')
+  if (provider === 'smtp') {
+    const missing = [!smtp.host && 'SMTP_HOST', !smtp.user && 'SMTP_USER', !smtp.password && 'SMTP_PASSWORD'].filter(Boolean)
+    if (!smtp.host || !smtp.user || !smtp.password) return new UnconfiguredEmailProvider(missing.join(', '))
+    // One transport for the life of the server.
     smtpProvider ??= new SmtpEmailProvider({ host: smtp.host, port: smtp.port, user: smtp.user, password: smtp.password }, from)
     return smtpProvider
   }

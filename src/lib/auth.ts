@@ -31,6 +31,8 @@ export type SessionUser = {
   /** The picture they uploaded, otherwise the one from their Google account. */
   avatarUrl: string | null
   hasUploadedAvatar: boolean
+  /** Signs in with an email and password (an account made through Google alone has none). */
+  hasPassword: boolean
   role: Role
   permissions: Set<Permission>
 }
@@ -59,6 +61,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
     phone: profile?.phone ?? null,
     avatarUrl: profile?.avatar_url ?? (user.user_metadata?.avatar_url as string | undefined) ?? (user.user_metadata?.picture as string | undefined) ?? null,
     hasUploadedAvatar: Boolean(profile?.avatar_url),
+    hasPassword: Boolean(user.identities?.some((identity) => identity.provider === 'email')),
     role,
     permissions,
   }

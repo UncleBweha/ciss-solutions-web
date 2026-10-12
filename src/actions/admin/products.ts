@@ -93,8 +93,13 @@ export async function saveProductAction(input: ProductInput): Promise<ActionResu
       }
     }
 
+    // The product itself is saved by now. Anything below that fails is named in the answer,
+    // so staff are not told "saved" about a part that was not.
+    const notSaved: string[] = []
+
     // Internal cost price
-    await supabase.from('product_costs').upsert({ product_id: productId, cost_price: d.costPrice, updated_at: new Date().toISOString() })
+    const { error: costError } = await supabase.from('product_costs').upsert({ product_id: productId, cost_price: d.costPrice, updated_at: new Date().toISOString() })
+    if (costError) notSaved.push('the cost price')
 
     // Compatibility: entries that name a known printer model (by name or model number) are
     // linked to it, so the parts finder lists this product. Replace the set.
@@ -116,14 +121,18 @@ export async function saveProductAction(input: ProductInput): Promise<ActionResu
     const current = new Set((currentCompat ?? []).map((c) => c.printer_model_id))
     const toRemove = [...current].filter((id) => !wanted.has(id))
     const toAdd = [...wanted].filter((id) => !current.has(id))
-    if (toRemove.length) await supabase.from('product_compatibility').delete().eq('product_id', productId).in('printer_model_id', toRemove)
-    if (toAdd.length) await supabase.from('product_compatibility').insert(toAdd.map((printer_model_id) => ({ product_id: productId!, printer_model_id })))
+    const { error: unlinkError } = toRemove.length ? await supabase.from('product_compatibility').delete().eq('product_id', productId).in('printer_model_id', toRemove) : { error: null }
+    const { error: linkError } = toAdd.length ? await supabase.from('product_compatibility').insert(toAdd.map((printer_model_id) => ({ product_id: productId!, printer_model_id }))) : { error: null }
+    if (unlinkError || linkError) notSaved.push('the compatible printers')
 
     // Variants: update existing, insert new, deactivate removed (orders keep their snapshots)
     const { data: existingVariants } = await supabase.from('product_variants').select('id').eq('product_id', productId)
     const keep = new Set(d.variants.map((v) => v.id).filter(Boolean))
     const removed = (existingVariants ?? []).map((v) => v.id).filter((id) => !keep.has(id))
-    if (removed.length) await supabase.from('product_variants').update({ is_active: false }).in('id', removed)
+    if (removed.length) {
+      const { error: removeError } = await supabase.from('product_variants').update({ is_active: false }).in('id', removed)
+      if (removeError) notSaved.push('the removed variants (they are still on sale)')
+    }
     for (const [i, v] of d.variants.entries()) {
       const variantRow = {
         product_id: productId,
@@ -142,12 +151,18 @@ export async function saveProductAction(input: ProductInput): Promise<ActionResu
       } else {
         const { data: created, error } = await supabase.from('product_variants').insert(variantRow).select('id').single()
         if (error) return { ok: false, message: `Variant ${v.name}: ${dbError(error)}` }
-        if (v.stock) await supabase.rpc('adjust_stock', { p_product_id: productId, p_variant_id: created.id, p_change: v.stock, p_reason: 'purchase', p_note: 'Opening stock' })
+        if (v.stock) {
+          const { error: stockError } = await supabase.rpc('adjust_stock', { p_product_id: productId, p_variant_id: created.id, p_change: v.stock, p_reason: 'purchase', p_note: 'Opening stock' })
+          if (stockError) notSaved.push(`the opening stock of ${v.name}`)
+        }
       }
     }
     // Variable products list the lowest variant price.
     const activeVariantPrices = d.variants.filter((v) => v.isActive).map((v) => v.price)
-    if (activeVariantPrices.length) await supabase.from('products').update({ price: Math.min(...activeVariantPrices) }).eq('id', productId)
+    if (activeVariantPrices.length) {
+      const { error: priceError } = await supabase.from('products').update({ price: Math.min(...activeVariantPrices) }).eq('id', productId)
+      if (priceError) notSaved.push('the listed price (the lowest variant price)')
+    }
 
     const priceChanged = before && (Number(before.price) !== d.price || Number(before.compare_at_price ?? 0) !== Number(d.compareAtPrice ?? 0))
     await audit(user, d.id ? (priceChanged ? 'product.price_changed' : 'product.updated') : 'product.created', 'products', productId!, {
@@ -156,7 +171,9 @@ export async function saveProductAction(input: ProductInput): Promise<ActionResu
     })
     revalidateProducts([d.slug, before?.slug])
     revalidatePath('/admin/products')
-    return { ok: true, message: 'Product saved.', data: { id: productId! } }
+    // Still ok: the product exists, and the form must open it rather than create it again.
+    const message = notSaved.length ? `Product saved, except ${notSaved.join(', ')}. Open the product and save again.` : 'Product saved.'
+    return { ok: true, message, data: { id: productId! } }
   })
 }
 
@@ -212,12 +229,14 @@ export async function bulkProductsAction(input: BulkInput): Promise<ActionResult
         break
       }
       case 'price_percent': {
+        let failed = 0
         for (const p of list) {
           const price = Math.max(0, Math.round(Number(p.price) * (1 + b.value / 100)))
           const compare = p.compare_at_price != null && Number(p.compare_at_price) > price ? p.compare_at_price : null
-          await supabase.from('products').update({ price, compare_at_price: compare }).eq('id', p.id)
+          const { error } = await supabase.from('products').update({ price, compare_at_price: compare }).eq('id', p.id)
+          if (error) failed++
         }
-        message = `Prices updated by ${b.value}% on ${list.length} products.`
+        message = `Prices updated by ${b.value}% on ${list.length - failed} products.${failed ? ` ${failed} could not be updated: check them and try again.` : ''}`
         break
       }
       case 'stock_set': {
@@ -336,17 +355,17 @@ async function analyseCsv(csv: string) {
   if (rows.length > 2001) return { error: 'Import up to 2,000 products at a time.' as const }
 
   const db = createAdminClient()
-  const [{ data: brands }, { data: categories }, { data: existing }] = await Promise.all([
+  const [{ data: brands }, { data: categories }, existing] = await Promise.all([
     db.from('brands').select('id, name, slug'),
     db.from('categories').select('id, name, slug'),
-    db.from('products').select('id, sku, slug'),
+    allProducts(),
   ])
   const findBy = (list: { id: string; name: string; slug: string }[] | null, value?: string) => {
     if (!value) return null
     const v = value.trim().toLowerCase()
     return list?.find((x) => x.slug === v || x.name.toLowerCase() === v) ?? undefined
   }
-  const bySku = new Map((existing ?? []).map((p) => [p.sku.toUpperCase(), p]))
+  const bySku = new Map(existing.map((p) => [p.sku.toUpperCase(), p]))
   const seen = new Set<string>()
   const parsed = rows.slice(1).map((cells, i) => {
     const record = Object.fromEntries(header.map((h, j) => [h, (cells[j] ?? '').trim()]))
@@ -361,7 +380,19 @@ async function analyseCsv(csv: string) {
     seen.add(skuKey)
     return { line: i + 2, record, data: result.success ? result.data : null, brand, category, existing: bySku.get(skuKey), errors }
   })
-  return { parsed }
+  return { parsed, existing }
+}
+
+/** Every product's id, SKU and slug. The API returns at most 1,000 rows per request, so read in pages. */
+async function allProducts() {
+  const db = createAdminClient()
+  const rows: { id: string; sku: string; slug: string }[] = []
+  for (;;) {
+    const { data, error } = await db.from('products').select('id, sku, slug').order('id').range(rows.length, rows.length + 999)
+    if (error) throw new Error(`products: ${error.message}`)
+    rows.push(...data)
+    if (data.length < 1000) return rows
+  }
 }
 
 export async function previewImportAction(csv: string): Promise<ActionResult<{ rows: ImportPreviewRow[] }>> {
@@ -392,10 +423,10 @@ export async function importProductsAction(csv: string): Promise<ActionResult<{ 
     if (invalid.length) return { ok: false, message: `${invalid.length} rows have errors. Fix them and preview again.` }
 
     const supabase = await createClient()
-    const { data: slugRows } = await supabase.from('products').select('slug')
-    const slugs = new Set((slugRows ?? []).map((r) => r.slug))
+    const slugs = new Set(result.existing.map((r) => r.slug))
     let created = 0
     let updated = 0
+    const stockNotSet: number[] = []
     for (const r of result.parsed) {
       const d = r.data!
       const fields = {
@@ -412,12 +443,30 @@ export async function importProductsAction(csv: string): Promise<ActionResult<{ 
       }
       const stock = d.stock === '' || d.stock === undefined ? null : d.stock
       if (r.existing) {
-        const { error } = await supabase.from('products').update(fields).eq('id', r.existing.id)
+        // Only the cells that are filled in. A sheet of names, prices and stock must not
+        // unpublish the products it touches or wipe their descriptions.
+        const changes = {
+          name: d.name,
+          price: d.price,
+          ...(d.compare_at_price === '' || d.compare_at_price === undefined ? {} : { compare_at_price: d.compare_at_price }),
+          ...(d.description ? { description: d.description } : {}),
+          ...(d.short_description ? { short_description: d.short_description } : {}),
+          ...(d.product_type ? { product_type: d.product_type } : {}),
+          ...(d.weight === '' || d.weight === undefined ? {} : { weight_kg: d.weight }),
+          ...(d.status ? { status: d.status } : {}),
+          ...(r.brand ? { brand_id: r.brand.id } : {}),
+          ...(r.category ? { category_id: r.category.id } : {}),
+        }
+        const { error } = await supabase.from('products').update(changes).eq('id', r.existing.id)
         if (error) return { ok: false, message: `Line ${r.line}: ${dbError(error)} (${created + updated} rows imported before this)` }
         if (stock != null) {
-          const { data: cur } = await supabase.from('products').select('stock_quantity').eq('id', r.existing.id).single()
+          const { data: cur, error: readError } = await supabase.from('products').select('stock_quantity').eq('id', r.existing.id).single()
           const change = stock - (cur?.stock_quantity ?? 0)
-          if (change) await supabase.rpc('adjust_stock', { p_product_id: r.existing.id, p_variant_id: null as unknown as string, p_change: change, p_reason: 'correction', p_note: 'CSV import' })
+          if (readError) stockNotSet.push(r.line)
+          else if (change) {
+            const { error: stockError } = await supabase.rpc('adjust_stock', { p_product_id: r.existing.id, p_variant_id: null as unknown as string, p_change: change, p_reason: 'correction', p_note: 'CSV import' })
+            if (stockError) stockNotSet.push(r.line)
+          }
         }
         updated++
       } else {
@@ -426,14 +475,20 @@ export async function importProductsAction(csv: string): Promise<ActionResult<{ 
         slugs.add(slug)
         const { data: row, error } = await supabase.from('products').insert({ ...fields, sku: d.sku, slug }).select('id').single()
         if (error) return { ok: false, message: `Line ${r.line}: ${dbError(error)} (${created + updated} rows imported before this)` }
-        if (stock) await supabase.rpc('adjust_stock', { p_product_id: row.id, p_variant_id: null as unknown as string, p_change: stock, p_reason: 'purchase', p_note: 'CSV import' })
+        if (stock) {
+          const { error: stockError } = await supabase.rpc('adjust_stock', { p_product_id: row.id, p_variant_id: null as unknown as string, p_change: stock, p_reason: 'purchase', p_note: 'CSV import' })
+          if (stockError) stockNotSet.push(r.line)
+        }
         created++
       }
     }
-    await audit(user, 'product.csv_import', 'products', null, { after: { created, updated } })
+    await audit(user, 'product.csv_import', 'products', null, { after: { created, updated, stock_not_set_lines: stockNotSet } })
     revalidateProducts()
     revalidatePath('/admin/products')
-    return { ok: true, message: `Imported: ${created} created, ${updated} updated.`, data: { created, updated } }
+    const stockNote = stockNotSet.length
+      ? ` Stock was NOT changed on line${stockNotSet.length > 1 ? 's' : ''} ${stockNotSet.slice(0, 20).join(', ')}${stockNotSet.length > 20 ? ' and more' : ''} (it cannot go below what open orders are holding).`
+      : ''
+    return { ok: true, message: `Imported: ${created} created, ${updated} updated.${stockNote}`, data: { created, updated } }
   })
 }
 

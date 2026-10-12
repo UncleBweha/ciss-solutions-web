@@ -48,10 +48,6 @@ export function LinkButton({ variant, size, className, ...props }: LinkButtonPro
   return <Link className={buttonClass(variant, size, className)} {...props} />
 }
 
-export const PrimaryButton = (props: ButtonProps) => <Button variant="primary" {...props} />
-export const SecondaryButton = (props: ButtonProps) => <Button variant="secondary" {...props} />
-export const GlassButton = (props: ButtonProps) => <Button variant="glass" {...props} />
-
 export function Spinner({ className }: { className?: string }) {
   return (
     <svg className={cn('h-4 w-4 animate-spin', className)} viewBox="0 0 24 24" fill="none" aria-hidden="true">
