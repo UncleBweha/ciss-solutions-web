@@ -36,7 +36,7 @@ const categorySchema = z.object({
   imageUrl: optional(500),
   seoTitle: optional(70),
   seoDescription: optional(170),
-  sortOrder: z.coerce.number().int().default(0),
+  sortOrder: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().int().optional()),
   isActive: z.boolean(),
 })
 
@@ -46,15 +46,25 @@ export async function saveCategoryAction(_prev: ActionResult | null, formData: F
     if (d.id && d.parentId === d.id) return { ok: false, message: 'A category cannot be its own parent.' }
     const uploaded = await uploadImage(formData, 'image', 'category-images', 'categories')
     const supabase = await createClient()
+    const parentId = d.parentId || null
+    if (d.id && parentId) {
+      // Moving a category under one of its own subcategories would hide the whole branch.
+      const { data: all } = await supabase.from('categories').select('id, parent_id')
+      const parentOf = new Map((all ?? []).map((c) => [c.id, c.parent_id]))
+      for (let at: string | null | undefined = parentId, hops = 0; at && hops < 50; at = parentOf.get(at), hops++) {
+        if (at === d.id) return { ok: false, message: 'A category cannot go inside one of its own subcategories.' }
+      }
+    }
     const row = {
       name: d.name,
-      slug: d.slug || slugify(d.name),
-      parent_id: d.parentId || null,
+      slug: d.slug || (d.id ? slugify(d.name) : await freeCategorySlug(supabase, d.name)),
+      parent_id: parentId,
       description: d.description,
       image_url: uploaded ?? d.imageUrl,
       seo_title: d.seoTitle,
       seo_description: d.seoDescription,
-      sort_order: d.sortOrder,
+      // Left empty: a new category goes to the end of its list; an edited one keeps its place.
+      ...(d.sortOrder !== undefined ? { sort_order: d.sortOrder } : d.id ? {} : { sort_order: await nextSortOrder(supabase, parentId) }),
       is_active: d.isActive,
     }
     const { error } = d.id ? await supabase.from('categories').update(row).eq('id', d.id) : await supabase.from('categories').insert(row)
@@ -63,6 +73,80 @@ export async function saveCategoryAction(_prev: ActionResult | null, formData: F
     revalidateCategories([row.slug])
     revalidatePath('/admin/categories')
     return { ok: true, message: 'Category saved.' }
+  })
+}
+
+/** A slug not used by any other category: "cables", then "cables-2", "cables-3"... */
+async function freeCategorySlug(supabase: Awaited<ReturnType<typeof createClient>>, name: string) {
+  const base = slugify(name) || `category-${Date.now().toString(36)}`
+  const { data } = await supabase.from('categories').select('slug').like('slug', `${base}%`)
+  const taken = new Set((data ?? []).map((c) => c.slug))
+  if (!taken.has(base)) return base
+  for (let i = 2; ; i++) if (!taken.has(`${base}-${i}`)) return `${base}-${i}`
+}
+
+/** Next sort order at the end of a parent's list (or the top level). */
+async function nextSortOrder(supabase: Awaited<ReturnType<typeof createClient>>, parentId: string | null) {
+  const query = supabase.from('categories').select('sort_order').order('sort_order', { ascending: false }).limit(1)
+  const { data } = await (parentId ? query.eq('parent_id', parentId) : query.is('parent_id', null)).maybeSingle()
+  return (data?.sort_order ?? 0) + 10
+}
+
+/**
+ * Adds a category by name only (optionally under a parent), from the categories page or
+ * the product page. The slug and position are worked out; everything else can be filled
+ * in later. Returns it so a product form can select it.
+ */
+export async function quickAddCategoryAction(name: string, parentId: string | null): Promise<ActionResult<{ id: string; name: string; parentId: string | null }>> {
+  return staffAction('catalog.manage', async (user) => {
+    const parsed = z
+      .object({ name: z.string().trim().min(2, 'Enter a name of at least 2 letters').max(80), parentId: z.string().uuid().nullable() })
+      .safeParse({ name, parentId: parentId || null })
+    if (!parsed.success) return { ok: false, message: parsed.error.issues[0].message }
+    const supabase = await createClient()
+    const parent = parsed.data.parentId
+    // The same name under the same parent (whatever the capitals): use that one.
+    const same = supabase.from('categories').select('id, name, parent_id').ilike('name', parsed.data.name.replace(/[%_\\]/g, '\\$&')).limit(1)
+    const { data: existing } = await (parent ? same.eq('parent_id', parent) : same.is('parent_id', null)).maybeSingle()
+    if (existing) return { ok: true, message: `${existing.name} already exists.`, data: { id: existing.id, name: existing.name, parentId: existing.parent_id } }
+    const row = {
+      name: parsed.data.name,
+      slug: await freeCategorySlug(supabase, parsed.data.name),
+      parent_id: parent,
+      sort_order: await nextSortOrder(supabase, parent),
+      is_active: true,
+    }
+    const { data: created, error } = await supabase.from('categories').insert(row).select('id, name, parent_id').single()
+    if (error) return { ok: false, message: dbError(error)! }
+    await audit(user, 'category.created', 'categories', row.slug, { after: row })
+    revalidateCategories([row.slug])
+    revalidatePath('/admin/categories')
+    return { ok: true, message: parent ? 'Subcategory added.' : 'Category added.', data: { id: created.id, name: created.name, parentId: created.parent_id } }
+  })
+}
+
+/** Moves a category one place up or down among its siblings (renumbers them 10, 20, 30...). */
+export async function moveCategoryAction(id: string, direction: 'up' | 'down'): Promise<ActionResult> {
+  return staffAction('catalog.manage', async (user) => {
+    const supabase = await createClient()
+    const { data: cat } = await supabase.from('categories').select('id, parent_id').eq('id', z.string().uuid().parse(id)).single()
+    if (!cat) return { ok: false, message: 'Category not found.' }
+    const siblings = supabase.from('categories').select('id, slug, sort_order, name').order('sort_order').order('name')
+    const { data } = await (cat.parent_id ? siblings.eq('parent_id', cat.parent_id) : siblings.is('parent_id', null))
+    const list = data ?? []
+    const from = list.findIndex((c) => c.id === id)
+    const to = direction === 'up' ? from - 1 : from + 1
+    if (from < 0 || to < 0 || to >= list.length) return { ok: true, message: 'Already there.' }
+    ;[list[from], list[to]] = [list[to], list[from]]
+    const changed = list.map((c, i) => ({ ...c, next: (i + 1) * 10 })).filter((c) => c.sort_order !== c.next)
+    for (const c of changed) {
+      const { error } = await supabase.from('categories').update({ sort_order: c.next }).eq('id', c.id)
+      if (error) return { ok: false, message: dbError(error)! }
+    }
+    await audit(user, 'category.moved', 'categories', id, { after: { direction } })
+    revalidateCategories(changed.map((c) => c.slug))
+    revalidatePath('/admin/categories')
+    return { ok: true, message: 'Order updated.' }
   })
 }
 
