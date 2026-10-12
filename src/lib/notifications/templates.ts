@@ -253,6 +253,22 @@ export function adminLowStockEmail(items: { name: string; sku: string; available
   return { subject, html, text: `${subject}\n${items.map((i) => `${i.sku}: ${i.available}`).join('\n')}` }
 }
 
+/** Entries of Admin → Notifications that cannot wait until somebody next opens the list. */
+export function staffAlertsEmail(alerts: { subject: string; at: string }[]) {
+  const subject = alerts.length === 1 ? `Needs attention: ${alerts[0].subject}` : `${alerts.length} things need attention in the shop`
+  const list = alerts
+    .map((a) => `<li style="margin:0 0 10px"><strong style="color:${C.text}">${esc(a.subject)}</strong><br><span style="color:${C.muted}">${esc(a.at)}</span></li>`)
+    .join('')
+  const html = layout(subject, {
+    tone: 'danger',
+    label: 'Needs attention',
+    heading: alerts.length === 1 ? 'One thing needs a person' : `${alerts.length} things need a person`,
+    intro: `<ul style="margin:0;padding-left:20px">${list}</ul>`,
+    button: { href: `${siteUrl}/admin/notifications`, label: 'Open notifications' },
+  })
+  return { subject, html, text: `${subject}\n\n${alerts.map((a) => `- ${a.subject} (${a.at})`).join('\n')}\n\n${siteUrl}/admin/notifications` }
+}
+
 export function welcomeEmail(name: string) {
   const subject = 'Welcome to Ciss Solutions'
   const html = layout(subject, {

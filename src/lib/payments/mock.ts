@@ -6,7 +6,7 @@ import { siteUrl } from '@/lib/env'
 import type { MpesaProvider, StkInitiated, StkQueryResult, StkRequest } from './types'
 
 /**
- * Development stand-in for Daraja. It never moves money. It mimics Safaricom's
+ * Development stand-in for KCB Buni. It never moves money. It mimics the real
  * behaviour: the STK push is accepted, and a few seconds later the result is
  * delivered to our callback endpoint (and answered by query()).
  *
@@ -29,7 +29,7 @@ export class MockMpesaProvider implements MpesaProvider {
     const merchantRequestId = `MOCK-${now}`
     const outcome = this.outcome(request.phone)
 
-    // Deliver the callback like Safaricom would (best effort; query() covers the rest).
+    // Deliver the callback like KCB would (best effort; query() covers the rest).
     setTimeout(() => {
       const url = new URL(serverEnv.mpesa.callbackUrl || `${siteUrl}/api/mpesa/callback`)
       if (serverEnv.mpesa.callbackSecret) url.searchParams.set('secret', serverEnv.mpesa.callbackSecret)

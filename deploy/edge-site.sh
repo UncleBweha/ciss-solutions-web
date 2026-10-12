@@ -22,6 +22,12 @@ case "$MODE" in
   set | ensure | remove) ;;
   *) echo "$USAGE"; exit 1 ;;
 esac
+# The upstream goes into a remote command and into the proxy's config: accept only a
+# container name and port, nothing a shell or Caddy could read as more.
+if [ "$MODE" != remove ] && ! [[ "$UPSTREAM" =~ ^[a-z0-9][a-z0-9-]*:[0-9]{1,5}$ ]]; then
+  echo "upstream must look like container-name:port"; exit 1
+fi
+[ "$MODE" = remove ] && UPSTREAM=-
 
 "${SSH[@]}" "$TARGET" "MODE=$MODE UPSTREAM=$UPSTREAM bash -s" <<'REMOTE'
 set -euo pipefail

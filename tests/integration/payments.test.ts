@@ -30,7 +30,7 @@ run('M-Pesa callback processing (integration)', () => {
     const checkoutRequestId = `ws_CO_IT_${crypto.randomUUID()}`
     const { data: payment } = await db
       .from('payments')
-      .insert({ order_id: order.id, method: 'mpesa', provider: 'mpesa_daraja', status: 'PROCESSING', amount: total, merchant_request_id: 'MR-IT', checkout_request_id: checkoutRequestId })
+      .insert({ order_id: order.id, method: 'mpesa', provider: 'mpesa_kcb', status: 'PROCESSING', amount: total, merchant_request_id: 'MR-IT', checkout_request_id: checkoutRequestId })
       .select('id')
       .single()
     return { orderId: order.id, paymentId: payment!.id, checkoutRequestId }

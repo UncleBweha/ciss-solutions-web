@@ -1,6 +1,7 @@
 import 'server-only'
 import { timingSafeEqual } from 'node:crypto'
 import { headers } from 'next/headers'
+import { forwardedIp } from '@/lib/forwarded-ip'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export function safeEqual(a: string | null | undefined, b: string | null | undefined) {
@@ -12,7 +13,30 @@ export function safeEqual(a: string | null | undefined, b: string | null | undef
 
 export async function clientIp(): Promise<string> {
   const h = await headers()
-  return h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || 'unknown'
+  return forwardedIp(h.get('x-forwarded-for')) || h.get('x-real-ip') || 'unknown'
+}
+
+const windows = new Map<string, { start: number; hits: number }>()
+
+/**
+ * Fixed-window rate limit held in this server's memory: for loose ceilings on busy
+ * paths (search suggestions, status polls), where a database write per request would
+ * cost more than the request it guards. Counts are per server process (the site runs as one).
+ */
+export function memoryRateLimit(key: string, max: number, windowSeconds: number): boolean {
+  const now = Date.now()
+  const current = windows.get(key)
+  if (!current || now - current.start > windowSeconds * 1000) {
+    // Bounded: drop finished windows before the map can grow without limit.
+    if (windows.size > 20_000) {
+      for (const [k, w] of windows) if (now - w.start > 3600_000) windows.delete(k)
+      if (windows.size > 20_000) windows.clear()
+    }
+    windows.set(key, { start: now, hits: 1 })
+    return true
+  }
+  current.hits += 1
+  return current.hits <= max
 }
 
 /**

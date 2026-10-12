@@ -13,7 +13,7 @@ export async function audit(
   change: { before?: unknown; after?: unknown } = {},
 ) {
   try {
-    await createAdminClient()
+    const { error } = await createAdminClient()
       .from('audit_logs')
       .insert({
         actor_id: actor.id,
@@ -25,8 +25,12 @@ export async function audit(
         after: (change.after ?? null) as never,
         ip: await clientIp(),
       })
+    // The database answers with an error instead of throwing.
+    if (error) throw new Error(error.message)
   } catch (error) {
-    logger.error('audit.write_failed', { action, resource, error })
+    // No "admin.action" line below: that one says the entry was recorded.
+    logger.error('audit.write_failed', { actor: actor.email, action, resource, resourceId, error })
+    return
   }
   logger.info('admin.action', { actor: actor.email, action, resource, resourceId })
 }

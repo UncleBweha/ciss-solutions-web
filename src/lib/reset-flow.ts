@@ -18,7 +18,7 @@ export async function readResetFlow(): Promise<ResetFlow | null> {
   if (!raw) return null
   try {
     const value = JSON.parse(raw) as Partial<ResetFlow>
-    if (typeof value.email === 'string' && (value.stage === 'code' || value.stage === 'password')) return { email: value.email, stage: value.stage }
+    if (typeof value.email === 'string' && (value.stage === 'code' || value.stage === 'password')) return { email: value.email.trim().toLowerCase(), stage: value.stage }
   } catch {
     // not ours
   }

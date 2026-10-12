@@ -49,6 +49,8 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 - `orders`: number (`CISS-` plus 8 random characters), customer or guest contact, delivery address,
   delivery zone, money columns (subtotal, discount, delivery fee, total), `payment_method`,
   `payment_status`, `order_status`, `stock_state`, `reservation_expires_at`, guest access token.
+- `order_admin_notes`: staff's internal notes on an order, one row per order. A table of its own
+  because customers can read every column of their own `orders` row.
 - `order_items`: snapshot of name, SKU, unit price and quantity at the time of purchase.
 - `order_status_history`: every status change with who made it and a note.
 - `payments`: one row per payment attempt: provider, amount, phone, `merchant_request_id`,
@@ -91,9 +93,9 @@ roles that need them.
 | Function | Called by | Does |
 | --- | --- | --- |
 | `place_order(order jsonb)` | checkout action (service role) | Prices every line from `products` (ignoring any client price), applies coupon and delivery fee, locks rows, reserves stock, writes order + items + history, returns number and token. Raises `EMPTY_CART`, `INVALID_QUANTITY`, `INSUFFICIENT_STOCK`, `COUPON_INVALID`, `COUPON_EXHAUSTED`, `COUPON_CUSTOMER_LIMIT`. |
-| `confirm_payment(payment_id, receipt, amount, raw)` | M-Pesa callback / STK query | Idempotent. If the amount is below the order total it fails the attempt, alerts staff and returns `amount_mismatch`. Otherwise marks payment and order paid, deducts stock (flagging a `shortage` if a late payment arrives after the reservation was released), records history and returns `confirmed`; a repeat returns `already_paid`. |
-| `fail_payment(payment_id, code, description, raw)` | callback / STK query / timeout | Marks the attempt failed; the order stays payable until it expires. |
-| `expire_stale_orders()` | cron, order page polling | Cancels unpaid orders past `reservation_expires_at` and releases their stock. |
+| `confirm_payment(payment_id, receipt, amount, raw)` | M-Pesa callback (the server only; staff cannot call it) | Idempotent. A second payment for an order that is already paid is recorded and answered with `duplicate: true`, leaving the order as it is. If the amount is below the order total it fails the attempt, alerts staff and returns `amount_mismatch`. Otherwise marks payment and order paid, deducts stock (flagging a `shortage` if a late payment arrives after the reservation was released), records history and returns `confirmed`; a repeat returns `already_paid`. |
+| `fail_payment(payment_id, code, description, raw)` | callback / timeout | Marks the attempt failed; the order stays payable until it expires. |
+| `expire_stale_orders()` | cron, order page polling | Marks unpaid orders past `reservation_expires_at` Failed, releases their stock and returns any coupon use. |
 | `update_order_status(order_id, status, note)` | admin | Enforces transitions and permissions (`orders.manage`, `orders.refund`), restocks on cancel/refund after deduction. |
 | `adjust_stock(product_id, variant_id, change, reason, note)` | admin | Stock adjustments with a reason; writes `inventory_transactions`; refuses to go below the reserved quantity (`STOCK_BELOW_RESERVED`). |
 | `catalog_search(query, category, brands, …, sort, page)` | search, listings | Prefix full-text search plus trigram match on SKU, model and part numbers, with filters and a total count. |
@@ -114,7 +116,7 @@ Views: `product_cards` (listing data with availability across variants), `catego
 | Draft/archived products, `product_costs` | – | – | `products.manage` |
 | Approved reviews | read | read; write own (pending) | moderate with `reviews.moderate` |
 | Public settings, homepage, delivery zones | read | read | write with `settings.manage` / `content.manage` |
-| Orders, items, history, payments | – | own (read) | read with `orders.manage` or `customers.view`; only `admin_notes` is directly writable |
+| Orders, items, history, payments | – | own (read) | read with `orders.manage` or `customers.view`; nothing is directly writable (internal notes are in `order_admin_notes`, readable and writable with `orders.manage` only) |
 | Profiles, addresses, carts, wishlists | – | own | `customers.view` (read) |
 | Support requests | via server action | via server action; read own | `support.manage` |
 | Audit logs | – | – | read with `reports.view` or `admins.manage` |

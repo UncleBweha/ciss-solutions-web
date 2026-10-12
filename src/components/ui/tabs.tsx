@@ -57,7 +57,7 @@ export function Tabs({ items, className }: { items: TabItem[]; className?: strin
           aria-labelledby={`${base}-tab-${item.id}`}
           hidden={item.id !== active}
           tabIndex={0}
-          className="pt-6 focus-visible:outline-none"
+          className="pt-6"
         >
           {item.content}
         </div>
