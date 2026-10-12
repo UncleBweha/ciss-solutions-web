@@ -1,4 +1,4 @@
-// Pure helpers for Daraja STK callbacks: parsing and validation (unit tested).
+// Pure helpers for M-Pesa STK callbacks: parsing and validation (unit tested).
 import { z } from 'zod'
 
 const metadataItem = z.object({ Name: z.string(), Value: z.union([z.string(), z.number()]).optional() })
@@ -76,30 +76,12 @@ export function describeResultCode(code: string, fallback?: string): string {
       return 'The M-Pesa PIN entered was incorrect.'
     case '1019':
       return 'The payment request expired before it was completed.'
+    // Ours, not Safaricom's: no callback arrived, so the prompt may still be answered.
+    case 'TIMEOUT':
+      return 'We have not received a confirmation from M-Pesa. If you already entered your PIN and got an M-Pesa message, do not pay again: contact us and we will confirm it.'
     case '1001':
       return 'Another M-Pesa transaction is in progress on your line. Wait a moment and try again.'
     default:
       return fallback || 'The payment did not go through.'
   }
-}
-
-/** Daraja timestamp: YYYYMMDDHHmmss in Kenyan time. */
-export function darajaTimestamp(date = new Date()): string {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Africa/Nairobi',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).formatToParts(date)
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '00'
-  const hour = get('hour') === '24' ? '00' : get('hour')
-  return `${get('year')}${get('month')}${get('day')}${hour}${get('minute')}${get('second')}`
-}
-
-export function darajaPassword(shortcode: string, passkey: string, timestamp: string): string {
-  return Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64')
 }

@@ -1,11 +1,42 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isOrderToken, orderTokenCookie } from '@/lib/order-token'
 
 // Refreshes the Supabase session cookie and gates signed-in areas. It runs only on
 // routes that depend on the user (see matcher), so cached catalogue pages never
 // wait on an auth round trip. Authorisation is re-checked server-side in every
 // page and action; this is just the first, cheap gate.
 export async function proxy(request: NextRequest) {
+  // Order pages: take the guest's access token out of the address (see lib/order-token).
+  // They do not depend on the session here, so there is no auth round trip for them.
+  if (request.nextUrl.pathname.startsWith('/order/')) {
+    const token = request.nextUrl.searchParams.get('t')
+    const number = (request.nextUrl.pathname.split('/')[2] ?? '').replace(/%2D/gi, '-')
+    // Order numbers are plain (CISS-XXXXXXXX): anything needing decoding is not one.
+    if (!/^[A-Za-z0-9_-]+$/.test(number)) return NextResponse.next({ request })
+    const cookie = {
+      httpOnly: true,
+      sameSite: 'lax' as const,
+      // Behind the reverse proxy the request itself arrives over http: go by the site's address.
+      secure: process.env.NEXT_PUBLIC_SITE_URL?.startsWith('https://') ?? false,
+      // The whole site, so the status and invoice routes under /api/orders receive it too.
+      path: '/',
+      maxAge: 60 * 60 * 24 * 90,
+    }
+    if (!token || !isOrderToken(token)) {
+      const next = NextResponse.next({ request })
+      // Cookies set before the path covered /api/orders: issue them again for the whole site.
+      const held = request.cookies.get(orderTokenCookie(number))?.value
+      if (held && isOrderToken(held)) next.cookies.set(orderTokenCookie(number), held, cookie)
+      return next
+    }
+    const clean = request.nextUrl.clone()
+    clean.searchParams.delete('t')
+    const redirect = NextResponse.redirect(clean)
+    redirect.cookies.set(orderTokenCookie(number), token, cookie)
+    return redirect
+  }
+
   let response = NextResponse.next({ request })
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -42,5 +73,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/account/:path*', '/admin/:path*', '/checkout/:path*', '/login', '/register', '/auth/:path*'],
+  matcher: ['/account/:path*', '/admin/:path*', '/checkout/:path*', '/order/:path*', '/login', '/register', '/auth/:path*'],
 }

@@ -38,7 +38,7 @@ export function QuantitySelector({
           const n = parseInt(e.target.value, 10)
           if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, n)))
         }}
-        className="w-10 bg-transparent text-center text-sm font-semibold [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+        className="w-10 bg-transparent text-center text-sm font-semibold [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
       />
       <button type="button" className={btn} onClick={() => onChange(Math.min(max, value + 1))} disabled={disabled || value >= max} aria-label="Increase quantity">
         <Plus className="h-4 w-4" />

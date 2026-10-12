@@ -16,9 +16,9 @@ export type StkQueryResult =
   | { state: 'success' }
   | { state: 'failed'; code: string; description: string }
 
-/** An M-Pesa STK push provider (Daraja in sandbox/production, or the dev mock). */
+/** An M-Pesa STK push provider (KCB Buni in sandbox/production, or the dev mock). */
 export interface MpesaProvider {
-  readonly name: 'mpesa_daraja' | 'mpesa_mock'
+  readonly name: 'mpesa_kcb' | 'mpesa_mock'
   initiate(request: StkRequest): Promise<StkInitiated>
   query(checkoutRequestId: string): Promise<StkQueryResult>
 }
@@ -27,6 +27,8 @@ export class PaymentError extends Error {
   constructor(
     message: string,
     readonly customerMessage = 'We could not start the M-Pesa payment. Please try again.',
+    /** The request was sent but no answer came back, so the prompt may still have gone out. */
+    readonly outcomeUnknown = false,
   ) {
     super(message)
   }

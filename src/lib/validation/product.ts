@@ -90,7 +90,8 @@ export const csvRowSchema = z.object({
   sku: z.string().trim().min(2, 'sku is required').max(60),
   brand: z.string().trim().optional(),
   category: z.string().trim().optional(),
-  price: z.coerce.number({ message: 'price must be a number' }).min(0, 'price must be 0 or more'),
+  // An empty cell would otherwise count as 0 and price the product at nothing.
+  price: z.string().trim().min(1, 'price is required').transform(Number).pipe(z.number({ message: 'price must be a number' }).min(0, 'price must be 0 or more')),
   compare_at_price: z.union([z.literal(''), z.coerce.number().min(0)]).optional(),
   stock: z.union([z.literal(''), z.coerce.number().int('stock must be a whole number').min(0)]).optional(),
   description: z.string().optional(),

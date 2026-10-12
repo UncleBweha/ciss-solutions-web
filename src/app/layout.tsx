@@ -10,7 +10,7 @@ import './globals.css'
 // IBM Plex: a technical, engineered face that suits a printer and parts catalogue;
 // the mono cut sets SKUs, part numbers and order numbers.
 const plexSans = IBM_Plex_Sans({ subsets: ['latin'], variable: '--font-plex-sans', weight: ['400', '500', '600', '700'], display: 'swap' })
-const plexMono = IBM_Plex_Mono({ subsets: ['latin'], variable: '--font-plex-mono', weight: ['400', '500', '600'], display: 'swap' })
+const plexMono = IBM_Plex_Mono({ subsets: ['latin'], variable: '--font-plex-mono', weight: ['400', '500', '600'], display: 'swap', preload: false })
 
 export async function generateMetadata(): Promise<Metadata> {
   const { seo, business } = await getSettings()

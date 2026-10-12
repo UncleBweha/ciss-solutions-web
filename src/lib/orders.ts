@@ -1,5 +1,7 @@
 import 'server-only'
+import { cookies } from 'next/headers'
 import { getSessionUser, can } from '@/lib/auth'
+import { isOrderToken, orderTokenCookie } from '@/lib/order-token'
 import { safeEqual } from '@/lib/security'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -8,6 +10,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * the order's access token (from the confirmation link / email).
  */
 export async function getOrderForViewer(orderNumber: string, token?: string | null) {
+  // Nothing that is not shaped like an order number or a token reaches the database.
+  if (!/^[A-Za-z0-9_-]{1,40}$/.test(orderNumber)) return null
+  token ??= (await cookies()).get(orderTokenCookie(orderNumber))?.value
+  if (token && !isOrderToken(token)) token = null
   const db = createAdminClient()
   const { data: order } = await db
     .from('orders')

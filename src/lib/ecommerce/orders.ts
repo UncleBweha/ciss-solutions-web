@@ -75,7 +75,7 @@ export function awaitsPaymentConfirmation(method: PaymentMethod) {
 }
 
 /** Next statuses staff may choose (mirrors update_order_status() in the database). */
-export function allowedTransitions(status: OrderStatus, method: PaymentMethod): OrderStatus[] {
+export function allowedTransitions(status: OrderStatus, method: PaymentMethod, paymentStatus?: PaymentStatus): OrderStatus[] {
   const manual = isManualPayment(method)
   switch (status) {
     case 'PENDING':
@@ -93,7 +93,11 @@ export function allowedTransitions(status: OrderStatus, method: PaymentMethod): 
     case 'DELIVERED':
       return ['REFUNDED']
     case 'FAILED':
-      return ['CANCELLED']
+      // The money for an expired bank transfer, Paybill or cash order can still arrive.
+      return manual ? ['PAID', 'CANCELLED'] : ['CANCELLED']
+    case 'CANCELLED':
+      // Cancelled after it was paid: the money can still be returned.
+      return paymentStatus === 'PAID' ? ['REFUNDED'] : []
     default:
       return []
   }

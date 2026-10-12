@@ -16,8 +16,11 @@ export function ProductImage({
   ...props
 }: Omit<ImageProps, 'src' | 'priority'> & { src: string | null | undefined; priority?: boolean }) {
   if (!src) {
+    // alt="" marks a picture as decoration (a thumbnail beside the product's name): its
+    // placeholder is decoration too, and must not be read out as "No image available".
+    const label = alt === '' ? ({ 'aria-hidden': true } as const) : ({ role: 'img', 'aria-label': alt || 'No image available' } as const)
     return (
-      <div className={cn('grid h-full w-full place-items-center text-fg-muted', className)} role="img" aria-label={alt || 'No image available'}>
+      <div className={cn('grid h-full w-full place-items-center text-fg-muted', className)} {...label}>
         <Printer className="h-1/3 w-1/3 opacity-40" aria-hidden="true" />
       </div>
     )

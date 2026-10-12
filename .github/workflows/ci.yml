@@ -52,7 +52,7 @@ jobs:
         run: npm run typecheck
 
       - name: Unit and integration tests
-        run: npm test
+        run: npm run test:all
 
       - name: Database tests (order lifecycle, RLS)
         run: npm run test:db
@@ -65,6 +65,8 @@ jobs:
           set -a; . ./.env.local; set +a
           MPESA_ALLOW_MOCK=true PORT=3000 HOSTNAME=127.0.0.1 node .next/standalone/server.js > /tmp/server.log 2>&1 &
           for i in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:3000/robots.txt && break; sleep 1; done
+          # The HTTP checks (callback secret, cron auth) need the server, so they skipped in the test step above.
+          E2E_BASE_URL=http://127.0.0.1:3000 REQUIRE_APP_SERVER=1 npx vitest run tests/integration/callback-http.test.ts
           npx playwright install --with-deps chromium
           E2E_BASE_URL=http://127.0.0.1:3000 npx playwright test
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { FileText } from 'lucide-react'
@@ -13,6 +14,7 @@ import { DELIVERY_TBC_NOTE, deliveryFeeLabel, isStorePickup } from '@/lib/ecomme
 import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { formatKES } from '@/lib/ecommerce/money'
 import { awaitsPaymentConfirmation, isTerminalFailure, orderStatusLabels, orderStatusTone, paymentMethodLabels } from '@/lib/ecommerce/orders'
+import { orderTokenCookie } from '@/lib/order-token'
 import { getOrderForViewer } from '@/lib/orders'
 import { refreshPaymentStatus } from '@/lib/payments/service'
 import { formatDateTime, param } from '@/lib/utils'
@@ -20,14 +22,14 @@ import { formatDateTime, param } from '@/lib/utils'
 export const metadata: Metadata = { title: 'Your order', robots: { index: false } }
 
 export default async function OrderPage({ params, searchParams }: PageProps<'/order/[number]'>) {
-  const [{ number }, sp] = await Promise.all([params, searchParams])
-  const token = param(sp.t) ?? null
+  const [{ number }, sp, jar] = await Promise.all([params, searchParams, cookies()])
+  // The proxy moves ?t= into a cookie and redirects, so the token is normally read from there.
+  const token = param(sp.t) ?? jar.get(orderTokenCookie(number))?.value ?? null
   // Straight from checkout: a payment confirmation. Order progress is for people tracking an order.
   const justPlaced = param(sp.placed) === '1'
-  const order = await getOrderForViewer(decodeURIComponent(number), token)
+  const [order, settings] = await Promise.all([getOrderForViewer(number, token), getSettings()])
   if (!order) notFound()
 
-  const settings = await getSettings()
   const isMpesa = order.payment_method === 'mpesa'
   const view = !isMpesa
     ? null
@@ -40,7 +42,6 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
   const awaitingConfirmation = awaitsPaymentConfirmation(order.payment_method) && !paid && !failed
   const bank = settings.payment_methods.bank_transfer
   const paybill = settings.payment_methods.mpesa_paybill
-  const tokenQs = token ? `?t=${token}` : ''
 
   const page = (
     <div className="container-page max-w-5xl py-10">
@@ -56,7 +57,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
           {isMpesa && !failed && view ? (
-            <MpesaPaymentStatus orderNumber={order.order_number} token={token} phone={order.customer_phone} />
+            <MpesaPaymentStatus orderNumber={order.order_number} phone={order.customer_phone} />
           ) : null}
 
           {order.payment_method === 'bank_transfer' && !paid && !failed ? (
@@ -171,7 +172,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
           </OrderSummary>
           <div className="grid gap-2">
             {paid ? (
-              <Link href={`/api/orders/${encodeURIComponent(order.order_number)}/invoice${tokenQs}`} className="flex items-center justify-center gap-2 rounded-full border border-white bg-white/70 py-2.5 text-sm font-semibold hover:bg-white">
+              <Link href={`/api/orders/${encodeURIComponent(order.order_number)}/invoice`} className="flex items-center justify-center gap-2 rounded-full border border-white bg-white/70 py-2.5 text-sm font-semibold hover:bg-white">
                 <FileText className="h-4 w-4" aria-hidden="true" /> Download invoice
               </Link>
             ) : null}
@@ -186,7 +187,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
   )
   // M-Pesa orders share one live payment state between the heading and the prompt panel.
   return isMpesa && !failed && view ? (
-    <MpesaPaymentProvider orderNumber={order.order_number} token={token} total={Number(order.total)} initial={{ state: view.state, message: view.message }}>
+    <MpesaPaymentProvider orderNumber={order.order_number} total={Number(order.total)} initial={{ state: view.state, message: view.message }}>
       {page}
     </MpesaPaymentProvider>
   ) : (

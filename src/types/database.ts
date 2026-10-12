@@ -364,6 +364,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"order_admin_notes": {
+                  Row: {
+                    "notes": string,"order_id": string,"updated_at": string,"updated_by": string | null
+                  }
+                  Insert: {
+                    "notes"?: string,"order_id": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "notes"?: string,"order_id"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_admin_notes_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: true
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"outbox": {
                   Row: {
                     "attempts": number,"created_at": string,"id": string,"kind": string,"last_error": string | null,"locked_until": string | null,"max_attempts": number,"next_attempt_at": string,"order_id": string | null,"payload": NonNullable<Json>,"processed_at": string | null,"status": string,"updated_at": string

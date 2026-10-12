@@ -44,6 +44,9 @@ PREV=$(docker inspect ciss-store --format '{{.Config.Image}}' 2>/dev/null || tru
 NET=$(docker network ls --format '{{.Name}}' | grep -E '(^|_)web$' | head -1 || true)
 
 start() {
+  # Let requests in flight finish (an M-Pesa prompt being sent, emails queued after a
+  # response) before the container goes: rm -f alone kills it mid-request.
+  docker stop -t 30 ciss-store >/dev/null 2>&1 || true
   docker rm -f ciss-store >/dev/null 2>&1 || true
   docker run -d --name ciss-store --restart unless-stopped \
     --env-file "$ENV_FILE" -e NODE_ENV=production \
@@ -69,14 +72,22 @@ else
 fi
 
 # Every 5 minutes: release stock held by unpaid orders whose payment window has passed.
+# The secret is read by curl from a root-only file, not passed on the command line, where
+# every user of this shared server could see it in the process list.
+CRON_CURL=$APP/cron.curl
+( umask 077; printf 'header = "Authorization: Bearer %s"\n' "$(grep -E '^CRON_SECRET=' "$ENV_FILE" | cut -d= -f2- | tr -d '"')" > "$CRON_CURL" )
+chmod 600 "$CRON_CURL"
 cat > /etc/cron.d/ciss-store <<CRON
 # Installed by deploy/app-deploy.sh (CISS Solutions repo). Remove with deploy/app-remove.sh.
-*/5 * * * * root curl -fsS -m 30 -H "Authorization: Bearer \$(grep -E '^CRON_SECRET=' $ENV_FILE | cut -d= -f2- | tr -d '"')" http://127.0.0.1:3100/api/cron/release-reservations >/dev/null 2>&1
+*/5 * * * * root curl -fsS -m 30 -K $CRON_CURL http://127.0.0.1:3100/api/cron/release-reservations >/dev/null 2>&1
 CRON
 chmod 644 /etc/cron.d/ciss-store
 
 # Keep the three most recent images for quick manual rollback.
 docker images ciss-store --format '{{.CreatedAt}}\t{{.Tag}}' | sort -r | cut -f2 | grep -v '^latest$' \
   | tail -n +4 | xargs -r -I{} docker rmi "ciss-store:{}" >/dev/null 2>&1 || true
+
+# Every deploy is a fresh build; without this the build cache grows until the disk is full.
+docker builder prune -f --filter until=168h >/dev/null 2>&1 || true
 
 docker ps --filter name=ciss-store --format '{{.Names}}  {{.Status}}  {{.Ports}}'

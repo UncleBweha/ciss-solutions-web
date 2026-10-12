@@ -20,7 +20,7 @@ export default async function ProfilePage() {
       </section>
       <section className="glass-flat max-w-xl rounded-[var(--radius-card)] p-5 sm:p-6">
         <h2 className="mb-4 text-lg font-bold">Change password</h2>
-        <UpdatePasswordForm />
+        <UpdatePasswordForm hasPassword={user.hasPassword} />
       </section>
     </div>
   )

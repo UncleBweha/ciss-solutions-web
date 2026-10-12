@@ -13,6 +13,12 @@ async function guard(kind: string): Promise<string | null> {
   return (await rateLimit(`${kind}:${ip}`, 40, 3600)) ? null : 'You have sent several messages already. Please try again later or contact us on WhatsApp.'
 }
 
+/** The request is saved either way; without this entry staff would only find it by opening Support. */
+async function alertStaff(subject: string, name: string) {
+  const { error } = await createAdminClient().rpc('notify_admin', { p_kind: 'new_support_request', p_subject: subject, p_payload: { name } })
+  if (error) logger.error('support.alert_not_saved', { subject, error: error.message })
+}
+
 export async function submitContactAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const limited = await guard('contact')
   if (limited) return { message: limited }
@@ -35,7 +41,7 @@ export async function submitContactAction(_prev: FormState, formData: FormData):
     logger.error('support.contact_failed', { error: error.message })
     return { message: 'We could not send your message. Please try WhatsApp or call us.' }
   }
-  await db.rpc('notify_admin', { p_kind: 'new_support_request', p_subject: `Message: ${parsed.data.subject}`, p_payload: { name: parsed.data.name } })
+  await alertStaff(`Message: ${parsed.data.subject}`, parsed.data.name)
   return { ok: true, message: 'Thank you. We will get back to you shortly.' }
 }
 
@@ -78,10 +84,6 @@ export async function submitPartRequestAction(_prev: FormState, formData: FormDa
     logger.error('support.part_request_failed', { error: error.message })
     return { message: 'We could not send your request. Please try WhatsApp or call us.' }
   }
-  await db.rpc('notify_admin', {
-    p_kind: 'new_support_request',
-    p_subject: `Part request: ${parsed.data.printerBrand} ${parsed.data.printerModel}`,
-    p_payload: { name: parsed.data.name },
-  })
+  await alertStaff(`Part request: ${parsed.data.printerBrand} ${parsed.data.printerModel}`, parsed.data.name)
   return { ok: true, message: 'Request received. A technician will contact you, usually within one business day.' }
 }

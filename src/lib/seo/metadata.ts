@@ -33,6 +33,17 @@ export function productMetadata(product: ProductDetail): Metadata {
  * clean URL and are kept out of the index to avoid duplicate content.
  */
 export function listingRobots(searchParams: Record<string, string | string[] | undefined>): Metadata['robots'] {
-  const keys = Object.keys(searchParams).filter((k) => searchParams[k] !== undefined && k !== 'page')
-  return keys.length ? { index: false, follow: true } : undefined
+  return isFilteredListing(searchParams) ? { index: false, follow: true } : undefined
+}
+
+/** What changes which products a listing shows (see parseCatalogParams). */
+const LISTING_FILTERS = ['q', 'category', 'brand', 'min', 'max', 'stock', 'rating', 'sale', 'type', 'sort']
+
+/**
+ * Whether the address asks for a filtered or sorted view. Anything else in it (utm_source,
+ * fbclid and the like, added by shared and advertised links) shows the same page as the
+ * clean address and must not take it out of the index.
+ */
+export function isFilteredListing(searchParams: Record<string, string | string[] | undefined>) {
+  return LISTING_FILTERS.some((key) => searchParams[key] !== undefined)
 }

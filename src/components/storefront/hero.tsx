@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { ProductImage } from '@/components/product/product-image'
 import { buttonClass } from '@/components/ui/button'
 import { formatKES } from '@/lib/ecommerce/money'
@@ -25,16 +25,30 @@ export type HeroSlide = {
 
 /** Homepage promo carousel: a compact retail banner, not a full-screen hero. */
 export function Hero({ slides, className }: { slides: HeroSlide[]; className?: string }) {
-  const [index, setIndex] = useState(0)
+  // `seen`: slides that have been on screen. Only those (and the one coming next) load their
+  // picture; the others sit invisibly on top of the first and would otherwise all download at once.
+  const [{ index, seen }, setShown] = useState({ index: 0, seen: [0] })
   const [paused, setPaused] = useState(false)
+  // Stopped by the visitor (the pause button, or taking over with the arrows).
+  const [stopped, setStopped] = useState(false)
   const count = slides.length
+  const move = (step: number) =>
+    setShown((s) => {
+      const next = (s.index + step + count) % count
+      return { index: next, seen: s.seen.includes(next) ? s.seen : [...s.seen, next] }
+    })
 
   useEffect(() => {
-    if (count < 2 || paused) return
+    if (count < 2 || paused || stopped) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const t = setInterval(() => setIndex((i) => (i + 1) % count), 5000)
+    const t = setInterval(() => {
+      setShown((s) => {
+        const next = (s.index + 1) % count
+        return { index: next, seen: s.seen.includes(next) ? s.seen : [...s.seen, next] }
+      })
+    }, 5000)
     return () => clearInterval(t)
-  }, [count, paused])
+  }, [count, paused, stopped])
 
   if (!count) return null
 
@@ -92,25 +106,47 @@ export function Hero({ slides, className }: { slides: HeroSlide[]; className?: s
           {/* Same white stage as the product cards, so wide photos, square photos and
               photos with a white background all sit the same way in the banner. */}
           <div className="relative order-1 m-2 aspect-[16/10] rounded-[calc(var(--radius-card)-6px)] bg-white sm:order-2 sm:m-3 sm:aspect-auto sm:min-h-[17rem] sm:self-stretch">
-            <ProductImage
-              src={slide.imageUrl}
-              alt={slide.imageAlt ?? ''}
-              fill
-              priority={i === 0}
-              sizes="(min-width: 1024px) 34vw, (min-width: 640px) 48vw, 100vw"
-              className="object-contain p-4 sm:p-5"
-            />
+            {seen.includes(i) || i === (index + 1) % count ? (
+              <ProductImage
+                src={slide.imageUrl}
+                alt={slide.imageAlt ?? ''}
+                fill
+                priority={i === 0}
+                sizes="(min-width: 1024px) 34vw, (min-width: 640px) 48vw, 100vw"
+                className="object-contain p-4 sm:p-5"
+              />
+            ) : null}
           </div>
         </div>
       ))}
 
       {count > 1 ? (
         <div className="absolute right-3 top-3 flex items-center gap-1 sm:bottom-3 sm:top-auto">
-          <button type="button" onClick={() => setIndex((index - 1 + count) % count)} className="glass-strong grid h-8 w-8 place-items-center rounded-full text-fg-secondary hover:text-fg" aria-label="Previous slide">
-            <ChevronLeft className="h-4 w-4" />
+          {/* The slides change on their own: anyone must be able to stop them, not only with a mouse over them. */}
+          <button type="button" onClick={() => setStopped((v) => !v)} className="glass-strong grid h-8 w-8 place-items-center rounded-full text-fg-secondary hover:text-fg" aria-label={stopped ? 'Play slides' : 'Pause slides'}>
+            {stopped ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
           </button>
-          <button type="button" onClick={() => setIndex((index + 1) % count)} className="glass-strong grid h-8 w-8 place-items-center rounded-full text-fg-secondary hover:text-fg" aria-label="Next slide">
-            <ChevronRight className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={() => {
+              setStopped(true)
+              move(-1)
+            }}
+            className="glass-strong grid h-8 w-8 place-items-center rounded-full text-fg-secondary hover:text-fg"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStopped(true)
+              move(1)
+            }}
+            className="glass-strong grid h-8 w-8 place-items-center rounded-full text-fg-secondary hover:text-fg"
+            aria-label="Next slide"
+          >
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       ) : null}
