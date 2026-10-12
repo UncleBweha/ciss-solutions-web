@@ -9,10 +9,10 @@ const columns: { title: string; links: [string, string][] }[] = [
     title: 'Shop',
     links: [
       ['Printers', '/c/printers'],
-      ['Spare Parts', '/c/spare-parts'],
+      ['Printer Spare Parts', '/c/spare-parts'],
       ['Ink & Toner', '/c/ink-toner'],
       ['Scanners', '/c/scanners'],
-      ['Accessories', '/c/accessories'],
+      ['Printer Accessories', '/c/accessories'],
       ['Paper & Media', '/c/paper-media'],
       ['Deals', '/deals'],
     ],

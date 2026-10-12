@@ -85,8 +85,8 @@ insert into public.categories (name, slug, parent_id, description, image_url, so
 values ('Toner', 'toner', (select id from public.categories where slug = 'ink-toner'),
   'Toner cartridges and drum units for laser printers.', '/images/products/toner-black.svg', 70, 'Toner in Kenya | CISS Solutions', 'Toner cartridges and drum units for laser printers.');
 insert into public.categories (name, slug, parent_id, description, image_url, sort_order, seo_title, seo_description)
-values ('Spare Parts', 'spare-parts', null,
-  'Genuine and compatible printer spare parts: rollers, printheads, fusers and maintenance kits.', '/images/products/printhead.svg', 80, 'Spare Parts in Kenya | CISS Solutions', 'Genuine and compatible printer spare parts: rollers, printheads, fusers and maintenance kits.');
+values ('Printer Spare Parts', 'spare-parts', null,
+  'Genuine and compatible printer spare parts: rollers, printheads, fusers and maintenance kits.', '/images/products/printhead.svg', 80, 'Printer Spare Parts in Kenya | CISS Solutions', 'Genuine and compatible printer spare parts: rollers, printheads, fusers and maintenance kits.');
 insert into public.categories (name, slug, parent_id, description, image_url, sort_order, seo_title, seo_description)
 values ('Printheads', 'printheads', (select id from public.categories where slug = 'spare-parts'),
   'Replacement printheads for ink tank printers.', '/images/products/printhead.svg', 90, 'Printheads in Kenya | CISS Solutions', 'Replacement printheads for ink tank printers.');
@@ -109,8 +109,8 @@ insert into public.categories (name, slug, parent_id, description, image_url, so
 values ('Paper & Media', 'paper-media', null,
   'Copy paper, photo paper and printing media.', '/images/products/paper-ream.svg', 150, 'Paper & Media in Kenya | CISS Solutions', 'Copy paper, photo paper and printing media.');
 insert into public.categories (name, slug, parent_id, description, image_url, sort_order, seo_title, seo_description)
-values ('Accessories', 'accessories', null,
-  'Cables and printer accessories.', '/images/products/usb-cable.svg', 160, 'Accessories in Kenya | CISS Solutions', 'Cables and printer accessories.');
+values ('Printer Accessories', 'accessories', null,
+  'USB and network cables, power cords, paper trays, cleaning kits and other printer accessories.', '/images/products/usb-cable.svg', 160, 'Printer Accessories in Kenya | CISS Solutions', 'USB and network cables, power cords, paper trays, cleaning kits and other printer accessories.');
 insert into public.categories (name, slug, parent_id, description, image_url, sort_order, seo_title, seo_description)
 values ('Cables', 'cables', (select id from public.categories where slug = 'accessories'),
   'USB printer cables.', '/images/products/usb-cable.svg', 170, 'Cables in Kenya | CISS Solutions', 'USB printer cables.');

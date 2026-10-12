@@ -55,7 +55,8 @@ the shop as soon as you press **Publish product**:
 1. **Photos** first: JPG, PNG, WebP or AVIF up to 5 MB each. The first photo is the main one.
    Use your own photos or images you have rights to; do not copy manufacturer images.
 2. **Product:** name, category, brand, SKU and description. If the brand is not in the list,
-   **Add brand** adds it by name and selects it (a logo can be added later under Brands).
+   **Add brand** adds it by name and selects it (a logo can be added later under Brands); the
+   same goes for the category with **Add category** (optionally inside another category).
 3. **Specifications** (name/value rows), **features**, **what's in the box** and
    **compatibility**: the printers the product fits, one per line. Fill compatibility in for
    spare parts, ink and toner. It is shown on the product page and customers can search by it;
@@ -138,8 +139,13 @@ history, not in the email).
 
 ## Catalogue structure
 
-- **Categories:** a tree (for example Spare Parts → Printheads). Each can have an image, description
-  and SEO text. Deleting a category with products is blocked; move the products first.
+- **Categories:** a tree (for example Printer Spare Parts → Printheads). Each main category is a card:
+  type a name in "Add a main category", or in "Add a subcategory to …" inside a card, and press
+  Add. The web address (slug) and position are filled in for you. The arrows move a category up or
+  down in the shop menu; Edit opens the full form (image, description, and under "More options"
+  the web address, SEO text and sort order). A category can also be added from the product page
+  with "Add category" beside the category list. Deleting a category with products is blocked;
+  move the products first.
 - **Brands:** name, logo and description; each brand gets a page at `/b/<slug>`.
 - **Printer models:** brand, full name, model number and optional notes. Products link to them
   through compatibility.
