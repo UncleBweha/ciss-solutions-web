@@ -46,7 +46,8 @@ export default async function ProductPage({ params }: PageProps<'/p/[slug]'>) {
       <JsonLd data={[productSchema(product), breadcrumbSchema(crumbs)]} />
       <Breadcrumbs items={crumbs} />
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12">
+      {/* grid-cols-1: the column is as wide as the screen, however many thumbnails the gallery has. */}
+      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
         <VariantAwareGallery images={images} name={product.name} />
 
         <div className="glass-flat h-fit rounded-[var(--radius-card)] p-5 sm:p-7 lg:sticky lg:top-[calc(var(--header-height)+4rem)]">
