@@ -17,7 +17,8 @@ export type NavData = {
 }
 export type HeaderContact = { phone: string; whatsappHref: string | null; location: string; hours: string }
 
-type MenuKey = 'all' | 'printers' | 'spare-parts' | 'brands'
+/** 'all', 'brands', or the address of a category that has subcategories. */
+type MenuKey = string
 
 function Dropdown({
   label,
@@ -235,7 +236,7 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
               </Dropdown>
             ) : null}
             {parts ? (
-              <Dropdown label="Spare Parts" open={menu === 'spare-parts'} onOpen={() => setMenu('spare-parts')} onClose={close}>
+              <Dropdown label={parts.name} open={menu === 'spare-parts'} onOpen={() => setMenu('spare-parts')} onClose={close}>
                 {parts.children.map((c) => (
                   <MenuLink key={c.href} href={c.href} count={c.count} onClick={close}>
                     {c.name}
@@ -246,20 +247,35 @@ export function Header({ nav, contact }: { nav: NavData; contact: HeaderContact 
                 </MenuLink>
               </Dropdown>
             ) : null}
-            {others.map((c, i) => (
-              <Link
-                key={c.href}
-                href={c.href}
-                // Narrow desktops (lg) show the first two; the rest stay reachable via "All categories".
-                className={cn(
-                  'h-11 items-center whitespace-nowrap px-3 text-sm font-semibold hover:text-primary-light',
-                  i < 2 ? 'flex' : 'hidden xl:flex',
-                  isActive(c.href) ? 'text-primary-light' : 'text-fg',
-                )}
-              >
-                {c.name}
-              </Link>
-            ))}
+            {others.map((c, i) =>
+              // Narrow desktops (lg) show the first two; the rest stay reachable via "All categories".
+              c.children.length ? (
+                <div key={c.href} className={i < 2 ? undefined : 'hidden xl:block'}>
+                  <Dropdown label={c.name} open={menu === c.href} onOpen={() => setMenu(c.href)} onClose={close}>
+                    {c.children.map((child) => (
+                      <MenuLink key={child.href} href={child.href} count={child.count} onClick={close}>
+                        {child.name}
+                      </MenuLink>
+                    ))}
+                    <MenuLink href={c.href} onClick={close}>
+                      <span className="font-semibold text-primary-light">All {c.name.toLowerCase()}</span>
+                    </MenuLink>
+                  </Dropdown>
+                </div>
+              ) : (
+                <Link
+                  key={c.href}
+                  href={c.href}
+                  className={cn(
+                    'h-11 items-center whitespace-nowrap px-3 text-sm font-semibold hover:text-primary-light',
+                    i < 2 ? 'flex' : 'hidden xl:flex',
+                    isActive(c.href) ? 'text-primary-light' : 'text-fg',
+                  )}
+                >
+                  {c.name}
+                </Link>
+              ),
+            )}
             <Dropdown label="Brands" open={menu === 'brands'} onOpen={() => setMenu('brands')} onClose={close} wide>
               <div className="grid grid-cols-3 gap-1">
                 {nav.brands.map((b) => (
