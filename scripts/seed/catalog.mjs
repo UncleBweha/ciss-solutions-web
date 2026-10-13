@@ -24,7 +24,7 @@ export const categories = [
   ['Ink & Toner', 'ink-toner', null, 'Original ink bottles, toner cartridges and drum units.', 'ink-bottle-set'],
   ['Ink', 'ink', 'ink-toner', 'Original refill ink bottles for ink tank printers.', 'ink-bottle-set'],
   ['Toner', 'toner', 'ink-toner', 'Toner cartridges and drum units for laser printers.', 'toner-black'],
-  ['Spare Parts', 'spare-parts', null, 'Genuine and compatible printer spare parts: rollers, printheads, fusers and maintenance kits.', 'printhead'],
+  ['Printer Spare Parts', 'spare-parts', null, 'Genuine and compatible printer spare parts: rollers, printheads, fusers and maintenance kits.', 'printhead'],
   ['Printheads', 'printheads', 'spare-parts', 'Replacement printheads for ink tank printers.', 'printhead'],
   ['Pickup Rollers', 'pickup-rollers', 'spare-parts', 'Pickup, separation and feed rollers to fix paper jams and misfeeds.', 'pickup-roller'],
   ['Fuser Units', 'fuser-units', 'spare-parts', 'Fuser assemblies for laser printers.', 'fuser-unit'],
@@ -32,7 +32,7 @@ export const categories = [
   ['Paper Feed Parts', 'paper-feed-parts', 'spare-parts', 'Feed rollers, trays and paper path parts.', 'pickup-roller'],
   ['Scanners', 'scanners', null, 'Flatbed and document scanners for home and office.', 'scanner'],
   ['Paper & Media', 'paper-media', null, 'Copy paper, photo paper and printing media.', 'paper-ream'],
-  ['Accessories', 'accessories', null, 'Cables and printer accessories.', 'usb-cable'],
+  ['Printer Accessories', 'accessories', null, 'USB and network cables, power cords, paper trays, cleaning kits and other printer accessories.', 'usb-cable'],
   ['Cables', 'cables', 'accessories', 'USB printer cables.', 'usb-cable'],
 ]
 

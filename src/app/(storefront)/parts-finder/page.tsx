@@ -40,7 +40,7 @@ export default async function PartsFinderPage({ searchParams }: PageProps<'/part
   const brandModels = !model && brand ? models.filter((m) => m.brand_slug === brand) : []
   const crumbs = [
     { name: 'Home', href: '/' },
-    { name: 'Spare Parts', href: '/c/spare-parts' },
+    { name: 'Printer Spare Parts', href: '/c/spare-parts' },
     { name: 'Parts finder', href: '/parts-finder' },
   ]
 
