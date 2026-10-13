@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useFieldArray, useForm, type FieldPath } from 'react-hook-form'
 import { ChevronDown, Copy, ImagePlus, Plus, Trash2, X } from 'lucide-react'
-import { quickAddBrandAction } from '@/actions/admin/catalog'
+import { quickAddBrandAction, quickAddCategoryAction } from '@/actions/admin/catalog'
 import { deleteProductAction, duplicateProductAction, saveProductAction } from '@/actions/admin/products'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/dialog'
@@ -18,6 +18,7 @@ import { productTypes, type ProductInput } from '@/lib/validation/product'
 import { Panel } from './admin-ui'
 
 type Option = { id: string; name: string }
+type CategoryOption = Option & { depth: number }
 type ModelOption = { id: string; name: string; brand: string }
 type ListField = 'features' | 'whatsIncluded' | 'compatibleWith'
 
@@ -38,13 +39,13 @@ const MORE = ['slug', 'productType', 'shortDescription', 'compareAtPrice', 'lowS
 export function ProductForm({
   initial,
   brands: initialBrands,
-  categories,
+  categories: initialCategories,
   models,
   stock,
 }: {
   initial: ProductFormValues
   brands: Option[]
-  categories: (Option & { depth: number })[]
+  categories: CategoryOption[]
   models: ModelOption[]
   stock?: { onHand: number; reserved: number }
 }) {
@@ -57,6 +58,9 @@ export function ProductForm({
   const [brands, setBrands] = useState(initialBrands)
   const [addingBrand, setAddingBrand] = useState(false)
   const [addedBrandId, setAddedBrandId] = useState<string | null>(null)
+  const [categories, setCategories] = useState(initialCategories)
+  const [addingCategory, setAddingCategory] = useState(false)
+  const [addedCategoryId, setAddedCategoryId] = useState<string | null>(null)
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([])
   const isNew = !initial.id
 
@@ -74,6 +78,9 @@ export function ProductForm({
   useEffect(() => {
     if (addedBrandId) setValue('brandId', addedBrandId, { shouldDirty: true, shouldValidate: true })
   }, [addedBrandId, setValue])
+  useEffect(() => {
+    if (addedCategoryId) setValue('categoryId', addedCategoryId, { shouldDirty: true, shouldValidate: true })
+  }, [addedCategoryId, setValue])
 
   // Free the previews' memory when the form goes away.
   const photosRef = useRef(photos)
@@ -177,10 +184,15 @@ export function ProductForm({
             <Input id="name" aria-invalid={Boolean(err('name'))} {...register('name', { required: 'Enter the product name' })} />
           </Field>
           <Field label="Category" htmlFor="categoryId" error={msg('categoryId')} required>
-            <Select id="categoryId" aria-invalid={Boolean(err('categoryId'))} {...register('categoryId', { required: 'Choose a category' })}>
-              <option value="">Choose a category</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{'  '.repeat(c.depth)}{c.name}</option>)}
-            </Select>
+            <div className="flex gap-2">
+              <Select id="categoryId" aria-invalid={Boolean(err('categoryId'))} {...register('categoryId', { required: 'Choose a category, or add it' })}>
+                <option value="">Choose a category</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{'— '.repeat(c.depth)}{c.name}</option>)}
+              </Select>
+              <Button variant="glass" className="h-11" onClick={() => setAddingCategory(true)}>
+                <Plus className="h-4 w-4" aria-hidden="true" /> Add category
+              </Button>
+            </div>
           </Field>
           <Field label="Brand" htmlFor="brandId" error={msg('brandId')} required>
             <div className="flex gap-2">
@@ -413,6 +425,25 @@ export function ProductForm({
         }}
       />
 
+      <AddCategory
+        open={addingCategory}
+        categories={categories}
+        onClose={() => setAddingCategory(false)}
+        onAdded={(cat) => {
+          setCategories((list) => {
+            if (list.some((c) => c.id === cat.id)) return list
+            // Right after the parent's last subcategory (or at the end for a main category).
+            const at = cat.parentId ? list.findIndex((c) => c.id === cat.parentId) : -1
+            if (at < 0) return [...list, { id: cat.id, name: cat.name, depth: 0 }]
+            let end = at + 1
+            while (end < list.length && list[end].depth > list[at].depth) end++
+            return [...list.slice(0, end), { id: cat.id, name: cat.name, depth: list[at].depth + 1 }, ...list.slice(end)]
+          })
+          setAddedCategoryId(cat.id)
+          setAddingCategory(false)
+        }}
+      />
+
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete this product?">
         <p className="text-sm text-fg-secondary">The product and its photos are removed permanently. Orders keep their item details. To hide it instead, untick “Show in the shop”.</p>
         <div className="mt-4 flex justify-end gap-2">
@@ -474,6 +505,69 @@ function AddBrand({ open, onClose, onAdded }: { open: boolean; onClose: () => vo
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
         <Button loading={pending} disabled={!name.trim()} onClick={add}>Add brand</Button>
+      </div>
+    </Modal>
+  )
+}
+
+/** "Add category" beside the category list: a name, and optionally where it goes. The new category is selected. */
+function AddCategory({
+  open,
+  categories,
+  onClose,
+  onAdded,
+}: {
+  open: boolean
+  categories: CategoryOption[]
+  onClose: () => void
+  onAdded: (category: { id: string; name: string; parentId: string | null }) => void
+}) {
+  const toast = useToast()
+  const [name, setName] = useState('')
+  const [parentId, setParentId] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [pending, start] = useTransition()
+
+  const add = () =>
+    start(async () => {
+      setError(null)
+      const result = await quickAddCategoryAction(name, parentId || null)
+      if (!result.ok || !result.data) {
+        setError(result.ok ? 'The category was not added.' : result.message)
+        return
+      }
+      toast(result.message ?? 'Category added')
+      setName('')
+      setParentId('')
+      onAdded(result.data)
+    })
+
+  return (
+    <Modal open={open} onClose={onClose} title="Add a category">
+      <div className="space-y-3">
+        <Field label="Category name" htmlFor="new-category" error={error ?? undefined} hint="A picture, description and SEO can be added later under Catalog, Categories.">
+          <Input
+            id="new-category"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            // Inside the product form: Enter adds the category instead of publishing the product.
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return
+              e.preventDefault()
+              if (name.trim()) add()
+            }}
+          />
+        </Field>
+        <Field label="Inside" htmlFor="new-category-parent" hint="Choose a category to make this a subcategory of it.">
+          <Select id="new-category-parent" value={parentId} onChange={(e) => setParentId(e.target.value)}>
+            <option value="">Main category</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{'— '.repeat(c.depth)}{c.name}</option>)}
+          </Select>
+        </Field>
+      </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button loading={pending} disabled={!name.trim()} onClick={add}>Add category</Button>
       </div>
     </Modal>
   )
