@@ -1,5 +1,6 @@
 import { siteUrl } from '@/lib/env'
 import type { BusinessSettings, ProductDetail } from '@/types/catalog'
+import { shareableImage } from './metadata'
 
 const abs = (path: string | null | undefined) => (!path ? undefined : path.startsWith('http') ? path : `${siteUrl}${path}`)
 
@@ -23,6 +24,7 @@ export function organizationSchema(business: BusinessSettings) {
       addressCountry: 'KE',
     },
     openingHours: business.business_hours || undefined,
+    areaServed: { '@type': 'Country', name: 'Kenya' },
     currenciesAccepted: 'KES',
     paymentAccepted: 'M-Pesa, Cash, Bank Transfer',
     sameAs: sameAs.length ? sameAs : undefined,
@@ -62,6 +64,8 @@ export function productSchema(product: ProductDetail) {
         lowPrice: Math.min(...product.variants.map((v) => v.price)),
         highPrice: Math.max(...product.variants.map((v) => v.price)),
         offerCount: product.variants.length,
+        url: `${siteUrl}/p/${product.slug}`,
+        seller: { '@id': `${siteUrl}/#organization` },
         availability: available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       }
     : {
@@ -77,11 +81,13 @@ export function productSchema(product: ProductDetail) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
+    url: `${siteUrl}/p/${product.slug}`,
     description: product.short_description || product.description || undefined,
     sku: product.sku,
     mpn: product.part_number || undefined,
     gtin13: product.barcode && /^\d{13}$/.test(product.barcode) ? product.barcode : undefined,
-    image: product.images.map((i) => abs(i.url)),
+    // Google shows raster images only.
+    image: product.images.map((i) => abs(shareableImage(i.url))).filter(Boolean),
     brand: product.brand ? { '@type': 'Brand', name: product.brand.name } : undefined,
     category: product.category?.name,
     offers,

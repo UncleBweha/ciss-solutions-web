@@ -189,7 +189,7 @@ accounting and reconciliation (see [PAYMENTS.md](PAYMENTS.md#reconciliation)).
 | --- | --- |
 | Business | Name, tagline, phone, WhatsApp, email, address, hours, social links, M-Pesa Paybill shown to customers |
 | Payments | Turn methods on/off; bank account details and instructions; cash-on-delivery counties |
-| Checkout, SEO & alerts | M-Pesa and bank-transfer reservation windows, maximum quantity per item, default SEO title/description, staff alert emails |
+| Checkout, SEO & alerts | M-Pesa and bank-transfer reservation windows, maximum quantity per item, default SEO title/description, Google Search Console and Bing verification codes (paste the meta tag or its code), staff alert emails |
 | Content pages | Page text and the Reviewed flag |
 | Staff & roles | Add staff, change roles |
 | My password | Change your own password (every staff member; the current password is required) |

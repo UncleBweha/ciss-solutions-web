@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { notFound } from 'next/navigation'
 import { Markdown } from '@/components/content/markdown'
 import { Breadcrumbs } from '@/components/ui/misc'
@@ -16,13 +17,13 @@ export async function generateMetadata({ params }: PageProps<'/[page]'>): Promis
   const { page } = await params
   const content = await getContentPage(page)
   if (!content) return {}
-  return {
+  return pageMetadata({
     title: content.title,
-    description: content.description,
-    alternates: { canonical: `/${page}` },
+    description: content.description ?? '',
+    path: `/${page}`,
     // Drafts nobody has signed off yet stay out of search results.
     robots: content.reviewed ? undefined : { index: false, follow: true },
-  }
+  })
 }
 
 export default async function ContentPage({ params }: PageProps<'/[page]'>) {

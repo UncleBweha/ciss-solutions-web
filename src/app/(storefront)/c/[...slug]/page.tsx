@@ -6,7 +6,7 @@ import { CatalogListing } from '@/components/storefront/catalog-listing'
 import { Breadcrumbs } from '@/components/ui/misc'
 import { categoryHref, getCategoryByPath, getFacets, searchCatalog } from '@/lib/catalog'
 import { parseCatalogParams } from '@/lib/catalog-params'
-import { listingRobots } from '@/lib/seo/metadata'
+import { listingRobots, pageMetadata } from '@/lib/seo/metadata'
 import { breadcrumbSchema, collectionSchema } from '@/lib/seo/schema'
 
 export async function generateMetadata({ params, searchParams }: PageProps<'/c/[...slug]'>): Promise<Metadata> {
@@ -14,12 +14,14 @@ export async function generateMetadata({ params, searchParams }: PageProps<'/c/[
   const found = await getCategoryByPath(slug)
   if (!found) return { title: 'Category not found' }
   const { node } = found
-  return {
-    title: node.seo_title ? { absolute: node.seo_title } : `${node.name} in Kenya`,
+  return pageMetadata({
+    title: node.seo_title || `${node.name} in Kenya`,
+    absolute: Boolean(node.seo_title),
     description: node.seo_description || node.description || `Shop ${node.name} at CISS Solutions with delivery across Kenya.`,
-    alternates: { canonical: categoryHref(node) },
+    path: categoryHref(node),
+    image: node.image_url,
     robots: listingRobots(await searchParams),
-  }
+  })
 }
 
 export default async function CategoryPage({ params, searchParams }: PageProps<'/c/[...slug]'>) {

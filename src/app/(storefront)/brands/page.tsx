@@ -1,15 +1,16 @@
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { BrandCard } from '@/components/storefront/cards'
 import { Breadcrumbs } from '@/components/ui/misc'
 import { getBrands } from '@/lib/catalog'
 
 export const revalidate = 86400
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Printer Brands',
   description: 'Shop printers, ink, toner and genuine spare parts by brand: Epson, HP, Canon, Brother, Kyocera, Pantum and more.',
-  alternates: { canonical: '/brands' },
-}
+  path: '/brands',
+})
 
 export default async function BrandsPage() {
   const brands = await getBrands()

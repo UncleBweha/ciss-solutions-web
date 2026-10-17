@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo/metadata'
 import Link from 'next/link'
 import { Wrench } from 'lucide-react'
 import { JsonLd } from '@/components/seo/json-ld'
@@ -14,14 +15,14 @@ export async function generateMetadata({ searchParams }: PageProps<'/parts-finde
   const sp = await searchParams
   const models = await getPrinterModels()
   const model = models.find((m) => m.slug === param(sp.model))
-  return {
+  return pageMetadata({
     title: model ? `Spare parts & supplies for ${model.name}` : 'Printer Spare Parts Finder',
     description: model
       ? `Compatible ink, toner and spare parts for the ${model.name}, available in Kenya.`
       : 'Find compatible printer spare parts, ink and toner by printer brand and model, or search by part number.',
-    alternates: { canonical: model ? `/parts-finder?model=${model.slug}` : '/parts-finder' },
+    path: model ? `/parts-finder?model=${model.slug}` : '/parts-finder',
     robots: param(sp.type) || param(sp.brand) ? { index: false, follow: true } : undefined,
-  }
+  })
 }
 
 export default async function PartsFinderPage({ searchParams }: PageProps<'/parts-finder'>) {
