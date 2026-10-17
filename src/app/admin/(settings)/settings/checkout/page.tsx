@@ -26,6 +26,12 @@ export default async function CheckoutSettings() {
           <Field label="Max quantity per item" htmlFor="max_quantity_per_item"><Input id="max_quantity_per_item" name="max_quantity_per_item" type="number" defaultValue={c.max_quantity_per_item ?? 20} /></Field>
           <Field label="Default page title" htmlFor="default_title"><Input id="default_title" name="default_title" defaultValue={seo.default_title} maxLength={70} /></Field>
           <Field label="Default meta description" htmlFor="default_description"><Textarea id="default_description" name="default_description" rows={2} className="min-h-0" defaultValue={seo.default_description} maxLength={170} /></Field>
+          <Field label="Google Search Console verification" htmlFor="google_verification" hint="In Search Console choose “HTML tag” and paste the tag or just its code.">
+            <Input id="google_verification" name="google_verification" defaultValue={seo.google_verification} placeholder='<meta name="google-site-verification" content="…" />' />
+          </Field>
+          <Field label="Bing Webmaster Tools verification" htmlFor="bing_verification" hint="In Bing choose the meta tag option and paste the tag or its code.">
+            <Input id="bing_verification" name="bing_verification" defaultValue={seo.bing_verification} placeholder='<meta name="msvalidate.01" content="…" />' />
+          </Field>
         </AdminForm>
       </Panel>
       <Panel title="Staff email alerts">

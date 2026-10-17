@@ -3,15 +3,15 @@ import { CatalogListing } from '@/components/storefront/catalog-listing'
 import { Breadcrumbs } from '@/components/ui/misc'
 import { getFacets, searchCatalog } from '@/lib/catalog'
 import { parseCatalogParams } from '@/lib/catalog-params'
-import { listingRobots } from '@/lib/seo/metadata'
+import { listingRobots, pageMetadata } from '@/lib/seo/metadata'
 
 export async function generateMetadata({ searchParams }: PageProps<'/shop'>): Promise<Metadata> {
-  return {
+  return pageMetadata({
     title: 'Shop Printers, Spare Parts, Ink & Toner',
     description: 'Browse printers, genuine spare parts, ink, toner, scanners and accessories from Epson, HP, Canon, Brother and more. Delivery across Kenya.',
-    alternates: { canonical: '/shop' },
+    path: '/shop',
     robots: listingRobots(await searchParams),
-  }
+  })
 }
 
 export default async function ShopPage({ searchParams }: PageProps<'/shop'>) {

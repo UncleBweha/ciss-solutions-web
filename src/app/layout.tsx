@@ -28,6 +28,11 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: { card: 'summary_large_image' },
     formatDetection: { telephone: true },
+    // Site ownership for Google Search Console and Bing Webmaster Tools (Admin, Settings, SEO).
+    verification: {
+      google: seo.google_verification || undefined,
+      other: seo.bing_verification ? { 'msvalidate.01': seo.bing_verification } : undefined,
+    },
   }
 }
 

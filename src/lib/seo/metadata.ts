@@ -12,19 +12,76 @@ export function productMetadata(product: ProductDetail): Metadata {
       `Buy ${product.name} in Kenya with nationwide delivery and M-Pesa payment.`,
     160,
   )
-  const image = product.og_image_url || product.images[0]?.url
+  const image = shareableImage(product.og_image_url) ?? product.images.map((i) => shareableImage(i.url)).find(Boolean) ?? DEFAULT_IMAGE
   const canonical = product.canonical_url || `/p/${product.slug}`
   return {
-    title: { absolute: title.includes('CISS') ? title : `${title} | CISS Solutions` },
+    title: { absolute: withSiteName(title) },
     description,
     alternates: { canonical },
     openGraph: {
       type: 'website',
+      siteName: SITE,
+      locale: 'en_KE',
       title: product.og_title || title,
       description: product.og_description || description,
       url: canonical,
-      images: image && !image.endsWith('.svg') ? [{ url: image, alt: product.name }] : undefined,
+      images: [{ url: image, alt: product.name }],
     },
+    twitter: { card: 'summary_large_image', title: product.og_title || title, description: product.og_description || description, images: [image] },
+  }
+}
+
+const SITE = 'CISS Solutions'
+
+/** The site's default share card (app/opengraph-image.tsx) for pages without a picture of their own. */
+const DEFAULT_IMAGE = '/opengraph-image'
+
+/**
+ * "<title> | CISS Solutions", unless that runs past what Google shows (about 60
+ * characters): then the page's own words matter more than the name.
+ */
+export function withSiteName(title: string) {
+  if (title.includes('CISS')) return title
+  const full = `${title} | ${SITE}`
+  return full.length <= 62 ? full : title
+}
+
+/** Raster images only: social networks and Google do not show SVG previews. */
+export const shareableImage = (url: string | null | undefined) => (url && !/\.svg(\?|$)/i.test(url) ? url : undefined)
+
+/**
+ * Metadata for a public page: title, description, canonical, and the same title and
+ * description for link previews (WhatsApp, Facebook, X), which otherwise fall back to the
+ * homepage's. `absolute` titles are used as written; others get " | CISS Solutions".
+ */
+export function pageMetadata({
+  title,
+  absolute,
+  description,
+  path,
+  image,
+  robots,
+}: {
+  title: string
+  absolute?: boolean
+  description: string
+  path: string
+  image?: string | null
+  robots?: Metadata['robots']
+}): Metadata {
+  const fullTitle = absolute ? title : withSiteName(title)
+  // A one-line description leaves Google to pick random page text; round it off instead.
+  const base = description.trim()
+  const tail = 'Shop online at CISS Solutions with delivery across Kenya.'
+  const desc = truncate(!base ? tail : base.length < 90 && !/kenya/i.test(base) ? `${base.replace(/\.?$/, '.')} ${tail}` : base, 160)
+  const img = shareableImage(image) ?? DEFAULT_IMAGE
+  return {
+    title: { absolute: fullTitle },
+    description: desc,
+    alternates: { canonical: path },
+    openGraph: { type: 'website', siteName: SITE, locale: 'en_KE', url: path, title: fullTitle, description: desc, images: [{ url: img, alt: title }] },
+    twitter: { card: 'summary_large_image', title: fullTitle, description: desc, images: [img] },
+    robots,
   }
 }
 
