@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { FileText } from 'lucide-react'
-import { MpesaPaymentProvider, MpesaPaymentStatus, OrderHeading } from '@/components/checkout/payment-status'
+import { OrderHeading } from '@/components/checkout/order-heading'
 import { OrderTimeline } from '@/components/checkout/order-timeline'
 import { OrderSummary } from '@/components/cart/order-summary'
 import { ProductImage } from '@/components/product/product-image'
@@ -16,7 +16,6 @@ import { formatKES } from '@/lib/ecommerce/money'
 import { awaitsPaymentConfirmation, isTerminalFailure, orderStatusLabels, orderStatusTone, paymentMethodLabels } from '@/lib/ecommerce/orders'
 import { orderTokenCookie } from '@/lib/order-token'
 import { getOrderForViewer } from '@/lib/orders'
-import { refreshPaymentStatus } from '@/lib/payments/service'
 import { formatDateTime, param } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Your order', robots: { index: false } }
@@ -30,12 +29,6 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
   const [order, settings] = await Promise.all([getOrderForViewer(number, token), getSettings()])
   if (!order) notFound()
 
-  const isMpesa = order.payment_method === 'mpesa'
-  const view = !isMpesa
-    ? null
-    : order.payment_status === 'PAID'
-      ? { state: 'paid' as const, message: null }
-      : await refreshPaymentStatus(order.id)
   const failed = isTerminalFailure(order.order_status)
   const paid = order.payment_status === 'PAID'
   // Paybill / bank transfer: the customer says they paid; staff have not confirmed it yet.
@@ -43,12 +36,11 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
   const bank = settings.payment_methods.bank_transfer
   const paybill = settings.payment_methods.mpesa_paybill
 
-  const page = (
+  return (
     <div className="container-page max-w-5xl py-10">
       <OrderHeading
         orderNumber={order.order_number}
         paid={paid}
-        awaitingMpesa={isMpesa && !paid}
         awaitingConfirmation={awaitingConfirmation}
         failedLabel={failed ? orderStatusLabels[order.order_status] : null}
         celebrate={justPlaced}
@@ -56,10 +48,6 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
-          {isMpesa && !failed && view ? (
-            <MpesaPaymentStatus orderNumber={order.order_number} phone={order.customer_phone} />
-          ) : null}
-
           {order.payment_method === 'bank_transfer' && !paid && !failed ? (
             <section className="glass-flat rounded-[var(--radius-card)] p-5">
               <h2 className="mb-3 font-bold">Pay by bank transfer</h2>
@@ -184,13 +172,5 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
         </div>
       </div>
     </div>
-  )
-  // M-Pesa orders share one live payment state between the heading and the prompt panel.
-  return isMpesa && !failed && view ? (
-    <MpesaPaymentProvider orderNumber={order.order_number} total={Number(order.total)} initial={{ state: view.state, message: view.message }}>
-      {page}
-    </MpesaPaymentProvider>
-  ) : (
-    page
   )
 }

@@ -39,8 +39,6 @@ jobs:
             echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
             echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
-            echo "MPESA_ENV=mock"
-            echo "MPESA_CALLBACK_SECRET=ci-callback-secret"
             echo "CRON_SECRET=ci-cron-secret"
             echo "EMAIL_PROVIDER=log"
           } > .env.local
@@ -63,10 +61,10 @@ jobs:
       - name: E2E (production build)
         run: |
           set -a; . ./.env.local; set +a
-          MPESA_ALLOW_MOCK=true PORT=3000 HOSTNAME=127.0.0.1 node .next/standalone/server.js > /tmp/server.log 2>&1 &
+          PORT=3000 HOSTNAME=127.0.0.1 node .next/standalone/server.js > /tmp/server.log 2>&1 &
           for i in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:3000/robots.txt && break; sleep 1; done
-          # The HTTP checks (callback secret, cron auth) need the server, so they skipped in the test step above.
-          E2E_BASE_URL=http://127.0.0.1:3000 REQUIRE_APP_SERVER=1 npx vitest run tests/integration/callback-http.test.ts
+          # The HTTP checks (cron auth, order access) need the server, so they skipped in the test step above.
+          E2E_BASE_URL=http://127.0.0.1:3000 REQUIRE_APP_SERVER=1 npx vitest run tests/integration/endpoints-http.test.ts
           npx playwright install --with-deps chromium
           E2E_BASE_URL=http://127.0.0.1:3000 npx playwright test
 

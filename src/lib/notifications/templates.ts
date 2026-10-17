@@ -130,22 +130,19 @@ const textSummary = (o: OrderEmailData) =>
 const textFooter = `\n\nThis is an automated email. Please do not reply; replies are not read.\nQuestions? Email ${EMAIL_CONTACT}`
 
 /**
- * Sent when a non-M-Pesa order is placed. Paybill and bank transfer orders are not paid
- * yet as far as we know: the email says the payment is still to be confirmed, never "paid".
+ * Sent when an order is placed. Paybill and bank transfer orders are not paid yet as far
+ * as we know: the email says the payment is still to be confirmed, never "paid".
  */
 export function orderConfirmationEmail(o: OrderEmailData) {
-  const awaitingMpesa = o.paymentMethod === 'mpesa'
   const awaitingConfirmation = awaitsPaymentConfirmation(o.paymentMethod)
   const method = esc(paymentMethodLabels[o.paymentMethod])
   const subject = `${awaitingConfirmation ? 'Order placed, awaiting payment confirmation' : 'Order received'}: ${o.orderNumber} | Ciss Solutions`
-  const payment = awaitingMpesa
-    ? 'Complete the M&#8209;Pesa prompt on your phone to confirm it.'
-    : awaitingConfirmation
+  const payment = awaitingConfirmation
       ? `It is not confirmed yet: we will confirm it, and email you, once we have checked your ${method} payment. If you have not paid yet, the payment details are on your order page.`
       : `Payment: ${method}.`
   const html = layout(subject, {
-    tone: awaitingMpesa || awaitingConfirmation ? 'warning' : 'info',
-    label: awaitingMpesa ? 'Order received · awaiting payment' : awaitingConfirmation ? 'Order placed · awaiting payment confirmation' : 'Order received',
+    tone: awaitingConfirmation ? 'warning' : 'info',
+    label: awaitingConfirmation ? 'Order placed · awaiting payment confirmation' : 'Order received',
     heading: `Thanks, ${o.customerName.trim().split(/\s+/)[0]}`,
     intro: `<p style="margin:0">We've received your order ${strong(o.orderNumber)}. ${payment} ${fulfilment(o)}</p>`,
     order: o,
@@ -155,10 +152,7 @@ export function orderConfirmationEmail(o: OrderEmailData) {
   return { subject, html, text: `Thanks for your order ${o.orderNumber}.${textPayment}\n\n${textSummary(o)}\n\nTrack: ${orderLink(o)}${textFooter}` }
 }
 
-/**
- * Sent once the money is confirmed: by Safaricom for an M-Pesa order (its one email:
- * order received and payment cleared), by staff for a Paybill or bank transfer order.
- */
+/** Sent once staff have confirmed the money (Paybill, bank transfer, cash on delivery). */
 export function paymentConfirmationEmail(o: OrderEmailData) {
   const subject = `Order confirmed: ${o.orderNumber} | Ciss Solutions`
   const receipt = o.receipt ? `, M&#8209;Pesa receipt ${strong(o.receipt)}` : ''
@@ -206,9 +200,8 @@ export function orderStatusEmail(o: OrderEmailData & { status: OrderStatus }) {
 }
 
 /**
- * Staff alert. 'placed' as soon as a non-M-Pesa order comes in: for Paybill and bank
- * transfer it asks staff to check the money and mark the order Paid. 'paid' once the
- * payment is confirmed (by Safaricom for M-Pesa, by staff for Paybill and bank transfer).
+ * Staff alert. 'placed' as soon as an order comes in: for Paybill and bank transfer it asks
+ * staff to check the money and mark the order Paid. 'paid' once staff confirm the payment.
  */
 export function adminNewOrderEmail(o: OrderEmailData, stage: 'placed' | 'paid' = 'placed') {
   const method = paymentMethodLabels[o.paymentMethod]

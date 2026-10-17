@@ -1,4 +1,4 @@
--- Database integration tests: stock reservation, payment confirmation, expiry and
+-- Database integration tests: stock reservation, staff payment confirmation, expiry and
 -- cancellation. Runs inside a transaction that is rolled back.
 -- Usage: npm run test:db   (needs `supabase start`)
 \set ON_ERROR_STOP on
@@ -16,7 +16,6 @@ declare
   v_stock int;
   v_order jsonb;
   v_order_id uuid;
-  v_payment uuid;
   v_result jsonb;
   v_failed boolean;
   v_rec record;
@@ -27,7 +26,7 @@ begin
   -- 1. Placing an order reserves stock --------------------------------------
   v_order := place_order(jsonb_build_object(
     'customer_name', 'Test Buyer', 'customer_email', 'Buyer@Example.com', 'customer_phone', '254712345678',
-    'payment_method', 'mpesa', 'subtotal', 105998, 'discount', 0, 'delivery_fee', 200, 'total', 106198,
+    'payment_method', 'bank_transfer', 'subtotal', 105998, 'discount', 0, 'delivery_fee', 200, 'total', 106198,
     'delivery_zone_name', 'Nairobi', 'delivery_county', 'Nairobi', 'delivery_town', 'Westlands',
     'delivery_address', 'Test street', 'reservation_minutes', 30,
     'items', jsonb_build_array(jsonb_build_object(
@@ -37,7 +36,7 @@ begin
   assert (v_order ->> 'order_number') ~ '^CISS-[2-9A-HJ-NP-Z]{8}$', 'order number format';
   assert (select reserved_quantity from products where id = v_product) = 2, 'stock reserved';
   assert (select available_quantity from products where id = v_product) = 3, 'available reduced';
-  assert (select order_status from orders where id = v_order_id) = 'PAYMENT_PENDING', 'awaiting payment';
+  assert (select order_status from orders where id = v_order_id) = 'PENDING', 'awaiting payment';
   assert (select customer_email from orders where id = v_order_id) = 'buyer@example.com', 'email normalised';
 
   -- 2. Overselling is impossible -----------------------------------------------
@@ -45,7 +44,7 @@ begin
   begin
     perform place_order(jsonb_build_object(
       'customer_name', 'Other', 'customer_email', 'o@example.com', 'customer_phone', '254700000001',
-      'payment_method', 'mpesa', 'subtotal', 211996, 'total', 211996, 'delivery_zone_name', 'Nairobi',
+      'payment_method', 'bank_transfer', 'subtotal', 211996, 'total', 211996, 'delivery_zone_name', 'Nairobi',
       'delivery_county', 'Nairobi', 'delivery_town', 'CBD', 'delivery_address', 'x',
       'items', jsonb_build_array(jsonb_build_object(
         'product_id', v_product, 'product_name', 'HP M404dn', 'sku', 'HP-M404DN', 'quantity', 4, 'unit_price', 52999))
@@ -56,20 +55,31 @@ begin
   assert v_failed, 'oversell rejected';
   assert (select reserved_quantity from products where id = v_product) = 2, 'failed order left no reservation';
 
-  -- 3. Short payment is rejected ---------------------------------------------------
-  insert into payments (order_id, method, provider, amount, phone_number, checkout_request_id)
-  values (v_order_id, 'mpesa', 'mpesa_mock', 106198, '254712345678', 'ws_CO_test_1') returning id into v_payment;
-  v_result := confirm_payment(v_payment, 'QAB1CD2EF3', 100, '{}'::jsonb);
-  assert v_result ->> 'status' = 'amount_mismatch', 'amount mismatch detected';
-  assert (select payment_status from orders where id = v_order_id) = 'PENDING', 'order not paid on mismatch';
+  -- 3. M-Pesa STK push (removed) and card orders are refused ------------------------
+  v_failed := false;
+  begin
+    perform place_order(jsonb_build_object(
+      'customer_name', 'Stk', 'customer_email', 'stk@example.com', 'customer_phone', '254700000001',
+      'payment_method', 'mpesa', 'subtotal', 52999, 'total', 52999, 'delivery_zone_name', 'Nairobi',
+      'delivery_county', 'Nairobi', 'delivery_town', 'CBD', 'delivery_address', 'x',
+      'items', jsonb_build_array(jsonb_build_object(
+        'product_id', v_product, 'product_name', 'HP M404dn', 'sku', 'HP-M404DN', 'quantity', 1, 'unit_price', 52999))
+    ));
+  exception when others then
+    v_failed := sqlerrm like 'PAYMENT_METHOD_UNAVAILABLE%';
+  end;
+  assert v_failed, 'M-Pesa (STK) order rejected';
+  assert (select reserved_quantity from products where id = v_product) = 2, 'rejected order left no reservation';
 
-  -- 4. Correct payment confirms and deducts stock exactly once ----------------------
-  insert into payments (order_id, method, provider, amount, phone_number, checkout_request_id)
-  values (v_order_id, 'mpesa', 'mpesa_mock', 106198, '254712345678', 'ws_CO_test_2') returning id into v_payment;
-  v_result := confirm_payment(v_payment, 'QAB1CD2EF4', 106198, '{}'::jsonb);
-  assert v_result ->> 'status' = 'confirmed', 'payment confirmed';
-  v_result := confirm_payment(v_payment, 'QAB1CD2EF4', 106198, '{}'::jsonb);
-  assert v_result ->> 'status' = 'already_paid', 'duplicate callback is idempotent';
+  -- 4. Staff confirm the payment: stock is deducted exactly once --------------------
+  perform update_order_status(v_order_id, 'PAID', 'Transfer received');
+  v_failed := false;
+  begin
+    perform update_order_status(v_order_id, 'PAID', 'Again');
+  exception when others then
+    v_failed := sqlerrm like 'INVALID_TRANSITION%';
+  end;
+  assert v_failed, 'a paid order cannot be marked paid again';
   select * into v_rec from products where id = v_product;
   assert v_rec.stock_quantity = 3 and v_rec.reserved_quantity = 0, 'stock deducted once';
   assert (select order_status from orders where id = v_order_id) = 'PAID', 'order paid';
@@ -85,7 +95,7 @@ begin
   -- 6. Unpaid orders expire and release their reservation ---------------------------
   v_order := place_order(jsonb_build_object(
     'customer_name', 'Late Payer', 'customer_email', 'late@example.com', 'customer_phone', '254700000002',
-    'payment_method', 'mpesa', 'subtotal', 52999, 'total', 52999, 'delivery_zone_name', 'Nairobi',
+    'payment_method', 'bank_transfer', 'subtotal', 52999, 'total', 52999, 'delivery_zone_name', 'Nairobi',
     'delivery_county', 'Nairobi', 'delivery_town', 'CBD', 'delivery_address', 'x', 'reservation_minutes', 30,
     'items', jsonb_build_array(jsonb_build_object(
       'product_id', v_product, 'product_name', 'HP M404dn', 'sku', 'HP-M404DN', 'quantity', 1, 'unit_price', 52999))
@@ -98,10 +108,7 @@ begin
   assert (select order_status from orders where id = v_order_id) = 'FAILED', 'expired order failed';
 
   -- 7. A late payment after expiry still records the sale (re-takes stock) ------------
-  insert into payments (order_id, method, provider, amount, checkout_request_id)
-  values (v_order_id, 'mpesa', 'mpesa_mock', 52999, 'ws_CO_test_3') returning id into v_payment;
-  v_result := confirm_payment(v_payment, 'QAB1CD2EF5', 52999, null);
-  assert v_result ->> 'status' = 'confirmed', 'late payment confirmed';
+  perform update_order_status(v_order_id, 'PAID', 'Transfer received late');
   assert (select stock_quantity from products where id = v_product) = 4, 'late payment deducted stock';
   assert (select order_status from orders where id = v_order_id) = 'PAID', 'late order revived as paid';
 
@@ -148,25 +155,18 @@ begin
   end;
   assert v_failed, 'delivered -> processing rejected';
 
-  -- 11. A second payment for a paid order is recorded but changes nothing else ---------------
+  -- 11. A Paybill order marked paid deducts its stock once -----------------------------------------
   update products set stock_quantity = 5, reserved_quantity = 0 where id = v_product;
   v_order := place_order(jsonb_build_object(
-    'customer_name', 'Twice', 'customer_email', 'twice@example.com', 'customer_phone', '254700000005',
-    'payment_method', 'mpesa', 'subtotal', 52999, 'total', 52999, 'delivery_zone_name', 'Nairobi',
+    'customer_name', 'Paid', 'customer_email', 'paid@example.com', 'customer_phone', '254700000005',
+    'payment_method', 'mpesa_paybill', 'subtotal', 52999, 'total', 52999, 'delivery_zone_name', 'Nairobi',
     'delivery_county', 'Nairobi', 'delivery_town', 'CBD', 'delivery_address', 'x', 'reservation_minutes', 30,
     'items', jsonb_build_array(jsonb_build_object(
       'product_id', v_product, 'product_name', 'HP M404dn', 'sku', 'HP-M404DN', 'quantity', 1, 'unit_price', 52999))
   ));
   v_order_id := (v_order ->> 'id')::uuid;
-  insert into payments (order_id, method, provider, amount, checkout_request_id)
-  values (v_order_id, 'mpesa', 'mpesa_mock', 52999, 'ws_CO_test_4') returning id into v_payment;
-  v_result := confirm_payment(v_payment, 'QAB1CD2EF6', 52999, null);
-  assert v_result ->> 'status' = 'confirmed' and (v_result ->> 'duplicate')::boolean is false, 'first payment confirmed';
-  insert into payments (order_id, method, provider, amount, checkout_request_id)
-  values (v_order_id, 'mpesa', 'mpesa_mock', 52999, 'ws_CO_test_5') returning id into v_payment;
-  v_result := confirm_payment(v_payment, 'QAB1CD2EF7', 52999, null);
-  assert v_result ->> 'status' = 'confirmed' and (v_result ->> 'duplicate')::boolean, 'second payment flagged as a duplicate';
-  assert (select status from payments where id = v_payment) = 'PAID', 'the second payment is recorded as received';
+  perform update_order_status(v_order_id, 'PAID', 'Paybill payment checked');
+  assert (select count(*) from payments where order_id = v_order_id and provider = 'manual' and status = 'PAID') = 1, 'staff payment recorded';
   assert (select stock_quantity from products where id = v_product) = 4, 'stock deducted once for the order';
   assert (select count(*) from order_status_history where order_id = v_order_id and status = 'PAID') = 1, 'one paid entry in the history';
 
@@ -179,7 +179,7 @@ begin
   -- 13. Short stock on a late payment: flagged, and a cancel returns only what was taken ----------
   v_order := place_order(jsonb_build_object(
     'customer_name', 'Short', 'customer_email', 'short@example.com', 'customer_phone', '254700000006',
-    'payment_method', 'mpesa', 'subtotal', 52999, 'total', 52999, 'delivery_zone_name', 'Nairobi',
+    'payment_method', 'bank_transfer', 'subtotal', 52999, 'total', 52999, 'delivery_zone_name', 'Nairobi',
     'delivery_county', 'Nairobi', 'delivery_town', 'CBD', 'delivery_address', 'x', 'reservation_minutes', 30,
     'items', jsonb_build_array(jsonb_build_object(
       'product_id', v_product, 'product_name', 'HP M404dn', 'sku', 'HP-M404DN', 'quantity', 1, 'unit_price', 52999))
@@ -188,10 +188,7 @@ begin
   update orders set reservation_expires_at = now() - interval '1 minute' where id = v_order_id;
   perform expire_stale_orders();
   update products set stock_quantity = 0, reserved_quantity = 0 where id = v_product;
-  insert into payments (order_id, method, provider, amount, checkout_request_id)
-  values (v_order_id, 'mpesa', 'mpesa_mock', 52999, 'ws_CO_test_6') returning id into v_payment;
-  v_result := confirm_payment(v_payment, 'QAB1CD2EF8', 52999, null);
-  assert v_result ->> 'stock' = 'shortage', 'late payment with no stock is a shortage';
+  perform update_order_status(v_order_id, 'PAID', 'Transfer received late');
   assert (select stock_state from orders where id = v_order_id) = 'shortage', 'order marked short';
   assert exists (select 1 from notifications where kind = 'stock_shortage' and order_id = v_order_id), 'staff told about the shortage';
   perform update_order_status(v_order_id, 'CANCELLED', 'No stock');

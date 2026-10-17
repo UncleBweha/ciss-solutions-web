@@ -8,11 +8,11 @@ insert into products (name, slug, sku, price, status) values ('Hidden draft', 'h
 insert into orders (order_number, user_id, customer_name, customer_email, customer_phone, subtotal, total,
                     payment_method, delivery_county, delivery_town, delivery_address)
 values ('TEST-OWN', '00000000-0000-4000-8000-000000000002', 'Wanjiku', 'customer@ciss.local', '254700000000', 100, 100,
-        'mpesa', 'Nairobi', 'CBD', 'x'),
+        'bank_transfer', 'Nairobi', 'CBD', 'x'),
        ('TEST-OTHER', '00000000-0000-4000-8000-000000000003', 'Brian', 'brian@ciss.local', '254700000001', 100, 100,
-        'mpesa', 'Nairobi', 'CBD', 'x');
+        'bank_transfer', 'Nairobi', 'CBD', 'x');
 insert into payments (order_id, method, provider, amount, raw_response)
-select id, 'mpesa', 'mpesa_mock', 100, '{"secret":"x"}' from orders where order_number = 'TEST-OWN';
+select id, 'bank_transfer', 'manual', 100, '{"secret":"x"}' from orders where order_number = 'TEST-OWN';
 insert into order_admin_notes (order_id, notes)
 select id, 'Customer disputes the amount' from orders where order_number = 'TEST-OWN';
 
@@ -37,10 +37,10 @@ begin
   assert v_failed, 'anon cannot call place_order';
   v_failed := false;
   begin
-    perform confirm_payment(gen_random_uuid(), 'X', 1, null, null);
+    perform update_order_status((select id from orders where order_number = 'TEST-OWN'), 'PAID', null);
   exception when insufficient_privilege then v_failed := true;
   end;
-  assert v_failed, 'anon cannot confirm payments';
+  assert v_failed, 'anon cannot mark an order paid';
 end;
 $$;
 
@@ -96,10 +96,10 @@ begin
 
   v_failed := false;
   begin
-    perform confirm_payment(gen_random_uuid(), 'X', 1, null, null);
+    perform update_order_status((select id from orders where order_number = 'TEST-OWN'), 'PAID', null);
   exception when insufficient_privilege then v_failed := true;
   end;
-  assert v_failed, 'customer cannot confirm payments';
+  assert v_failed, 'customer cannot mark their own order paid';
 
   begin
     insert into products (name, slug, sku, price) values ('x', 'x-test', 'X-TEST', 1);
@@ -130,13 +130,6 @@ begin
   assert (select count(*) from payments) >= 1, 'order manager sees payments';
   assert (select count(*) from product_costs) = 0, 'order manager cannot read costs';
   assert (select count(*) from order_admin_notes) = 1, 'order manager reads staff notes';
-  -- Payments are confirmed by the server (M-Pesa callback), never by a staff session.
-  begin
-    perform confirm_payment((select id from payments limit 1), 'X', 100, null, null);
-  exception when insufficient_privilege then v_failed := true;
-  end;
-  assert v_failed, 'staff cannot confirm a payment themselves';
-  v_failed := false;
   begin
     update settings set value = '{}' where key = 'payment_methods';
     assert not found, 'order manager cannot change payment settings';

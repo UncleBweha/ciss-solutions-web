@@ -5,26 +5,20 @@ import { PARCEL_DELIVERY, STORE_PICKUP } from '@/lib/ecommerce/delivery'
 import { quoteCart, type Quote } from '@/lib/ecommerce/quote'
 import { logger } from '@/lib/logger'
 import { background, notifyOrderPlaced } from '@/lib/notifications'
-import { getOrderForViewer } from '@/lib/orders'
 import { runTaskNow } from '@/lib/outbox'
-import { initiateMpesaPayment, type InitiateResult } from '@/lib/payments/service'
 import { clientIp, rateLimit } from '@/lib/security'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { checkoutSchema, type CheckoutInput } from '@/lib/validation/checkout'
-import { kenyanPhone } from '@/lib/validation/forms'
 
 export type { CheckoutInput }
 
 export type PlaceOrderResult =
-  | { ok: true; orderNumber: string; redirectTo: string; paymentMessage?: string }
+  | { ok: true; orderNumber: string; redirectTo: string }
   | { ok: false; message: string; errors?: Record<string, string>; quote?: Quote }
 
-/** Unpaid orders of one kind (M-Pesa awaiting payment; or Paybill, bank and cash awaiting confirmation) one phone number or email may have open at once. */
+/** Unpaid orders (Paybill, bank and cash awaiting confirmation) one phone number or email may have open at once. */
 const MAX_UNPAID_ORDERS = 3
-/** M-Pesa prompts one number may receive per hour, across all orders and whoever asks. */
-const STK_PER_NUMBER = 8
-const stkLimitKey = (phone: string) => `stk-number:${phone}`
 
 const stockMessage = (sqlMessage: string) => {
   const name = sqlMessage.split('INSUFFICIENT_STOCK:')[1]?.split('\n')[0]?.trim()
@@ -46,17 +40,11 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
   const [settings, user] = await Promise.all([getSettings(), getSessionUser()])
   if (user && user.role !== 'customer') return { ok: false, message: 'Staff accounts cannot place orders. Sign in with a customer account to buy.' }
   if (!(await rateLimit(`checkout-phone:${data.phone}`, 10, 600))) return tooMany
-  // The number the M-Pesa prompt goes to, which need not be the buyer's own.
-  const mpesaPhone = data.mpesaPhone ? kenyanPhone.parse(data.mpesaPhone) : data.phone
-  // Limit how often any one number can be prompted, whoever is asking.
-  if (data.paymentMethod === 'mpesa' && !(await rateLimit(stkLimitKey(mpesaPhone), STK_PER_NUMBER, 3600))) {
-    return { ok: false, message: 'Too many M-Pesa prompts have been sent to that number. Please wait an hour, or pay with another method.' }
-  }
 
   // Payment method must be enabled (and COD only where offered).
   const method = settings.payment_methods[data.paymentMethod]
   if (!method?.enabled) return { ok: false, message: 'That payment method is not available. Please choose another.' }
-  if (data.paymentMethod === 'card') return { ok: false, message: 'Card payments are not available yet. Please choose M-Pesa.' }
+  if (data.paymentMethod === 'card') return { ok: false, message: 'Card payments are not available yet. Please choose another payment method.' }
   if (data.paymentMethod === 'mpesa_paybill' && !(settings.payment_methods.mpesa_paybill.paybill_number && settings.payment_methods.mpesa_paybill.account_number)) {
     return { ok: false, message: 'That payment method is not available. Please choose another.' }
   }
@@ -89,22 +77,15 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
     ? { county: 'Nairobi', town: shop.location || 'Nairobi', address: shop.address || shop.location || 'CISS Solutions shop', instructions: null }
     : { county: data.county, town: data.town, address: data.address, instructions: data.instructions ?? null }
 
-  const reservationMinutes =
-    data.paymentMethod === 'mpesa'
-      ? settings.checkout.mpesa_reservation_minutes
-      : // Cash on delivery too: an order staff never confirm must not hold stock for ever.
-        // (Once they start processing it the stock is sold and the window no longer applies.)
-        settings.checkout.bank_transfer_reservation_minutes
+  // Cash on delivery too: an order staff never confirm must not hold stock for ever.
+  // (Once they start processing it the stock is sold and the window no longer applies.)
+  const reservationMinutes = settings.checkout.bank_transfer_reservation_minutes
 
   const db = createAdminClient()
   // Every order holds stock until it is paid or expires, and nothing is paid when an order
   // is placed: without a cap, fake orders could make the whole shop look sold out.
   {
-    // M-Pesa orders wait in PAYMENT_PENDING until paid or expired; the others in PENDING.
-    const unpaid = () =>
-      data.paymentMethod === 'mpesa'
-        ? db.from('orders').select('id', { count: 'exact', head: true }).eq('order_status', 'PAYMENT_PENDING').eq('stock_state', 'reserved')
-        : db.from('orders').select('id', { count: 'exact', head: true }).eq('payment_status', 'PENDING').eq('order_status', 'PENDING')
+    const unpaid = () => db.from('orders').select('id', { count: 'exact', head: true }).eq('payment_status', 'PENDING').eq('order_status', 'PENDING')
     const [byPhone, byEmail] = await Promise.all([unpaid().eq('customer_phone', data.phone), unpaid().eq('customer_email', data.email.toLowerCase())])
     if (Math.max(byPhone.count ?? 0, byEmail.count ?? 0) >= MAX_UNPAID_ORDERS) {
       return { ok: false, message: `You already have ${MAX_UNPAID_ORDERS} orders waiting for payment. Please pay for those first, or contact us and we will help.` }
@@ -116,8 +97,6 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
       customer_name: data.fullName,
       customer_email: data.email,
       customer_phone: data.phone,
-      // M-Pesa number for the STK push (stored in the outbox task with the order)
-      payment_phone: data.paymentMethod === 'mpesa' ? mpesaPhone : data.phone,
       payment_method: data.paymentMethod,
       subtotal: quote.subtotal,
       discount: quote.discount,
@@ -177,39 +156,9 @@ export async function placeOrderAction(input: CheckoutInput): Promise<PlaceOrder
     }
   }
 
-  let paymentMessage: string | undefined
-  if (data.paymentMethod === 'mpesa') {
-    // The STK push task was committed with the order. Run it now so the prompt reaches
-    // the phone immediately; if this fails or the server stops, the cron sweep retries it.
-    const stk = await runTaskNow(order.id, 'mpesa_stk_push', () => initiateMpesaPayment(order.id, mpesaPhone)).catch((e) => {
-      logger.error('checkout.stk_failed', { error: e })
-      return undefined
-    })
-    // A task that was skipped or gave up carries no message: nothing was sent.
-    paymentMessage =
-      stk?.outcome === 'retry'
-        ? 'We are having trouble reaching M-Pesa and will retry shortly. You can also retry from the next page.'
-        : (stk?.outcome === 'done' && stk.message) || 'We could not send the M-Pesa prompt. You can retry from the next page.'
-  }
-
   return {
     ok: true,
     orderNumber: order.order_number,
     redirectTo: `/order/${encodeURIComponent(order.order_number)}?t=${order.access_token}&placed=1`,
-    paymentMessage,
   }
-}
-
-/** Re-sends the STK push for an unpaid M-Pesa order (from the order page). */
-export async function retryMpesaPaymentAction(orderNumber: string, phoneInput: string): Promise<InitiateResult> {
-  const ip = await clientIp()
-  // Loose per-address ceiling; initiateMpesaPayment limits prompts per order.
-  if (!(await rateLimit(`retry:${ip}`, 200, 600))) return { ok: false, message: 'Too many attempts. Please wait a few minutes.' }
-  // Authorised by the order's access cookie, a signed-in owner, or staff.
-  const order = await getOrderForViewer(orderNumber)
-  if (!order) return { ok: false, message: 'Order not found.' }
-  const phone = kenyanPhone.safeParse(phoneInput)
-  if (!phone.success) return { ok: false, message: 'Enter a valid Safaricom number.' }
-  if (!(await rateLimit(stkLimitKey(phone.data), STK_PER_NUMBER, 3600))) return { ok: false, message: 'Too many M-Pesa prompts have been sent to that number. Please wait an hour.' }
-  return initiateMpesaPayment(order.id, phone.data)
 }

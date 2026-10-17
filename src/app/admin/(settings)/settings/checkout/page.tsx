@@ -17,10 +17,7 @@ export default async function CheckoutSettings() {
     <div className="grid max-w-5xl gap-4 xl:grid-cols-2">
       <Panel title="Checkout & SEO defaults">
         <AdminForm action={saveCheckoutAction} className="space-y-3">
-          <Field label="M-Pesa payment window (minutes)" htmlFor="mpesa_reservation_minutes" hint="Stock is reserved this long while the customer pays">
-            <Input id="mpesa_reservation_minutes" name="mpesa_reservation_minutes" type="number" defaultValue={c.mpesa_reservation_minutes ?? 30} />
-          </Field>
-          <Field label="Bank transfer reservation (minutes)" htmlFor="bank_transfer_reservation_minutes">
+          <Field label="Payment window (minutes)" htmlFor="bank_transfer_reservation_minutes" hint="An unpaid order holds its stock this long, then expires (Paybill, bank transfer, cash on delivery)">
             <Input id="bank_transfer_reservation_minutes" name="bank_transfer_reservation_minutes" type="number" defaultValue={c.bank_transfer_reservation_minutes ?? 2880} />
           </Field>
           <Field label="Max quantity per item" htmlFor="max_quantity_per_item"><Input id="max_quantity_per_item" name="max_quantity_per_item" type="number" defaultValue={c.max_quantity_per_item ?? 20} /></Field>
@@ -30,7 +27,7 @@ export default async function CheckoutSettings() {
       </Panel>
       <Panel title="Staff email alerts">
         <AdminForm action={saveNotificationSettingsAction} className="space-y-3">
-          <Field label="Admin alert emails" htmlFor="admin_emails" hint="Emailed when an order is paid (M-Pesa) or placed (bank transfer, cash on delivery). Comma-separated. orders@cisssolutions.co.ke always receives these; add anyone else who should get a copy.">
+          <Field label="Admin alert emails" htmlFor="admin_emails" hint="Emailed when an order is placed and when its payment is confirmed. Comma-separated. orders@cisssolutions.co.ke always receives these; add anyone else who should get a copy.">
             <Textarea id="admin_emails" name="admin_emails" rows={3} defaultValue={(n.admin_emails ?? []).join(', ')} />
           </Field>
         </AdminForm>

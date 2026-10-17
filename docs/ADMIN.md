@@ -35,13 +35,13 @@ enter their email and pick a role. To remove access, set them back to customer.
 
 The dashboard shows today's sales and orders, open orders, low-stock and pending-payment counts,
 and for the last 30 days: sales and orders per day, top products and top categories. The bell
-(Notifications) lists new orders, payment problems (for example an underpayment), low stock, new
-support requests, and "Task failed" when an email or M-Pesa prompt still failed after its retries
+(Notifications) lists new orders, low stock, new support requests, and "Task failed" when an email
+or POS sale still failed after its retries
 (open the order to follow up with the customer). New orders are also emailed to
 `orders@cisssolutions.co.ke` and to the addresses in Settings → Checkout, SEO & alerts (plus any in
 the server's `ADMIN_ALERT_EMAILS`).
 
-**POS.** When an order becomes paid (staff mark it Paid, M-Pesa confirms it, or a cash-on-delivery
+**POS.** When an order becomes paid (staff mark it Paid, or a cash-on-delivery
 order is delivered), it appears in the POS as a sale of the "Website" shop, with the order number
 next to the customer's name. Refunding the order voids that sale. This usually takes a few
 seconds and at most a few minutes. POS stock does not change. The POS works out the profit from each
@@ -114,22 +114,23 @@ return, damage, correction or manual adjustment, plus an optional note. Every mo
 sales and cancellations, appears in the product's stock history. Stock cannot be reduced below what
 is currently reserved.
 
-Online orders reserve stock when placed and deduct it when paid. Unpaid M-Pesa orders release their
-reservation automatically after the payment window (30 minutes by default).
+Online orders reserve stock when placed and deduct it when paid. Unpaid orders release their
+reservation automatically after the payment window (two days by default).
 
 ## Orders
 
 Orders lists everything with filters by order status and payment status, and search by order
-number, name, phone or email. Open an order to see items, customer and delivery details, payment attempts (with
-M-Pesa receipts and failure reasons), the status timeline and internal notes.
+number, name, phone or email. Open an order to see items, customer and delivery details, payments, the status timeline and internal notes.
 
 **Status flow:** Paid → Processing → Ready for dispatch → Shipped → Delivered. Cancel or refund
 when needed. The customer is emailed when the order moves to Processing, Ready for dispatch,
 Shipped, Delivered, Cancelled or Refunded. Notes you add are internal (they appear in the order
 history, not in the email).
 
-- **M-Pesa orders** become Paid only when KCB confirms the payment; staff cannot mark them paid.
+- **M-Pesa Paybill:** when the payment shows on the Paybill statement, set the order to Paid.
 - **Bank transfer:** when the money shows in the bank account, set the order to Paid.
+- **M-Pesa** (the automatic phone prompt, removed in October 2026): older orders paid this way
+  still show here, with their M-Pesa receipts. They cannot be marked paid by hand.
 - **Cash on delivery:** move it through Processing → Shipped → Delivered and collect payment on
   delivery.
 - **Cancelling** releases or restocks the items automatically. **Refunding** needs the
@@ -180,7 +181,7 @@ discount is always calculated on the server, at checkout, from the current cart.
 ## Reports
 
 For a date range: paid revenue, order count, average order, discounts, revenue by payment method and
-orders by status, plus the latest audit-log entries. **Export orders (CSV)** downloads the orders in the range (up to 20,000: a longer range ends with a line saying the file is incomplete, so export it in shorter ranges), including the M-Pesa receipt, for
+orders by status, plus the latest audit-log entries. **Export orders (CSV)** downloads the orders in the range (up to 20,000: a longer range ends with a line saying the file is incomplete, so export it in shorter ranges), including the payment reference, for
 accounting and reconciliation (see [PAYMENTS.md](PAYMENTS.md#reconciliation)).
 
 ## Settings
@@ -188,11 +189,8 @@ accounting and reconciliation (see [PAYMENTS.md](PAYMENTS.md#reconciliation)).
 | Tab | What you set |
 | --- | --- |
 | Business | Name, tagline, phone, WhatsApp, email, address, hours, social links, M-Pesa Paybill shown to customers |
-| Payments | Turn methods on/off; bank account details and instructions; cash-on-delivery counties |
-| Checkout, SEO & alerts | M-Pesa and bank-transfer reservation windows, maximum quantity per item, default SEO title/description, staff alert emails |
+| Payments | Turn methods on/off; Paybill and bank account details and instructions; cash-on-delivery counties |
+| Checkout, SEO & alerts | Payment window (how long an unpaid order holds stock), maximum quantity per item, default SEO title/description, staff alert emails |
 | Content pages | Page text and the Reviewed flag |
 | Staff & roles | Add staff, change roles |
 | My password | Change your own password (every staff member; the current password is required) |
-
-M-Pesa API credentials are **not** in the admin: they are server environment variables, so they
-can't leak through the browser or a staff account (see [DEPLOYMENT.md](DEPLOYMENT.md)).

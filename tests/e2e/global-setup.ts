@@ -37,18 +37,12 @@ async function createPaidOrder(db: SupabaseClient<Database>) {
   const { data, error } = await db.rpc('place_order', {
     p_order: {
       customer_name: 'E2E Paid Order', customer_email: 'e2e@example.com', customer_phone: '254700000009',
-      payment_method: 'mpesa', subtotal: product.price, total: product.price, delivery_zone_name: 'Nairobi',
+      payment_method: 'bank_transfer', subtotal: product.price, total: product.price, delivery_zone_name: 'Nairobi',
       delivery_county: 'Nairobi', delivery_town: 'CBD', delivery_address: 'E2E fixture', reservation_minutes: 30,
       items: [{ product_id: product.id, product_name: product.name, sku: product.sku, quantity: 1, unit_price: product.price }],
     },
   })
   if (error) throw error
-  const orderId = (data as { id: string }).id
-  const { data: order } = await db.from('orders').select('total').eq('id', orderId).single()
-  const { data: payment } = await db
-    .from('payments')
-    .insert({ order_id: orderId, method: 'mpesa', provider: 'mpesa_mock', status: 'PROCESSING', amount: order!.total, checkout_request_id: `ws_CO_E2E_${crypto.randomUUID()}` })
-    .select('id')
-    .single()
-  await db.rpc('confirm_payment', { p_payment_id: payment!.id, p_transaction_reference: `E2E${Date.now().toString(36).toUpperCase()}`, p_amount: order!.total, p_raw: { source: 'e2e-setup' } })
+  const { error: paidError } = await db.rpc('update_order_status', { p_order_id: (data as { id: string }).id, p_status: 'PAID', p_note: 'E2E fixture' })
+  if (paidError) throw paidError
 }

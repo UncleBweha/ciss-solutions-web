@@ -138,7 +138,6 @@ export type BusinessSettings = {
 }
 
 export type PaymentMethodsSettings = {
-  mpesa: { enabled: boolean; label: string }
   card: { enabled: boolean; label: string }
   bank_transfer: {
     enabled: boolean
@@ -155,7 +154,6 @@ export type PaymentMethodsSettings = {
 }
 
 export type CheckoutSettings = {
-  mpesa_reservation_minutes: number
   bank_transfer_reservation_minutes: number
   max_quantity_per_item: number
 }

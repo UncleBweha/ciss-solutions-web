@@ -5,7 +5,6 @@ import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/form'
 import { requireStaff } from '@/lib/auth'
 import { readSettings } from '@/lib/admin/settings'
 import { KENYA_COUNTIES } from '@/lib/ecommerce/kenya'
-import { serverEnv } from '@/lib/server-env'
 import type { PaymentMethodsSettings } from '@/types/catalog'
 
 export const metadata = { title: 'Payment settings' }
@@ -14,15 +13,12 @@ export default async function PaymentSettings() {
   await requireStaff('payments.settings')
   const { payment_methods } = await readSettings<PaymentMethodsSettings>(['payment_methods'])
   const pm = payment_methods as unknown as PaymentMethodsSettings
-  const m = serverEnv.mpesa
-  const k = serverEnv.kcb
   return (
-    <div className="grid max-w-5xl gap-4 xl:grid-cols-[1fr_20rem]">
+    <div className="max-w-3xl">
       <Panel title="Payment methods">
         <AdminForm action={savePaymentsAction} className="space-y-5" submitLabel="Save payment settings">
           <fieldset className="space-y-2">
             <legend className="mb-1 text-sm font-semibold">Enabled at checkout</legend>
-            <label className="flex items-center gap-2 text-sm"><Checkbox name="mpesa" defaultChecked={pm?.mpesa?.enabled} /> M-Pesa (STK push)</label>
             <label className="flex items-center gap-2 text-sm"><Checkbox name="mpesa_paybill" defaultChecked={pm?.mpesa_paybill?.enabled} /> M-Pesa Paybill (customer pays manually, staff mark the order paid)</label>
             <label className="flex items-center gap-2 text-sm"><Checkbox name="bank_transfer" defaultChecked={pm?.bank_transfer?.enabled} /> Bank transfer</label>
             <label className="flex items-center gap-2 text-sm"><Checkbox name="cash_on_delivery" defaultChecked={pm?.cash_on_delivery?.enabled} /> Cash on delivery</label>
@@ -48,17 +44,6 @@ export default async function PaymentSettings() {
             </Select>
           </Field>
         </AdminForm>
-      </Panel>
-      <Panel title="M-Pesa connection">
-        <dl className="space-y-2 text-sm">
-          <div><dt className="text-fg-muted">Environment</dt><dd className="font-semibold">{m.env}</dd></div>
-          <div><dt className="text-fg-muted">Provider</dt><dd>{m.env === 'mock' ? 'Simulator' : 'KCB Buni'}</dd></div>
-          <div><dt className="text-fg-muted">Shortcode</dt><dd>{k.sharedShortCode ? 'KCB shared' : (k.orgShortCode ?? 'not set')}</dd></div>
-          <div><dt className="text-fg-muted">Till</dt><dd>{k.invoicePrefix ?? 'not set'}</dd></div>
-          <div><dt className="text-fg-muted">Credentials</dt><dd>{k.consumerKey && k.consumerSecret ? 'Configured' : 'Missing'}</dd></div>
-          <div><dt className="text-fg-muted">Callback URL</dt><dd className="break-all text-xs">{m.callbackUrl ?? 'not set'}</dd></div>
-        </dl>
-        <p className="mt-3 text-xs text-fg-muted">M-Pesa credentials are server environment variables (never stored in the database or sent to browsers). See PAYMENTS.md.</p>
       </Panel>
     </div>
   )

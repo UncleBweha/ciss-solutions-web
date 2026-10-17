@@ -1,7 +1,6 @@
 import 'server-only'
 import { logger } from '@/lib/logger'
 import { notifyOrderPlaced, notifyOrderStatus, notifyPaymentConfirmed } from '@/lib/notifications'
-import { initiateMpesaPayment } from '@/lib/payments/service'
 import { registerPosSale, voidPosSale } from '@/lib/pos/service'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { OrderStatus } from '@/lib/ecommerce/orders'
@@ -11,25 +10,19 @@ import type { Database } from '@/types/database'
 // Tasks are committed together with the change that caused them, then run here:
 // straight away by the request that created them, and by the cron sweep for
 // anything left behind (crash, deploy, provider outage). Handlers must be safe to
-// repeat: emails are de-duplicated per order, the STK push checks for earlier attempts,
-// the POS keeps one sale per order number.
+// repeat: emails are de-duplicated per order, the POS keeps one sale per order number.
 
 type Task = Database['public']['Tables']['outbox']['Row']
-export type OutboxKind = 'order_placed' | 'mpesa_stk_push' | 'payment_confirmed' | 'order_status' | 'pos_sale' | 'pos_void'
+export type OutboxKind = 'order_placed' | 'payment_confirmed' | 'order_status' | 'pos_sale' | 'pos_void'
 
 export type TaskResult = {
   id: string
   kind: string
   orderId: string | null
   outcome: 'done' | 'retry' | 'dead'
-  /** For the STK push: the message to show the customer. */
-  message?: string
 }
 
-/** An STK push sent minutes late would surprise the customer; they can retry from the order page. */
-const STK_MAX_AGE_MS = 10 * 60_000
-
-async function handle(task: Task): Promise<{ note?: string; message?: string }> {
+async function handle(task: Task): Promise<{ note?: string }> {
   if (!task.order_id) return { note: 'no order' }
   switch (task.kind as OutboxKind) {
     case 'order_placed':
@@ -43,8 +36,6 @@ async function handle(task: Task): Promise<{ note?: string; message?: string }> 
       if (status) await notifyOrderStatus(task.order_id, status)
       return {}
     }
-    case 'mpesa_stk_push':
-      return sendStkPush(task)
     case 'pos_sale':
       return { note: await registerPosSale(task.order_id) }
     case 'pos_void':
@@ -54,25 +45,6 @@ async function handle(task: Task): Promise<{ note?: string; message?: string }> 
       // succeeds) rather than marking work done that nobody did.
       throw new Error(`unknown outbox kind ${task.kind}`)
   }
-}
-
-async function sendStkPush(task: Task): Promise<{ note?: string; message?: string }> {
-  const db = createAdminClient()
-  const orderId = task.order_id!
-  // Any earlier attempt (sent, failed or paid) means this task already ran or the
-  // customer retried themselves: never send a second prompt from here.
-  const { count, error } = await db.from('payments').select('id', { count: 'exact', head: true }).eq('order_id', orderId)
-  // Without the count we cannot tell whether a prompt already went out.
-  if (error) throw new Error(`payments for STK push: ${error.message}`)
-  if (count) return { note: 'skipped: payment already attempted' }
-  if (Date.now() - new Date(task.created_at).getTime() > STK_MAX_AGE_MS) return { note: 'skipped: too late to prompt' }
-
-  const phone = (task.payload as { phone?: string }).phone
-  if (!phone) return { note: 'skipped: no phone' }
-  // Business outcomes (expired order, provider declined) come back as ok:false and are
-  // final; only unexpected errors (e.g. database unavailable) throw and get retried.
-  const result = await initiateMpesaPayment(orderId, phone)
-  return { note: result.ok ? 'sent' : `not sent: ${result.message}`, message: result.message }
 }
 
 /**
@@ -92,12 +64,12 @@ export async function runOutbox(opts: { orderId?: string; kinds?: OutboxKind[]; 
   const results: TaskResult[] = []
   for (const task of tasks ?? []) {
     try {
-      const { note, message } = await handle(task)
+      const { note } = await handle(task)
       // The work is done either way; if this is not saved the task runs again when its lock
       // expires, which the handlers tolerate.
       const { error: doneError } = await db.rpc('complete_outbox', { p_id: task.id, p_note: note ?? (null as unknown as string) })
       if (doneError) logger.error('outbox.complete_not_saved', { taskId: task.id, kind: task.kind, error: doneError.message })
-      results.push({ id: task.id, kind: task.kind, orderId: task.order_id, outcome: 'done', message })
+      results.push({ id: task.id, kind: task.kind, orderId: task.order_id, outcome: 'done' })
     } catch (e) {
       const reason = (e as Error).message ?? String(e)
       const { data: outcome, error: failError } = await db.rpc('fail_outbox', { p_id: task.id, p_error: reason })
@@ -118,7 +90,7 @@ export async function runOutbox(opts: { orderId?: string; kinds?: OutboxKind[]; 
 export async function runTaskNow(
   orderId: string,
   kind: OutboxKind,
-  direct: () => Promise<{ message?: string } | void>,
+  direct: () => Promise<void>,
 ): Promise<TaskResult> {
   try {
     const [result] = await runOutbox({ orderId, kinds: [kind] })
@@ -126,6 +98,6 @@ export async function runTaskNow(
   } catch (error) {
     logger.warn('outbox.unavailable', { kind, error })
   }
-  const out = await direct()
-  return { id: 'direct', kind, orderId, outcome: 'done', message: out ? out.message : undefined }
+  await direct()
+  return { id: 'direct', kind, orderId, outcome: 'done' }
 }

@@ -4,7 +4,6 @@ Supported methods (each can be switched on or off in Admin, Settings, Payments):
 
 | Method | How it is confirmed |
 | --- | --- |
-| M-Pesa (STK Push through KCB Buni) | Automatically, by KCB's callback |
 | M-Pesa Paybill (manual) | By staff, after checking the Paybill statement (order status → Paid). The customer pays to the Paybill themselves using the business number and account number saved in Admin → Settings → Payments. Only offered once both are saved |
 | Bank transfer | By staff, after checking the bank account (order status → Paid) |
 | Cash on delivery (chosen counties only) | By staff, on delivery |
@@ -15,149 +14,50 @@ them Paid: the order page and the emails sent at placement (customer and staff) 
 The "order confirmed & paid" email to the customer, the "payment confirmed" alert to staff and
 the POS sale all happen when staff mark the order Paid, never before.
 
-**Rule:** an order is never marked paid because of anything the browser says. The order page
-only displays the state stored in the database.
+**Rule:** an order is never marked paid because of anything the browser says. Only a staff
+status change (`update_order_status()`, permission `orders.manage`) marks it paid.
 
-## M-Pesa flow
-
-The STK push is sent through KCB's Buni gateway (`src/lib/payments/kcb.ts`). The customer gets an
-ordinary M-Pesa prompt and the money settles in the KCB till.
+## Flow
 
 ```
-Customer          Next.js server                       Postgres                 KCB Buni
-   │ Place order ───►│ placeOrderAction                     │                        │
-   │                 │  validate input, rate limit          │                        │
-   │                 │  place_order() ─────────────────────►│ price, reserve stock,  │
-   │                 │                                      │ order PAYMENT_PENDING, │
-   │                 │                                      │ outbox: STK push task  │
-   │                 │  run outbox task → initiateMpesaPayment()                     │
-   │                 │   payments row (PENDING) ───────────►│                        │
-   │                 │   STK Push ──────────────────────────┼───────────────────────►│
-   │                 │   save MerchantRequestID,            │                        │
-   │                 │   CheckoutRequestID (PROCESSING) ───►│                        │
-   │◄── redirect to /order/<number>?t=<token>               │                        │
-   │ enters PIN on phone (M-Pesa prompt)                    │                        │
-   │                 │◄─────── POST /api/mpesa/callback?secret=… ─────────────────────│
-   │                 │  verify secret (+ IP), match request ids, receipt unused      │
-   │                 │  confirm_payment() ─────────────────►│ amount ≥ total? PAID,  │
-   │                 │                                      │ deduct stock           │
-   │ page polls /api/orders/<n>/status every few seconds    │                        │
-   │◄── "Payment received" (read from the database)         │                        │
+Customer          Next.js server                       Postgres
+   │ Place order ───►│ placeOrderAction                     │
+   │                 │  validate input, rate limit          │
+   │                 │  place_order() ─────────────────────►│ price, reserve stock,
+   │                 │                                      │ order PENDING,
+   │                 │                                      │ outbox: order_placed
+   │◄── redirect to /order/<number>?t=<token>               │
+   │ pays by Paybill / bank (shown on the order page)       │
+Staff                │                                      │
+   │ Admin → Orders → Paid ───────────────────────────────►│ update_order_status():
+   │                 │                                      │ PAID, deduct stock,
+   │                 │                                      │ payments row (manual),
+   │                 │                                      │ outbox: payment_confirmed, pos_sale
 ```
 
-Key code: `src/actions/checkout.ts`, `src/lib/payments/service.ts`, `src/lib/payments/kcb.ts`,
-`src/app/api/mpesa/callback/route.ts`, SQL functions `place_order`, `confirm_payment`,
-`fail_payment`, `expire_stale_orders`.
+Key code: `src/actions/checkout.ts`, `src/app/(storefront)/order/[number]/page.tsx`, SQL functions
+`place_order`, `update_order_status`, `expire_stale_orders`.
 
-### What the callback checks
+## Payment window
 
-1. `?secret=` equals `MPESA_CALLBACK_SECRET` (constant-time compare). In production a missing
-   secret means every callback is rejected, and the KCB provider refuses to start without one.
-2. Optional source IP allow-list (`MPESA_ALLOWED_IPS`). Only enable it behind a proxy that
-   overwrites `X-Forwarded-For` (Caddy does by default; Vercel does), and set
-   `TRUSTED_PROXY_HOPS` to the number of proxies in front of the app (1 for Caddy alone, 2 with
-   Cloudflare in front of it): the address is read that many entries from the end.
-3. The `CheckoutRequestID` belongs to a payment we created, and its `MerchantRequestID` matches.
-4. The M-Pesa receipt number has not already confirmed a different payment.
-5. Inside `confirm_payment()`: the paid amount is at least the order total (otherwise the attempt
-   is failed and staff are alerted), and the payment isn't already paid (idempotent, so a
-   repeated callback is harmless).
-
-The endpoint answers `ResultCode: 0` once processed, including for unknown or invalid payloads, so
-the sender stops retrying, and returns HTTP 500 only when our own processing failed (for example
-the database is unreachable), so it can be retried later.
-
-### Failures, retries and expiry
-
-- Result codes such as 1032 (cancelled), 1 (insufficient balance), 1037 (phone unreachable) and
-  2001 (wrong PIN) are shown to the customer in plain language (`describeResultCode`). They can
-  retry from the order page, up to a rate limit, with the same or a different number.
-- If no callback arrives within 3 minutes, the attempt is marked failed (result code `TIMEOUT`)
-  and the customer can retry; the page tells them not to pay again if they already entered
-  their PIN. Staff get a "No answer from M-Pesa" alert, by email as well, to check the till:
-  KCB has no status query, so nobody else can tell whether that customer paid. The order page
-  does this while it is open, and the cron job does it for pushes still awaiting a result (up
-  to 25 a run), so it works even if the customer closed the page.
-- If the server stops between saving the order and sending the STK push, the push is still in
-  the outbox (committed with the order); the cron sweep sends it within 10 minutes of the order,
-  and never sends a second prompt if one was already attempted.
-- **There is no status query.** Buni has no documented STK query, so KCB's callback is the only
-  confirmation. If the callback arrives after the attempt timed out, the order is still marked
-  Paid. If a callback is lost altogether, the money is in the KCB till but the order stays
-  unpaid: staff find it when reconciling against the KCB statement.
-- Stock stays reserved for `checkout.mpesa_reservation_minutes` (default 30). After that,
-  `expire_stale_orders()` marks the order Failed and releases the stock. If money still arrives for
-  such an order, the payment is accepted and recorded, the order becomes Paid, and a stock
-  shortage is flagged for staff to resolve.
-
-## Configuration
-
-| Variable | Notes |
-| --- | --- |
-| `MPESA_ENV` | `mock`, `sandbox` (KCB's test environment, https://uat.buni.kcbgroup.com) or `production` |
-| `MPESA_CALLBACK_URL` | Public HTTPS URL of `/api/mpesa/callback` |
-| `MPESA_CALLBACK_SECRET` | Long random string, required in sandbox and production (`openssl rand -hex 32`) |
-| `MPESA_ALLOWED_IPS` | Optional comma-separated allow-list |
-| `MPESA_ALLOW_MOCK` | `true` lets a production build use the mock (staging and CI only) |
-| `KCB_CONSUMER_KEY`, `KCB_CONSUMER_SECRET` | From your application on the Buni portal |
-| `KCB_BASE_URL` | Blank in sandbox. Required in production: KCB gives you the live host at go-live |
-| `KCB_TOKEN_URL` | The "Token Endpoint" shown beside your keys on the Buni portal. Blank uses `<base URL>/token` |
-| `KCB_SHARED_SHORTCODE` | `true` (default) to collect through KCB's shared shortcode into your KCB till, `false` for a paybill of your own |
-| `KCB_INVOICE_PREFIX` | Your KCB till number. Required on the shared shortcode: sent as `<till>-<order number>`, which is how KCB finds the merchant |
-| `KCB_ORG_SHORTCODE`, `KCB_ORG_PASSKEY` | Only used with `KCB_SHARED_SHORTCODE=false`. On the shared shortcode both are sent blank: KCB fills in its own, and rejects the request with "Merchant does not exist" if a shortcode is sent (522522 included) |
-
-All of these are server-only: they are read in `src/lib/server-env.ts`, which is marked
-`server-only`, and none has a `NEXT_PUBLIC_` prefix. Never put them in client code or commit
-them; production values belong in the host's environment (`/opt/ciss-store/.env` on the VPS, or
-the Vercel project settings).
-
-### The sandbox prompt says "Daraja-Sandbox"
-
-KCB's test environment forwards the push through Safaricom's public sandbox, so the prompt on
-the phone names "Daraja-Sandbox" instead of the business, and a payment made there does not reach
-the KCB till. The real business name and settlement can only be checked with production
-credentials.
-
-## Mock provider (development)
-
-With `MPESA_ENV=mock` the app uses `MockMpesaProvider`. It never contacts KCB and never moves
-money. It accepts the STK request, then about 4 seconds later posts a realistic callback to
-`/api/mpesa/callback` and answers status queries the same way, so the whole flow (including
-the callback checks) runs locally.
-
-| Phone ends in | Result |
-| --- | --- |
-| 1 | 1032 cancelled by user |
-| 2 | 1 insufficient balance |
-| anything else | success with a generated receipt |
-
-A production build (`NODE_ENV=production`) refuses the mock unless `MPESA_ALLOW_MOCK=true`, so a
-misconfigured live site fails loudly instead of "accepting" fake payments.
-
-## Going live checklist
-
-1. Create an application on the [Buni portal](https://sandbox.buni.kcbgroup.com/devportal),
-   subscribe it to MpesaExpressAPIService, and test the whole flow with `MPESA_ENV=sandbox` on a
-   public URL (KCB has to reach the callback).
-2. Download the go-live letter from the API's Documents tab, sign it and send it to
-   buni@kcbgroup.com. KCB reviews the sandbox integration, then issues production credentials
-   and the live host.
-3. Set the production variables above on the server, with `MPESA_ENV=production`, `KCB_BASE_URL`
-   and the live `MPESA_CALLBACK_URL` (https://cisssolutions.co.ke/api/mpesa/callback).
-4. Make sure `MPESA_ALLOW_MOCK` is unset or `false`.
-5. Place a small real order (for example KSh 10 with a test product) and confirm the prompt names
-   the business, the order turns Paid, the receipt appears in Admin, Orders, the money is in the
-   KCB till, and the stock moves.
-6. Make sure the cron job is running (see [DEPLOYMENT.md](DEPLOYMENT.md)) so abandoned orders
-   release stock.
+An unpaid order holds its stock for `checkout.bank_transfer_reservation_minutes` (default 2880,
+two days; Admin → Settings → Checkout → Payment window). After that, `expire_stale_orders()`
+(run by the cron job) marks the order Failed and releases the stock. Money that arrives later can
+still be recorded: staff mark the order Paid, which takes the stock again, or flags a shortage if
+there is none left.
 
 ## Reconciliation
 
-- Every attempt is a row in `payments`, with result code, receipt and the raw callback.
-- Admin, Orders shows payment status per order. The CSV export (Admin, Reports) includes a
-  `payment_reference` column holding the M-Pesa receipt of the attempt that paid.
-- Compare the KCB till statement with the export; the M-Pesa receipt number is the shared
-  reference. Each receipt on the statement should match exactly one order. Staff cannot mark an
-  M-Pesa order as paid by hand (only KCB's callback can). If money arrived for an order that
-  shows unpaid, the callback was lost: refund the customer, or have them place the order again
-  and pay by bank transfer, and note the receipt on the order.
+- Every confirmed payment is a row in `payments` (provider `manual`, with the staff note).
+- Admin, Orders shows payment status per order. The CSV export (Admin, Reports) has a
+  `payment_reference` column.
+- Compare the Paybill and bank statements with the orders awaiting confirmation; the order
+  number is the account number or reference the customer used.
+
+## M-Pesa STK push (removed)
+
+The automatic M-Pesa prompt (STK push through KCB Buni) was removed on 2026-10-17
+(migration `20261017000100_remove_stk_push.sql`). `place_order()` now refuses the `mpesa` method.
+Earlier M-Pesa orders and their receipts are still in the database and show as "M-Pesa" in the
+admin; the `MPESA_*` and `KCB_*` environment variables are no longer read and can be deleted
+from the server's `.env`.

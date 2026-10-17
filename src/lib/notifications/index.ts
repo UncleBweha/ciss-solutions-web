@@ -103,17 +103,14 @@ async function staffAlertRecipients(): Promise<string[]> {
 export async function notifyOrderPlaced(orderId: string) {
   const o = await loadOrderEmailData(orderId)
   if (!o) return
-  // M-Pesa orders are emailed once, when the payment clears (notifyPaymentConfirmed).
-  if (o.paymentMethod === 'mpesa') return
   await deliver('order_confirmation', o.email, orderConfirmationEmail(o), o.id)
   await deliver('admin_new_order', await staffAlertRecipients(), adminNewOrderEmail(o, 'placed'), o.id)
 }
 
 /**
- * Payment confirmed. For an M-Pesa order these are its only emails: one to the customer
- * (order and payment together) and one to staff, once Safaricom confirms. For Paybill and
- * bank transfer they follow the "awaiting payment confirmation" emails sent at placement,
- * once staff have checked the money and marked the order Paid.
+ * Payment confirmed. For Paybill and bank transfer these follow the "awaiting payment
+ * confirmation" emails sent at placement, once staff have checked the money and marked the
+ * order Paid.
  */
 export async function notifyPaymentConfirmed(orderId: string) {
   const o = await loadOrderEmailData(orderId)
@@ -129,15 +126,12 @@ export async function notifyOrderStatus(orderId: string, status: OrderStatus) {
   await deliver(`order_${status.toLowerCase()}`, o.email, orderStatusEmail({ ...o, status }), o.id)
 }
 
-/** Admin notifications that mean money or stock needs a person now. */
-const URGENT_KINDS = ['payment_unmatched', 'duplicate_payment', 'payment_no_callback', 'stock_shortage', 'outbox_dead']
-/** Shares its kind (payment_failed) with every prompt a customer cancels; only this one is urgent. */
-const AMOUNT_MISMATCH = 'Payment amount mismatch'
+/** Admin notifications that mean stock or background work needs a person now. */
+const URGENT_KINDS = ['stock_shortage', 'outbox_dead']
 
 /**
  * Emails staff the urgent entries of Admin → Notifications that have not been emailed yet
- * (cron). Most of them are written by the database, which cannot send email, and in the
- * list they sit among a "payment failed" entry for every cancelled prompt.
+ * (cron). Most of them are written by the database, which cannot send email.
  */
 export async function emailUrgentAlerts(): Promise<number> {
   const db = createAdminClient()
@@ -145,13 +139,13 @@ export async function emailUrgentAlerts(): Promise<number> {
     .from('notifications')
     .select('id, kind, subject, payload, created_at')
     .eq('channel', 'admin')
-    .in('kind', [...URGENT_KINDS, 'payment_failed'])
+    .in('kind', URGENT_KINDS)
     .gte('created_at', new Date(Date.now() - 24 * 3600_000).toISOString())
     .is('payload->>emailed_at', null)
     .order('created_at')
     .limit(500)
   if (error) throw new Error(`urgent alerts: ${error.message}`)
-  const urgent = data.filter((n) => n.kind !== 'payment_failed' || n.subject?.startsWith(AMOUNT_MISMATCH)).slice(0, 30)
+  const urgent = data.slice(0, 30)
   if (!urgent.length) return 0
 
   const when = (iso: string) => new Date(iso).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi', dateStyle: 'medium', timeStyle: 'short' })
@@ -168,7 +162,7 @@ export async function emailUrgentAlerts(): Promise<number> {
 
 /**
  * Runs notification work after the response is sent (Next's after()), so emails
- * never slow down or break checkout and payment callbacks.
+ * never slow down or break checkout.
  */
 export function background(label: string, task: () => Promise<unknown>) {
   after(async () => {

@@ -24,27 +24,23 @@ export type Health = {
   cron: boolean
   /** No background task is overdue, and none gave up in the last day. */
   outbox: boolean
-  /** No M-Pesa prompt has been waiting for a result for more than 15 minutes. */
-  payments: boolean
 }
 
 export async function checkHealth(): Promise<Health> {
-  const health: Health = { database: false, cron: false, outbox: false, payments: false }
+  const health: Health = { database: false, cron: false, outbox: false }
   try {
     const db = createAdminClient()
     const stale = new Date(Date.now() - STALE_MS).toISOString()
     const dayAgo = new Date(Date.now() - 24 * 3600_000).toISOString()
-    const [heartbeat, overdue, dead, waiting] = await Promise.all([
+    const [heartbeat, overdue, dead] = await Promise.all([
       db.from('settings').select('value').eq('key', CRON_HEARTBEAT_KEY).maybeSingle(),
       db.from('outbox').select('id', { count: 'exact', head: true }).in('status', ['pending', 'failed']).lt('next_attempt_at', stale),
       db.from('outbox').select('id', { count: 'exact', head: true }).eq('status', 'dead').gte('updated_at', dayAgo),
-      db.from('payments').select('id', { count: 'exact', head: true }).in('status', ['PENDING', 'PROCESSING']).lt('created_at', stale),
     ])
     health.database = !heartbeat.error
     const at = (heartbeat.data?.value as { at?: unknown } | null)?.at
     health.cron = typeof at === 'string' && Date.now() - new Date(at).getTime() < STALE_MS
     health.outbox = !overdue.error && !dead.error && !overdue.count && !dead.count
-    health.payments = !waiting.error && !waiting.count
   } catch {
     // Not configured or unreachable: every check stays false.
   }
