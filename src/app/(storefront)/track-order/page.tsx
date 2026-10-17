@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { PackageSearch } from 'lucide-react'
 import { TrackOrderForm } from '@/components/checkout/track-order-form'
 import { Breadcrumbs } from '@/components/ui/misc'
 import { param } from '@/lib/utils'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Track your order',
   description: 'Check the status of your CISS Solutions order with your order number and phone number.',
-  alternates: { canonical: '/track-order' },
-}
+  path: '/track-order',
+})
 
 export default async function TrackOrderPage({ searchParams }: PageProps<'/track-order'>) {
   const sp = await searchParams

@@ -3,16 +3,16 @@ import { CatalogListing } from '@/components/storefront/catalog-listing'
 import { Breadcrumbs } from '@/components/ui/misc'
 import { getFacets, searchCatalog } from '@/lib/catalog'
 import { parseCatalogParams } from '@/lib/catalog-params'
-import { listingRobots } from '@/lib/seo/metadata'
+import { listingRobots, pageMetadata } from '@/lib/seo/metadata'
 import { param } from '@/lib/utils'
 
 export async function generateMetadata({ searchParams }: PageProps<'/deals'>): Promise<Metadata> {
-  return {
+  return pageMetadata({
     title: 'Deals on Printers, Ink & Spare Parts',
     description: 'Current discounts on printers, toner, ink and spare parts at CISS Solutions Kenya.',
-    alternates: { canonical: '/deals' },
+    path: '/deals',
     robots: listingRobots(await searchParams),
-  }
+  })
 }
 
 export default async function DealsPage({ searchParams }: PageProps<'/deals'>) {

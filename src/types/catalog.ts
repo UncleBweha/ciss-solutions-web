@@ -160,7 +160,13 @@ export type CheckoutSettings = {
   max_quantity_per_item: number
 }
 
-export type SeoSettings = { default_title: string; default_description: string }
+export type SeoSettings = {
+  default_title: string
+  default_description: string
+  /** Codes from Google Search Console / Bing Webmaster Tools, output as verification meta tags. */
+  google_verification?: string
+  bing_verification?: string
+}
 
 export type PublicSettings = {
   business: BusinessSettings
