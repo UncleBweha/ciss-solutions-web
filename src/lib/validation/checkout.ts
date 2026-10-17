@@ -14,8 +14,7 @@ const checkoutFields = z.object({
   town: z.string().trim().max(80),
   address: z.string().trim().max(300),
   instructions: z.string().trim().max(500).optional(),
-  paymentMethod: z.enum(['mpesa', 'card', 'bank_transfer', 'cash_on_delivery', 'mpesa_paybill'], { message: 'Choose a payment method' }),
-  mpesaPhone: z.string().trim().optional(),
+  paymentMethod: z.enum(['card', 'bank_transfer', 'cash_on_delivery', 'mpesa_paybill'], { message: 'Choose a payment method' }),
   couponCode: z.string().trim().max(40).optional(),
   notes: z.string().trim().max(500).optional(),
   saveAddress: z.boolean().optional(),
@@ -32,13 +31,7 @@ export const checkoutFormSchema = checkoutFields.superRefine(requireAddress)
 
 export const checkoutSchema = checkoutFields
   .extend({ items: cartItemsSchema.min(1, 'Your cart is empty') })
-  .superRefine((v, ctx) => {
-    requireAddress(v, ctx)
-    if (v.paymentMethod === 'mpesa' && v.mpesaPhone) {
-      const r = kenyanPhone.safeParse(v.mpesaPhone)
-      if (!r.success) ctx.addIssue({ code: 'custom', path: ['mpesaPhone'], message: 'Enter a valid Safaricom number' })
-    }
-  })
+  .superRefine(requireAddress)
 
 export type CheckoutFormValues = z.input<typeof checkoutFormSchema>
 export type CheckoutInput = z.input<typeof checkoutSchema>

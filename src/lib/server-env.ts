@@ -5,7 +5,7 @@ function optional(name: string) {
   return process.env[name]?.trim() || undefined
 }
 
-/** A mistyped value must stop the server, not quietly select another payment setup. */
+/** A mistyped value must stop the server, not quietly select another setup. */
 function oneOf<T extends string>(name: string, allowed: readonly T[], fallback: T): T {
   const value = optional(name)?.toLowerCase()
   if (value === undefined) return fallback
@@ -18,23 +18,6 @@ const sender = (value: string) => `Ciss Solutions <${(value.match(/<([^>]+)>/)?.
 
 export const serverEnv = {
   serviceRoleKey: optional('SUPABASE_SERVICE_ROLE_KEY'),
-  mpesa: {
-    env: oneOf('MPESA_ENV', ['mock', 'sandbox', 'production'], 'mock'),
-    allowMockInProduction: optional('MPESA_ALLOW_MOCK') === 'true',
-    callbackUrl: optional('MPESA_CALLBACK_URL'),
-    callbackSecret: optional('MPESA_CALLBACK_SECRET'),
-  },
-  // KCB Buni sends the M-Pesa STK push when MPESA_ENV is sandbox or production.
-  kcb: {
-    consumerKey: optional('KCB_CONSUMER_KEY'),
-    consumerSecret: optional('KCB_CONSUMER_SECRET'),
-    baseUrl: optional('KCB_BASE_URL'),
-    tokenUrl: optional('KCB_TOKEN_URL'),
-    orgShortCode: optional('KCB_ORG_SHORTCODE'),
-    orgPassKey: optional('KCB_ORG_PASSKEY'),
-    sharedShortCode: oneOf('KCB_SHARED_SHORTCODE', ['true', 'false'], 'true') === 'true',
-    invoicePrefix: optional('KCB_INVOICE_PREFIX'),
-  },
   email: {
     provider: oneOf('EMAIL_PROVIDER', ['log', 'resend', 'smtp'], 'log'),
     apiKey: optional('EMAIL_API_KEY'),

@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 
 // Critical flow: home -> search -> product -> cart -> checkout -> delivery ->
-// M-Pesa payment (mock provider) -> confirmed order.
-test('customer can find a printer and buy it with M-Pesa', async ({ page }) => {
+// bank transfer -> order placed, awaiting payment confirmation.
+test('customer can find a printer and order it', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('CISS Solutions')
 
@@ -40,15 +40,13 @@ test('customer can find a printer and buy it with M-Pesa', async ({ page }) => {
   await page.getByLabel('Town / City').fill('Westlands')
   await page.getByLabel('Delivery address').fill('Mpaka Road, Office 4')
   await page.getByRole('button', { name: 'Continue to payment' }).click()
-  // 32,999 from the server quote; courier delivery is agreed after the order, not charged here
-  await expect(page.getByRole('button', { name: /Pay KSh 32,999 with M-Pesa/ })).toBeVisible()
-
-  // Payment (mock M-Pesa succeeds for numbers not ending in 1 or 2)
-  await page.getByRole('button', { name: /Pay KSh 32,999 with M-Pesa/ }).click()
+  // Bank transfer is the first method a fresh database offers (the Paybill needs its number saved).
+  await expect(page.getByRole('radio', { name: /Bank transfer/ })).toBeChecked()
+  await page.getByRole('button', { name: 'Place order' }).click()
   // The access token is moved out of the address into a cookie (lib/order-token).
   await expect(page).toHaveURL(/\/order\/CISS-[2-9A-HJ-NP-Z]{8}\?placed=1$/)
-  await expect(page.getByText('Check your phone')).toBeVisible()
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Payment confirmed', { timeout: 45_000 })
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Order placed')
+  await expect(page.getByRole('heading', { name: 'Pay by bank transfer' })).toBeVisible()
   // Straight from checkout the page is a confirmation; order progress lives on Track order.
   await expect(page.getByRole('heading', { name: 'Order status' })).toHaveCount(0)
 })

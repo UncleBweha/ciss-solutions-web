@@ -40,13 +40,12 @@ const DEFAULT_SETTINGS: PublicSettings = {
     socials: { instagram: '', facebook: '', tiktok: '', youtube: '' },
   },
   payment_methods: {
-    mpesa: { enabled: true, label: 'M-Pesa' },
     card: { enabled: false, label: 'Card' },
     bank_transfer: { enabled: false, label: 'Bank transfer', bank_name: '', account_name: '', account_number: '', branch: '', instructions: '' },
     cash_on_delivery: { enabled: false, label: 'Cash on delivery', counties: [] },
     mpesa_paybill: { enabled: false, label: 'M-Pesa Paybill', paybill_number: '', account_number: '', instructions: '' },
   },
-  checkout: { mpesa_reservation_minutes: 30, bank_transfer_reservation_minutes: 2880, max_quantity_per_item: 20 },
+  checkout: { bank_transfer_reservation_minutes: 2880, max_quantity_per_item: 20 },
   seo: {
     default_title: 'CISS Solutions | Printers, Spare Parts, Ink & Toner in Kenya',
     default_description:

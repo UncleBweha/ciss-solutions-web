@@ -51,7 +51,6 @@ export default async function CheckoutPage() {
         addresses={addresses}
         shop={{ address: settings.business.address || settings.business.location, hours: settings.business.business_hours }}
         methods={{
-          mpesa: pm.mpesa.enabled,
           bank_transfer: pm.bank_transfer.enabled,
           cash_on_delivery: pm.cash_on_delivery.enabled,
           mpesa_paybill: pm.mpesa_paybill.enabled && Boolean(pm.mpesa_paybill.paybill_number) && Boolean(pm.mpesa_paybill.account_number),

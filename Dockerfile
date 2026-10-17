@@ -4,7 +4,7 @@
 #           --build-arg NEXT_PUBLIC_SITE_URL=https://cisssolutions.co.ke .
 # Run:    docker run --env-file .env.production -p 3000:3000 ciss-store
 # NEXT_PUBLIC_* values are compiled into the browser bundle, so they are build args.
-# Server secrets (service role key, M-Pesa, email) are runtime env only.
+# Server secrets (service role key, email) are runtime env only.
 # Behind a TLS-intercepting proxy, pass its CA: --secret id=ca,src=/path/ca.crt
 
 FROM node:22-alpine AS deps

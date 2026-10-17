@@ -3,13 +3,12 @@ import { recordCronRun } from '@/lib/health'
 import { logger } from '@/lib/logger'
 import { emailUrgentAlerts } from '@/lib/notifications'
 import { runOutbox } from '@/lib/outbox'
-import { releaseExpiredReservations } from '@/lib/payments/service'
 import { safeEqual } from '@/lib/security'
 import { serverEnv } from '@/lib/server-env'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Reconciles M-Pesa pushes still awaiting a result, releases stock held by unpaid
-// orders whose payment window has passed, and sweeps the outbox (emails, STK pushes, POS sales).
+// Releases stock held by unpaid orders whose payment window has passed, and sweeps the
+// outbox (emails, POS sales).
 // Schedule every 5-10 minutes (Vercel Cron, GitHub Actions, or crontab + curl):
 //   curl -H "Authorization: Bearer $CRON_SECRET" https://<site>/api/cron/release-reservations
 export async function GET(request: NextRequest) {
@@ -17,10 +16,12 @@ export async function GET(request: NextRequest) {
   if (!serverEnv.cronSecret || !safeEqual(auth, serverEnv.cronSecret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  // One failing step must not stop the others: the outbox still has emails and prompts to send.
+  // One failing step must not stop the others: the outbox still has emails to send.
   let result: Record<string, number | string>
   try {
-    result = await releaseExpiredReservations()
+    const { data, error } = await createAdminClient().rpc('expire_stale_orders')
+    if (error) throw new Error(error.message)
+    result = { released: data ?? 0 }
   } catch (error) {
     logger.error('cron.release_failed', { error })
     result = { error: 'release failed' }
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     logger.warn('cron.outbox_unavailable', { error })
     outbox = { error: 'unavailable' }
   }
-  // Staff are emailed what cannot wait (unmatched or duplicate payments, shortages, tasks that gave up).
+  // Staff are emailed what cannot wait (stock shortages, tasks that gave up).
   let alerts: number | string
   try {
     alerts = await emailUrgentAlerts()

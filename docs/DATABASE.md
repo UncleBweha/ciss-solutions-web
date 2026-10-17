@@ -53,9 +53,9 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
   because customers can read every column of their own `orders` row.
 - `order_items`: snapshot of name, SKU, unit price and quantity at the time of purchase.
 - `order_status_history`: every status change with who made it and a note.
-- `payments`: one row per payment attempt: provider, amount, phone, `merchant_request_id`,
-  `checkout_request_id`, `transaction_reference` (M-Pesa receipt, unique), status, result code,
-  raw callback.
+- `payments`: one row per confirmed payment (provider `manual`, written when staff mark an order
+  Paid). Rows from before 2026-10-17 also hold M-Pesa STK attempts: `merchant_request_id`,
+  `checkout_request_id`, `transaction_reference` (M-Pesa receipt), result code, raw callback.
 - `coupons`, `coupon_usage`; `delivery_zones` (counties, fee, estimate).
 - `carts` / `cart_items`, `wishlists` / `wishlist_items` for signed-in users.
 - `inventory_transactions`: every stock movement with reason, quantity change, actor, order.
@@ -67,7 +67,7 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 - `homepage_sections`, `homepage_banners`.
 - `support_requests` (contact and part-request forms), `notifications` (staff inbox).
 - `audit_logs`: staff actions. `rate_limits`: counters used by `check_rate_limit()`.
-- `outbox`: follow-up tasks (emails, STK push, POS sale and void) written in the same transaction as the order or
+- `outbox`: follow-up tasks (emails, POS sale and void) written in the same transaction as the order or
   payment change; status `pending` / `processing` / `failed` / `done` / `dead`, attempts, next
   attempt time and last error. Server-only (staff can read).
 
@@ -75,15 +75,16 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 
 ```
 order_status:   PENDING ─┬─► PAID ─► PROCESSING ─► READY_FOR_DISPATCH ─► SHIPPED ─► DELIVERED
-                         │     (cash on delivery / bank transfer: PENDING ─► PROCESSING / PAID)
-PAYMENT_PENDING ─────────┴─► (confirm_payment) PAID          any active state ─► CANCELLED / REFUNDED
+                         │     (cash on delivery: PENDING ─► PROCESSING, paid on delivery)
                          └─► FAILED / CANCELLED when the payment window expires
+                                                          any active state ─► CANCELLED / REFUNDED
+                (PAYMENT_PENDING was used by M-Pesa STK orders before 2026-10-17)
 payment_status: PENDING, PROCESSING, PAID, FAILED, CANCELLED, REFUNDED
 stock_state:    reserved ─► deducted (paid) │ released (expired/cancelled) │ restocked (refund/cancel after deduction)
 ```
 
-The exact allowed transitions are in `update_order_status()`; online payments can only be marked
-paid by `confirm_payment()`, never by a staff status change.
+The exact allowed transitions are in `update_order_status()`. Only Paybill, bank transfer and
+cash on delivery orders can be marked paid.
 
 ## Functions
 
@@ -92,11 +93,9 @@ roles that need them.
 
 | Function | Called by | Does |
 | --- | --- | --- |
-| `place_order(order jsonb)` | checkout action (service role) | Prices every line from `products` (ignoring any client price), applies coupon and delivery fee, locks rows, reserves stock, writes order + items + history, returns number and token. Raises `EMPTY_CART`, `INVALID_QUANTITY`, `INSUFFICIENT_STOCK`, `COUPON_INVALID`, `COUPON_EXHAUSTED`, `COUPON_CUSTOMER_LIMIT`. |
-| `confirm_payment(payment_id, receipt, amount, raw)` | M-Pesa callback (the server only; staff cannot call it) | Idempotent. A second payment for an order that is already paid is recorded and answered with `duplicate: true`, leaving the order as it is. If the amount is below the order total it fails the attempt, alerts staff and returns `amount_mismatch`. Otherwise marks payment and order paid, deducts stock (flagging a `shortage` if a late payment arrives after the reservation was released), records history and returns `confirmed`; a repeat returns `already_paid`. |
-| `fail_payment(payment_id, code, description, raw)` | callback / timeout | Marks the attempt failed; the order stays payable until it expires. |
-| `expire_stale_orders()` | cron, order page polling | Marks unpaid orders past `reservation_expires_at` Failed, releases their stock and returns any coupon use. |
-| `update_order_status(order_id, status, note)` | admin | Enforces transitions and permissions (`orders.manage`, `orders.refund`), restocks on cancel/refund after deduction. |
+| `place_order(order jsonb)` | checkout action (service role) | Prices every line from `products` (ignoring any client price), applies coupon and delivery fee, locks rows, reserves stock, writes order + items + history, returns number and token. Raises `PAYMENT_METHOD_UNAVAILABLE` (M-Pesa STK or card), `EMPTY_CART`, `INVALID_QUANTITY`, `INSUFFICIENT_STOCK`, `COUPON_INVALID`, `COUPON_EXHAUSTED`, `COUPON_CUSTOMER_LIMIT`. |
+| `expire_stale_orders()` | cron | Marks unpaid orders past `reservation_expires_at` Failed, releases their stock and returns any coupon use. |
+| `update_order_status(order_id, status, note)` | admin | Enforces transitions and permissions (`orders.manage`, `orders.refund`), restocks on cancel/refund after deduction. Marking an order Paid deducts its stock (flagging a `shortage` if a late payment arrives after the reservation was released) and records a `manual` payment. |
 | `adjust_stock(product_id, variant_id, change, reason, note)` | admin | Stock adjustments with a reason; writes `inventory_transactions`; refuses to go below the reserved quantity (`STOCK_BELOW_RESERVED`). |
 | `catalog_search(query, category, brands, …, sort, page)` | search, listings | Prefix full-text search plus trigram match on SKU, model and part numbers, with filters and a total count. |
 | `admin_dashboard_stats(days)` | admin dashboard | Revenue, orders by status, top products, low stock for the last N days. |

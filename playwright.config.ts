@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 // E2E tests run against a dev or production server backed by local Supabase
-// (`npx supabase start`) with MPESA_ENV=mock. See README "Testing".
+// (`npx supabase start`). See README "Testing".
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined
 

@@ -8,9 +8,7 @@ Browser ──► Caddy / Vercel ──► Next.js 16 (App Router, Node runtime)
                                    ├──► Supabase Postgres (PostgREST) ── RLS + SECURITY DEFINER functions
                                    ├──► Supabase Auth (cookies via @supabase/ssr)
                                    ├──► Supabase Storage (product, brand, category, banner images)
-                                   ├──► KCB Buni (OAuth, M-Pesa STK Push)
                                    └──► POS (separate Supabase project): paid orders become sales
-KCB Buni  ──► POST /api/mpesa/callback?secret=…
 Cron      ──► GET  /api/cron/release-reservations (Bearer CRON_SECRET)
 ```
 
@@ -28,8 +26,8 @@ src/
                          deals, parts-finder, cart, checkout, order/[number], account/*, ...
     (storefront)/(content)/[page]   about, faqs, privacy, terms, refund/shipping policy, warranty
     admin/               staff area (every page calls requireStaff(permission))
-    api/                 search, mpesa/callback, cron/release-reservations,
-                         orders/[number]/status|invoice, admin/orders-export
+    api/                 search, cron/release-reservations, orders/[number]/invoice,
+                         admin/orders-export
     sitemap.ts, robots.ts, opengraph-image.tsx, icon.tsx
   proxy.ts               refreshes the Supabase session cookie; gates /account, /admin, /checkout
   actions/               Server Actions ('use server'): cart, wishlist, checkout, auth, account,
@@ -37,7 +35,6 @@ src/
   components/            ui/ (primitives), storefront/, product/, cart/, checkout/, account/, admin/
   lib/
     ecommerce/           pure, unit-tested logic: money, pricing, coupons, delivery, inventory, orders
-    payments/            provider interface, KCB Buni client, mock provider, callback/status service
     supabase/            server (cookie session), client (browser), admin (service role), public (cached reads)
     catalog.ts           cached catalogue reads (settings, categories, products, facets, homepage)
     auth.ts              getSessionUser, requireStaff, can()
@@ -74,10 +71,9 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
 - The browser sends only identifiers and quantities. Prices, discounts, delivery fees, stock and
   totals are computed on the server (`lib/ecommerce/quote.ts`, `pricing.ts`) and again inside
   `place_order()` in the database, which also reserves stock under a row lock.
-- An order becomes paid only through `confirm_payment()`, called from the M-Pesa callback
-  (or the mock's status query in development), after checking the amount and request ids. See [PAYMENTS.md](PAYMENTS.md).
-- Order status changes go through `update_order_status()`, which enforces allowed transitions
-  and permissions.
+- An order becomes paid only when staff mark it Paid. Order status changes go through
+  `update_order_status()`, which enforces allowed transitions and permissions. See
+  [PAYMENTS.md](PAYMENTS.md).
 
 **Database access**
 
@@ -88,28 +84,26 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
   `requireStaff()` / `staffAction()` in the app. `super_admin` implicitly has every permission.
   A trigger stops users from changing their own role.
 - `SUPABASE_SERVICE_ROLE_KEY` is used only in server code (`lib/supabase/admin.ts`, `server-only`)
-  for payment callbacks, cron, order lookups by token and notifications.
+  for checkout, cron, order lookups by token and notifications.
 - Nobody updates `orders` directly, staff included: every change goes through functions.
   RLS decides which rows a person can read, not which columns, so anything a customer must not
   see about their own order lives in its own table: staff notes are in `order_admin_notes`
   (staff only), cost prices in `product_costs`.
 - A profile's `email` identifies the account (staff promotion, password reset). Only the server
   can change it; a trigger refuses anyone else.
-- `confirm_payment()` can be run by the server only, not by a staff session.
 
 **Other controls**
 
-- Secrets: only `NEXT_PUBLIC_*` values reach the browser. M-Pesa, Supabase service role, email
+- Secrets: only `NEXT_PUBLIC_*` values reach the browser. Supabase service role, email
   and cron secrets are read in `server-env.ts`, which is `server-only`.
 - Rate limits (database-backed `check_rate_limit()`): sign-in, registration, password reset,
-  checkout, payment retries, order tracking, contact and part-request forms. Search suggestions,
-  payment status polling and the health check are limited in the server's own memory instead
+  checkout, order tracking, contact and part-request forms. Search suggestions and the health
+  check are limited in the server's own memory instead
   (per process). Reviews require a signed-in account. Mobile networks share one address between thousands of
   customers, so the per-IP limits are loose flood ceilings; the tight limits are keyed on the
   email, phone or order number being tried.
 - Placing an order holds stock without any payment, so checkout also caps abuse directly: at
-  most 3 unpaid Paybill / bank / cash orders per phone number or email at once, and at most 8
-  M-Pesa prompts an hour to any one number, whoever asks for them.
+  most 3 unpaid Paybill / bank / cash orders per phone number or email at once.
 - Staff accounts manage the store and cannot buy from it: sign-in and `/account` send them to
   `/admin`, and checkout refuses them (page and `placeOrderAction`).
 - The logger (`lib/logger.ts`) redacts values under keys that look like passwords, PINs, tokens,
@@ -131,20 +125,17 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
 - **Transactional outbox** (`outbox` table, `src/lib/outbox.ts`). Follow-up work is written in
   the same database transaction as the change that causes it, so it can't be lost between
   "order saved" and "work done":
-  - `place_order()` queues `order_placed` (confirmation and staff alert) and, for M-Pesa,
-    `mpesa_stk_push` with the number entered at checkout;
-  - a trigger on `orders` queues `payment_confirmed` when a payment is confirmed (by KCB's callback,
-    or by staff marking a Paybill or bank transfer order Paid),
+  - `place_order()` queues `order_placed` (confirmation and staff alert);
+  - a trigger on `orders` queues `payment_confirmed` when staff mark a Paybill or bank transfer
+    order Paid,
     `order_status` when staff change an order's status, `pos_sale` when an order becomes paid
     (by any method) and `pos_void` when a paid order is refunded.
-- The request that created a task runs it straight away (the STK push before the response, so
-  the prompt reaches the phone immediately; emails after it with Next's `after()`). The cron
-  endpoint sweeps up anything left: a crash, a deploy, or an email or M-Pesa outage.
+- The request that created a task runs it straight away (emails after the response, with Next's
+  `after()`). The cron endpoint sweeps up anything left: a crash, a deploy, or an email outage.
 - Failed tasks retry with back-off (1, 4, 16, 60 minutes …). After 6 attempts a task is marked
   dead and staff see a "Task failed" entry in Admin → Notifications.
-- Handlers are safe to repeat: an email already sent for an order is never re-sent, the STK
-  push is skipped if the order already has a payment attempt or is more than 10 minutes old,
-  and the POS keeps one sale per order number.
+- Handlers are safe to repeat: an email already sent for an order is never re-sent, and the
+  POS keeps one sale per order number.
 - **POS sales** (`src/lib/pos`). The shop's POS is a separate Supabase project with its own
   catalogue and stock. A paid order is registered there as a sale of its "Website" shop
   (`register_web_sale()` in the POS database; `void_web_sale()` on refund): lines by name,
@@ -154,8 +145,8 @@ tests/                   unit, integration, db (SQL), e2e (Playwright)
   store calls with the POS's public key plus `POS_SYNC_SECRET`, whose hash the POS stores, so
   it can do nothing else there. With the `POS_*` variables unset the tasks complete as skipped.
 - `expire_stale_orders()` marks unpaid orders Failed after their payment window
-  (`checkout.mpesa_reservation_minutes`, default 30) and releases their reserved stock. It runs
-  from the cron endpoint and opportunistically when an order page polls for status.
+  (`checkout.bank_transfer_reservation_minutes`, default two days) and releases their reserved
+  stock. It runs from the cron endpoint.
 
 ## Design system
 

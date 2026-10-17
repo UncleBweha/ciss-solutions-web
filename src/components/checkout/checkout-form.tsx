@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { useForm, type FieldPath } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Banknote, Building2, Check, CheckCircle2, Clock, Loader2, Lock, Pencil, ShoppingCart, Smartphone, Store, Truck } from 'lucide-react'
+import { Banknote, Building2, Check, CheckCircle2, Clock, Loader2, Lock, Pencil, ShoppingCart, Store, Truck } from 'lucide-react'
 import { placeOrderAction } from '@/actions/checkout'
 import { useCart } from '@/components/cart/cart-provider'
 import { OrderSummary } from '@/components/cart/order-summary'
@@ -24,13 +24,12 @@ import { cn } from '@/lib/utils'
 
 type Address = { id: string; full_name: string; phone: string; county: string; town: string; address_line: string; instructions: string | null }
 
-const MPESA_LOGO = { src: '/images/payments/mpesa.webp', width: 320, height: 188 }
 const KCB_LOGO = { src: '/images/payments/kcb.webp', width: 240, height: 162 }
 
 const STEPS = [
   { title: 'Customer details', fields: ['fullName', 'email', 'phone'] },
   { title: 'Delivery', fields: ['deliveryMethod', 'county', 'town', 'address', 'instructions'] },
-  { title: 'Payment', fields: ['paymentMethod', 'mpesaPhone'] },
+  { title: 'Payment', fields: ['paymentMethod'] },
 ] as const
 
 export function CheckoutForm({
@@ -47,13 +46,13 @@ export function CheckoutForm({
   defaults: { fullName: string; email: string; phone: string }
   addresses: Address[]
   shop: { address: string; hours: string }
-  methods: Record<'mpesa' | 'mpesa_paybill' | 'bank_transfer' | 'cash_on_delivery' | 'card', boolean>
+  methods: Record<'mpesa_paybill' | 'bank_transfer' | 'cash_on_delivery' | 'card', boolean>
   codCounties: string[]
   bank: PaymentMethodsSettings['bank_transfer']
   paybill: PaymentMethodsSettings['mpesa_paybill']
 }) {
   // First enabled method that works in every county (cash on delivery may not).
-  const fallbackMethod = methods.mpesa ? 'mpesa' : methods.mpesa_paybill ? 'mpesa_paybill' : 'bank_transfer'
+  const fallbackMethod = methods.mpesa_paybill ? 'mpesa_paybill' : 'bank_transfer'
   const router = useRouter()
   const { items, ready, clear } = useCart()
   const [step, setStep] = useState(0)
@@ -74,8 +73,7 @@ export function CheckoutForm({
       town: '',
       address: '',
       instructions: '',
-      paymentMethod: methods.mpesa || methods.mpesa_paybill || methods.bank_transfer ? fallbackMethod : 'cash_on_delivery',
-      mpesaPhone: defaults.phone,
+      paymentMethod: methods.mpesa_paybill || methods.bank_transfer ? fallbackMethod : 'cash_on_delivery',
       notes: '',
       saveAddress: signedIn,
     },
@@ -95,11 +93,6 @@ export function CheckoutForm({
     if (ready && items.length) track('begin_checkout', { value: quote?.subtotal })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready])
-
-  // Keep the M-Pesa number in step with the contact number until the customer edits it.
-  useEffect(() => {
-    if (!form.getFieldState('mpesaPhone').isDirty) setValue('mpesaPhone', phone)
-  }, [phone, setValue, form])
 
   useEffect(() => {
     if (method === 'cash_on_delivery' && (pickup || county) && !codAllowed) setValue('paymentMethod', fallbackMethod)
@@ -308,9 +301,6 @@ export function CheckoutForm({
               <fieldset>
                 <legend className="sr-only">Payment method</legend>
                 <div className="space-y-2">
-                  {methods.mpesa ? (
-                    <PaymentOption value="mpesa" register={register} checked={method === 'mpesa'} icon={<Smartphone className="h-5 w-5" />} logo={MPESA_LOGO} title="M-Pesa Express" description="Pay instantly with a prompt sent to your phone" />
-                  ) : null}
                   {methods.mpesa_paybill ? (
                     <PaymentOption value="mpesa_paybill" register={register} checked={method === 'mpesa_paybill'} icon={<Building2 className="h-5 w-5" />} logo={KCB_LOGO} title="M-Pesa Paybill" description="Pay via Paybill on your own phone, then tell us you have paid" />
                   ) : null}
@@ -332,11 +322,6 @@ export function CheckoutForm({
                 {errors.paymentMethod ? <p className="mt-2 text-xs text-danger">{errors.paymentMethod.message}</p> : null}
               </fieldset>
 
-              {method === 'mpesa' ? (
-                <Field label="M-Pesa phone number" htmlFor="mpesaPhone" error={errors.mpesaPhone?.message} hint="You will receive a prompt on this phone to enter your M-Pesa PIN">
-                  <Input id="mpesaPhone" type="tel" inputMode="tel" autoComplete="tel" {...register('mpesaPhone')} />
-                </Field>
-              ) : null}
               {method === 'bank_transfer' ? (
                 <div className="rounded-md border border-border p-4 text-sm text-fg-secondary">
                   <p className="font-semibold text-fg">Bank details are shown after you place the order.</p>
@@ -442,7 +427,7 @@ export function CheckoutForm({
           ) : (
             <Button type="submit" variant={method === 'mpesa_paybill' ? 'success' : undefined} size="lg" className="w-full" loading={placing} disabled={!quote || Boolean(quote.issues.length)}>
               {method === 'mpesa_paybill' ? <CheckCircle2 className="h-5 w-5" aria-hidden="true" /> : <Lock className="h-4 w-4" aria-hidden="true" />}
-              {method === 'mpesa' ? `Pay ${quote ? formatKES(quote.total) : ''} with M-Pesa` : method === 'mpesa_paybill' ? 'I have completed the payment' : 'Place order'}
+              {method === 'mpesa_paybill' ? 'I have completed the payment' : 'Place order'}
             </Button>
           )}
           <p className="text-center text-xs text-fg-muted">

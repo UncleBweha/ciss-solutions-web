@@ -858,9 +858,6 @@ isOneToOne: false
 "complete_outbox":
 { Args: { "p_id": string,"p_note"?: string }; Returns: undefined
                            },
-"confirm_payment":
-{ Args: { "p_actor"?: string,"p_amount": number,"p_payment_id": string,"p_raw"?: Json,"p_transaction_reference": string }; Returns: Json
-                           },
 "current_role_name":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["user_role"]
                            },
@@ -872,9 +869,6 @@ isOneToOne: false
                            },
 "fail_outbox":
 { Args: { "p_error": string,"p_id": string }; Returns: string
-                           },
-"fail_payment":
-{ Args: { "p_description": string,"p_payment_id": string,"p_raw"?: Json,"p_result_code": string }; Returns: Json
                            },
 "generate_order_number":
 { Args: Record<PropertyKey, never>; Returns: string

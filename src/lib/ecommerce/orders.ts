@@ -61,7 +61,7 @@ export function paymentStatusTone(status: PaymentStatus): Tone {
   return 'danger'
 }
 
-/** Methods staff confirm by hand; mpesa (STK) and card are confirmed by the provider. */
+/** Methods staff confirm by hand. mpesa (the STK push, removed) and card cannot be marked paid. */
 export function isManualPayment(method: PaymentMethod) {
   return method === 'bank_transfer' || method === 'cash_on_delivery' || method === 'mpesa_paybill'
 }

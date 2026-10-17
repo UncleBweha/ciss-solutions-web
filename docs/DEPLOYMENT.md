@@ -53,8 +53,7 @@ Every variable is described in [`.env.example`](../.env.example). Production nee
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | From the Supabase project |
 | `SUPABASE_SERVICE_ROLE_KEY` | From the Supabase project (secret) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional: Google sign-in (section 1, step 4). The secret is a server secret |
-| `MPESA_*`, `KCB_*` | See [PAYMENTS.md](PAYMENTS.md). `MPESA_ENV=production`, never `mock`. The `KCB_*` values (including `KCB_BASE_URL` and `KCB_INVOICE_PREFIX`) must be in the server's `.env` before the code that uses KCB is deployed: without them every M-Pesa checkout fails |
-| `TRUSTED_PROXY_HOPS` | Optional, default `1` (Caddy alone). Set `2` if Cloudflare is put in front of Caddy: rate limits and `MPESA_ALLOWED_IPS` read the visitor's address that many entries from the end of `X-Forwarded-For` |
+| `TRUSTED_PROXY_HOPS` | Optional, default `1` (Caddy alone). Set `2` if Cloudflare is put in front of Caddy: rate limits read the visitor's address that many entries from the end of `X-Forwarded-For` |
 | `EMAIL_PROVIDER`, `EMAIL_FROM`, `ADMIN_ALERT_EMAILS` | Transactional email. `EMAIL_PROVIDER=smtp` sends through a mailbox and needs `SMTP_HOST`, `SMTP_PORT` (465 or 587), `SMTP_USER`, `SMTP_PASSWORD`; `EMAIL_PROVIDER=resend` needs `EMAIL_API_KEY`; `log` only writes emails to the server log. Order emails are sent from, and new-order alerts always go to, `orders@cisssolutions.co.ke` (`ORDERS_EMAIL` overrides it) |
 | `POS_SUPABASE_URL`, `POS_SUPABASE_KEY`, `POS_SYNC_SECRET` | Optional: registers paid orders as sales in the POS (see [ARCHITECTURE.md](ARCHITECTURE.md), Background work). URL and public (anon / publishable) key of the POS project, and a long random secret (`openssl rand -hex 32`) whose SHA-256 hash is stored in the POS table `integration_keys` under the name `website` |
 | `CRON_SECRET` | Long random string (`openssl rand -hex 32`) |
@@ -130,7 +129,6 @@ The GitHub workflow can do the switch too (tick "Point cisssolutions.co.ke at th
 
 Once the store is live:
 
-- Set `MPESA_CALLBACK_URL=https://cisssolutions.co.ke/api/mpesa/callback` and redeploy.
 - Indexing turns on automatically: `robots.txt` allows crawling only when `NEXT_PUBLIC_SITE_URL`
   is the real domain. Submit `https://cisssolutions.co.ke/sitemap.xml` in Google Search Console.
 
@@ -154,24 +152,22 @@ locally and run `app-deploy.sh` again.
    ```
    Sub-daily schedules need a paid Vercel plan. On Hobby, use an external scheduler (for
    example a GitHub Actions `schedule` workflow or cron-job.org) that sends the same header.
-4. Point the domain's DNS at Vercel and set `MPESA_CALLBACK_URL` accordingly.
+4. Point the domain's DNS at Vercel.
 
 ## 6. Scheduled job
 
 `GET /api/cron/release-reservations` with `Authorization: Bearer <CRON_SECRET>`:
 
-- times out M-Pesa pushes that got no callback, so the customer can retry;
 - marks unpaid orders past their payment window Failed and releases reserved stock;
-- sends any emails, M-Pesa prompts and POS sales left over in the outbox;
-- emails staff the alerts that cannot wait (a payment nobody could match, a customer who paid
-  twice, a prompt that never got an answer, a paid order short of stock, a task that gave up).
+- sends any emails and POS sales left over in the outbox;
+- emails staff the alerts that cannot wait (a paid order short of stock, a task that gave up).
 
-Run it every 5–10 minutes. Without it, abandoned M-Pesa orders hold stock until someone opens them.
+Run it every 5–10 minutes. Without it, abandoned orders hold stock after their payment window.
 It answers 500 when one of its steps failed.
 
 **Watching it.** `GET /api/health` answers 200 while the database is reachable, the job above ran
-in the last 15 minutes, no background task is overdue or has given up in the last day, and no
-M-Pesa prompt has waited more than 15 minutes for a result; otherwise 503, naming the check that
+in the last 15 minutes, and no background task is overdue or has given up in the last day;
+otherwise 503, naming the check that
 failed. Point an uptime monitor at `https://cisssolutions.co.ke/api/health`: nothing else notices
 when the cron job stops.
 
@@ -193,9 +189,8 @@ the server in `/opt/ciss-store/.env` and are never stored in GitHub.
 - [ ] Business details, payment methods, delivery zones and fees set in Admin, Settings
 - [ ] Legal pages written or reviewed and marked "Reviewed"
 - [ ] Real products, prices, stock and photos loaded (Admin, Products, or CSV import)
-- [ ] KCB Buni production credentials and live host; one small real M-Pesa payment tested end to end
-- [ ] `MPESA_ALLOW_MOCK` unset; `MPESA_CALLBACK_SECRET` and `CRON_SECRET` set to random values
-- [ ] Server `.env` has the `KCB_*` values before the KCB code is merged to `main`
+- [ ] Paybill number and account number saved in Admin, Settings, Payments
+- [ ] `CRON_SECRET` set to a random value
 - [ ] New migrations applied (`supabase db push`) before the code that needs them is deployed
 - [ ] Cron running (`grep ciss-store /var/log/syslog` or the app log `cron.release_reservations`)
 - [ ] An uptime monitor watches `/api/health`

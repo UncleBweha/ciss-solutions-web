@@ -25,7 +25,7 @@ export default async function BusinessSettings() {
         {f('business_hours', 'Business hours')}
         {f('location', 'Location (town)')}
         {f('address', 'Physical address')}
-        {f('mpesa_paybill', 'M-Pesa Paybill / Till (display only)', 'The STK push uses the server configuration')}
+        {f('mpesa_paybill', 'M-Pesa Paybill / Till (display only)', 'Checkout uses the Paybill saved under Payments')}
         {f('mpesa_account_hint', 'M-Pesa account reference hint')}
         <Field label="Instagram URL" htmlFor="instagram"><Input id="instagram" name="instagram" defaultValue={b.socials?.instagram ?? ''} /></Field>
         <Field label="Facebook URL" htmlFor="facebook"><Input id="facebook" name="facebook" defaultValue={b.socials?.facebook ?? ''} /></Field>
