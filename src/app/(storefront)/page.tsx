@@ -8,16 +8,20 @@ import { buttonClass } from '@/components/ui/button'
 import { SectionHeading } from '@/components/ui/misc'
 import { InkBackdrop } from '@/components/storefront/ink-backdrop'
 import { JsonLd } from '@/components/seo/json-ld'
+import { OccasionBanner } from '@/components/occasions/banner'
 import {
   categoryHref,
   getBrands,
   getCategoryTree,
   getHeroProducts,
   getHomepage,
+  getInStockCards,
   getPrinterModels,
   getProductCards,
   getSettings,
 } from '@/lib/catalog'
+import { getActiveOccasion } from '@/lib/occasions/data'
+import { occasionPicks } from '@/lib/occasions/picks'
 import { organizationSchema, websiteSchema } from '@/lib/seo/schema'
 import type { HomepageSection } from '@/types/catalog'
 
@@ -33,7 +37,9 @@ function limitOf(section: HomepageSection, fallback: number) {
 }
 
 export default async function HomePage() {
-  const [{ sections, banners }, settings] = await Promise.all([getHomepage(), getSettings()])
+  const [{ sections, banners }, settings, occasion] = await Promise.all([getHomepage(), getSettings(), getActiveOccasion()])
+  // During an occasion its poster leads the page, with the products that go with it.
+  const picks = occasion ? occasionPicks(occasion, await getInStockCards()) : []
   const ordered = sections.length
     ? sections
     : // No sections configured yet: sensible default order.
@@ -56,6 +62,11 @@ export default async function HomePage() {
       <JsonLd data={[organizationSchema(settings.business), websiteSchema(settings.business.name)]} />
       <h1 className="sr-only">CISS Solutions: printers, spare parts, ink and toner in Kenya</h1>
       <div className="space-y-8 pb-6 pt-4 sm:space-y-10 sm:pt-5">
+        {occasion ? (
+          <div className="container-page">
+            <OccasionBanner occasion={occasion} products={picks.slice(0, 16)} picksHref={picks.length ? '/occasion' : null} />
+          </div>
+        ) : null}
         {rendered.map((node, i) => (
           <div key={ordered[i].key}>{node}</div>
         ))}

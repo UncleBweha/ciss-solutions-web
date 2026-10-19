@@ -10,4 +10,5 @@ export const tags = {
   settings: 'settings',
   delivery: 'delivery',
   printerModels: 'printer-models',
+  occasions: 'occasions',
 } as const

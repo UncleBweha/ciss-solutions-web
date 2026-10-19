@@ -270,15 +270,47 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"order_items": {
+                },"occasions": {
                   Row: {
-                    "id": string,"image_url": string | null,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"sku": string,"total_price": number,"unit_price": number,"variant_id": string | null,"variant_name": string | null
+                    "accent_color": string,"banner_headline": string,"banner_subhead": string | null,"calendar_end_event_name": string | null,"calendar_source": string | null,"calendar_start_event_name": string | null,"created_at": string,"date_formula": string | null,"decoration": string,"end_day": number,"end_month": number,"id": string,"is_enabled": boolean,"kind": string,"name": string,"pick_keyword": string | null,"slug": string,"sort_order": number,"start_day": number,"start_month": number,"updated_at": string
                   }
                   Insert: {
-                    "id"?: string,"image_url"?: string | null,"order_id": string,"product_id"?: string | null,"product_name": string,"quantity": number,"sku": string,"total_price": number,"unit_price": number,"variant_id"?: string | null,"variant_name"?: string | null
+                    "accent_color"?: string,"banner_headline": string,"banner_subhead"?: string | null,"calendar_end_event_name"?: string | null,"calendar_source"?: string | null,"calendar_start_event_name"?: string | null,"created_at"?: string,"date_formula"?: string | null,"decoration"?: string,"end_day": number,"end_month": number,"id"?: string,"is_enabled"?: boolean,"kind": string,"name": string,"pick_keyword"?: string | null,"slug": string,"sort_order"?: number,"start_day": number,"start_month": number,"updated_at"?: string
                   }
                   Update: {
-                    "id"?: string,"image_url"?: string | null,"order_id"?: string,"product_id"?: string | null,"product_name"?: string,"quantity"?: number,"sku"?: string,"total_price"?: number,"unit_price"?: number,"variant_id"?: string | null,"variant_name"?: string | null
+                    "accent_color"?: string,"banner_headline"?: string,"banner_subhead"?: string | null,"calendar_end_event_name"?: string | null,"calendar_source"?: string | null,"calendar_start_event_name"?: string | null,"created_at"?: string,"date_formula"?: string | null,"decoration"?: string,"end_day"?: number,"end_month"?: number,"id"?: string,"is_enabled"?: boolean,"kind"?: string,"name"?: string,"pick_keyword"?: string | null,"slug"?: string,"sort_order"?: number,"start_day"?: number,"start_month"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"order_admin_notes": {
+                  Row: {
+                    "notes": string,"order_id": string,"updated_at": string,"updated_by": string | null
+                  }
+                  Insert: {
+                    "notes"?: string,"order_id": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "notes"?: string,"order_id"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_admin_notes_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: true
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"order_items": {
+                  Row: {
+                    "id": string,"image_url": string | null,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"sku": string,"stock_deducted": boolean,"total_price": number,"unit_price": number,"variant_id": string | null,"variant_name": string | null
+                  }
+                  Insert: {
+                    "id"?: string,"image_url"?: string | null,"order_id": string,"product_id"?: string | null,"product_name": string,"quantity": number,"sku": string,"stock_deducted"?: boolean,"total_price": number,"unit_price": number,"variant_id"?: string | null,"variant_name"?: string | null
+                  }
+                  Update: {
+                    "id"?: string,"image_url"?: string | null,"order_id"?: string,"product_id"?: string | null,"product_name"?: string,"quantity"?: number,"sku"?: string,"stock_deducted"?: boolean,"total_price"?: number,"unit_price"?: number,"variant_id"?: string | null,"variant_name"?: string | null
                   }
                   Relationships: [
                     {
@@ -361,25 +393,6 @@ isOneToOne: false
       columns: ["delivery_zone_id"]
 isOneToOne: false
       referencedRelation: "delivery_zones"
-      referencedColumns: ["id"]
-    }
-                  ]
-                },"order_admin_notes": {
-                  Row: {
-                    "notes": string,"order_id": string,"updated_at": string,"updated_by": string | null
-                  }
-                  Insert: {
-                    "notes"?: string,"order_id": string,"updated_at"?: string,"updated_by"?: string | null
-                  }
-                  Update: {
-                    "notes"?: string,"order_id"?: string,"updated_at"?: string,"updated_by"?: string | null
-                  }
-                  Relationships: [
-                    {
-      foreignKeyName: "order_admin_notes_order_id_fkey"
-      columns: ["order_id"]
-isOneToOne: true
-      referencedRelation: "orders"
       referencedColumns: ["id"]
     }
                   ]
@@ -554,13 +567,13 @@ isOneToOne: false
                   ]
                 },"products": {
                   Row: {
-                    "available_quantity": number | null,"barcode": string | null,"brand_id": string | null,"canonical_url": string | null,"category_id": string | null,"compare_at_price": number | null,"compatible_with": string[],"condition": string | null,"created_at": string,"description": string | null,"dimensions": string | null,"discount_percent": number | null,"features": (string)[],"id": string,"is_bestseller": boolean,"is_featured": boolean,"is_new": boolean,"is_on_sale": boolean,"low_stock_threshold": number,"name": string,"oem_number": string | null,"og_description": string | null,"og_image_url": string | null,"og_title": string | null,"part_number": string | null,"price": number,"printer_model_id": string | null,"product_type": Database["public"]['Enums']["product_type"],"rating_avg": number,"rating_count": number,"reserved_quantity": number,"sales_count": number,"search_text": string,"search_vector": unknown,"seo_description": string | null,"seo_title": string | null,"short_description": string | null,"sku": string,"slug": string,"specifications": NonNullable<Json>,"status": Database["public"]['Enums']["product_status"],"stock_quantity": number,"updated_at": string,"warranty": string | null,"weight_kg": number | null,"whats_included": (string)[],"build_product_search_text": string | null
+                    "available_quantity": number | null,"barcode": string | null,"brand_id": string | null,"canonical_url": string | null,"category_id": string | null,"compare_at_price": number | null,"compatible_with": (string)[],"condition": string | null,"created_at": string,"description": string | null,"dimensions": string | null,"discount_percent": number | null,"features": (string)[],"id": string,"is_bestseller": boolean,"is_featured": boolean,"is_new": boolean,"is_on_sale": boolean,"low_stock_threshold": number,"name": string,"oem_number": string | null,"og_description": string | null,"og_image_url": string | null,"og_title": string | null,"part_number": string | null,"price": number,"printer_model_id": string | null,"product_type": Database["public"]['Enums']["product_type"],"rating_avg": number,"rating_count": number,"reserved_quantity": number,"sales_count": number,"search_text": string,"search_vector": unknown,"seo_description": string | null,"seo_title": string | null,"short_description": string | null,"sku": string,"slug": string,"specifications": NonNullable<Json>,"status": Database["public"]['Enums']["product_status"],"stock_quantity": number,"updated_at": string,"warranty": string | null,"weight_kg": number | null,"whats_included": (string)[],"build_product_search_text": string | null
                   }
                   Insert: {
-                    "available_quantity"?: never,"barcode"?: string | null,"brand_id"?: string | null,"canonical_url"?: string | null,"category_id"?: string | null,"compare_at_price"?: number | null,"compatible_with"?: string[],"condition"?: string | null,"created_at"?: string,"description"?: string | null,"dimensions"?: string | null,"discount_percent"?: never,"features"?: (string)[],"id"?: string,"is_bestseller"?: boolean,"is_featured"?: boolean,"is_new"?: boolean,"is_on_sale"?: boolean,"low_stock_threshold"?: number,"name": string,"oem_number"?: string | null,"og_description"?: string | null,"og_image_url"?: string | null,"og_title"?: string | null,"part_number"?: string | null,"price": number,"printer_model_id"?: string | null,"product_type"?: Database["public"]['Enums']["product_type"],"rating_avg"?: number,"rating_count"?: number,"reserved_quantity"?: number,"sales_count"?: number,"search_text"?: string,"search_vector"?: never,"seo_description"?: string | null,"seo_title"?: string | null,"short_description"?: string | null,"sku": string,"slug": string,"specifications"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["product_status"],"stock_quantity"?: number,"updated_at"?: string,"warranty"?: string | null,"weight_kg"?: number | null,"whats_included"?: (string)[]
+                    "available_quantity"?: never,"barcode"?: string | null,"brand_id"?: string | null,"canonical_url"?: string | null,"category_id"?: string | null,"compare_at_price"?: number | null,"compatible_with"?: (string)[],"condition"?: string | null,"created_at"?: string,"description"?: string | null,"dimensions"?: string | null,"discount_percent"?: never,"features"?: (string)[],"id"?: string,"is_bestseller"?: boolean,"is_featured"?: boolean,"is_new"?: boolean,"is_on_sale"?: boolean,"low_stock_threshold"?: number,"name": string,"oem_number"?: string | null,"og_description"?: string | null,"og_image_url"?: string | null,"og_title"?: string | null,"part_number"?: string | null,"price": number,"printer_model_id"?: string | null,"product_type"?: Database["public"]['Enums']["product_type"],"rating_avg"?: number,"rating_count"?: number,"reserved_quantity"?: number,"sales_count"?: number,"search_text"?: string,"search_vector"?: never,"seo_description"?: string | null,"seo_title"?: string | null,"short_description"?: string | null,"sku": string,"slug": string,"specifications"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["product_status"],"stock_quantity"?: number,"updated_at"?: string,"warranty"?: string | null,"weight_kg"?: number | null,"whats_included"?: (string)[]
                   }
                   Update: {
-                    "available_quantity"?: never,"barcode"?: string | null,"brand_id"?: string | null,"canonical_url"?: string | null,"category_id"?: string | null,"compare_at_price"?: number | null,"compatible_with"?: string[],"condition"?: string | null,"created_at"?: string,"description"?: string | null,"dimensions"?: string | null,"discount_percent"?: never,"features"?: (string)[],"id"?: string,"is_bestseller"?: boolean,"is_featured"?: boolean,"is_new"?: boolean,"is_on_sale"?: boolean,"low_stock_threshold"?: number,"name"?: string,"oem_number"?: string | null,"og_description"?: string | null,"og_image_url"?: string | null,"og_title"?: string | null,"part_number"?: string | null,"price"?: number,"printer_model_id"?: string | null,"product_type"?: Database["public"]['Enums']["product_type"],"rating_avg"?: number,"rating_count"?: number,"reserved_quantity"?: number,"sales_count"?: number,"search_text"?: string,"search_vector"?: never,"seo_description"?: string | null,"seo_title"?: string | null,"short_description"?: string | null,"sku"?: string,"slug"?: string,"specifications"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["product_status"],"stock_quantity"?: number,"updated_at"?: string,"warranty"?: string | null,"weight_kg"?: number | null,"whats_included"?: (string)[]
+                    "available_quantity"?: never,"barcode"?: string | null,"brand_id"?: string | null,"canonical_url"?: string | null,"category_id"?: string | null,"compare_at_price"?: number | null,"compatible_with"?: (string)[],"condition"?: string | null,"created_at"?: string,"description"?: string | null,"dimensions"?: string | null,"discount_percent"?: never,"features"?: (string)[],"id"?: string,"is_bestseller"?: boolean,"is_featured"?: boolean,"is_new"?: boolean,"is_on_sale"?: boolean,"low_stock_threshold"?: number,"name"?: string,"oem_number"?: string | null,"og_description"?: string | null,"og_image_url"?: string | null,"og_title"?: string | null,"part_number"?: string | null,"price"?: number,"printer_model_id"?: string | null,"product_type"?: Database["public"]['Enums']["product_type"],"rating_avg"?: number,"rating_count"?: number,"reserved_quantity"?: number,"sales_count"?: number,"search_text"?: string,"search_vector"?: never,"seo_description"?: string | null,"seo_title"?: string | null,"short_description"?: string | null,"sku"?: string,"slug"?: string,"specifications"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["product_status"],"stock_quantity"?: number,"updated_at"?: string,"warranty"?: string | null,"weight_kg"?: number | null,"whats_included"?: (string)[]
                   }
                   Relationships: [
                     {
@@ -659,6 +672,25 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"site_theme_override": {
+                  Row: {
+                    "forced_occasion_slug": string | null,"id": boolean,"mode": string,"updated_at": string
+                  }
+                  Insert: {
+                    "forced_occasion_slug"?: string | null,"id"?: boolean,"mode"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "forced_occasion_slug"?: string | null,"id"?: boolean,"mode"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "site_theme_override_forced_occasion_slug_fkey"
+      columns: ["forced_occasion_slug"]
+isOneToOne: false
+      referencedRelation: "occasions"
+      referencedColumns: ["slug"]
+    }
                   ]
                 },"support_requests": {
                   Row: {

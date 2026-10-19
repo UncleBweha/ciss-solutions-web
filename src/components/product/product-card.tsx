@@ -11,7 +11,8 @@ export function ProductCard({ product, priority, className }: { product: Product
   const soldOut = product.available_quantity <= 0
   return (
     <article className={cn('glass-card group relative flex flex-col rounded-[var(--radius-card)]', className)}>
-      <div className="relative m-1.5 aspect-[4/3.4] rounded-[calc(var(--radius-card)-4px)] bg-white/80">
+      {/* occasion-media: wears the occasion's ribbon and ornament, if any (globals.css). */}
+      <div className="occasion-media relative m-1.5 aspect-[4/3.4] overflow-hidden rounded-[calc(var(--radius-card)-4px)] bg-white/80">
         <Link href={href} tabIndex={-1} aria-hidden="true" className="absolute inset-0">
           <ProductImage
             src={product.image_url}

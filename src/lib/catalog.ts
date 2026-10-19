@@ -254,6 +254,22 @@ export async function getHeroProducts(limit = 6): Promise<ProductCardData[]> {
   return shuffled.slice(0, limit)
 }
 
+/** In-stock products, best sellers first: the pool an occasion's picks are chosen from. */
+export async function getInStockCards(limit = 400): Promise<ProductCardData[]> {
+  return read('cards:in-stock', [] as ProductCardData[], async () =>
+    must(
+      await publicClient([tags.catalog], CACHE.homepage)
+        .from('product_cards')
+        .select('*')
+        .eq('status', 'active')
+        .gt('available_quantity', 0)
+        .order('sales_count', { ascending: false })
+        .limit(limit),
+      'in-stock',
+    ).map((r) => toCard(r as Record<string, unknown>)),
+  )
+}
+
 export async function getCardsByIds(ids: string[]): Promise<ProductCardData[]> {
   if (!ids.length) return []
   return read('cards:ids', [], async () =>
