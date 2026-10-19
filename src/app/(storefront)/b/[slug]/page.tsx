@@ -7,19 +7,21 @@ import { CatalogListing } from '@/components/storefront/catalog-listing'
 import { Breadcrumbs, SectionHeading } from '@/components/ui/misc'
 import { getBrand, getFacets, searchCatalog } from '@/lib/catalog'
 import { parseCatalogParams } from '@/lib/catalog-params'
-import { isFilteredListing, listingRobots } from '@/lib/seo/metadata'
+import { isFilteredListing, listingRobots, pageMetadata } from '@/lib/seo/metadata'
 import { breadcrumbSchema, collectionSchema } from '@/lib/seo/schema'
 
 export async function generateMetadata({ params, searchParams }: PageProps<'/b/[slug]'>): Promise<Metadata> {
   const { slug } = await params
   const brand = await getBrand(slug)
   if (!brand) return { title: 'Brand not found' }
-  return {
-    title: brand.seo_title ? { absolute: brand.seo_title } : `${brand.name} Printers, Ink & Spare Parts in Kenya`,
-    description: brand.seo_description || brand.description || `Shop ${brand.name} products at CISS Solutions.`,
-    alternates: { canonical: `/b/${brand.slug}` },
+  return pageMetadata({
+    title: brand.seo_title || `${brand.name} Printers, Ink & Spare Parts in Kenya`,
+    absolute: Boolean(brand.seo_title),
+    description: brand.seo_description || brand.description || `Shop ${brand.name} printers, ink, toner and spare parts at CISS Solutions, with delivery across Kenya.`,
+    path: `/b/${brand.slug}`,
+    image: brand.logo_url,
     robots: listingRobots(await searchParams),
-  }
+  })
 }
 
 export default async function BrandPage({ params, searchParams }: PageProps<'/b/[slug]'>) {

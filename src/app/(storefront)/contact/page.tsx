@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { Clock, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import { ContactForm } from '@/components/storefront/support-forms'
 import { Breadcrumbs } from '@/components/ui/misc'
@@ -6,11 +7,11 @@ import { getSettings } from '@/lib/catalog'
 import { whatsappLink } from '@/lib/contact'
 
 export const revalidate = 3600
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Contact CISS Solutions',
   description: 'Call, WhatsApp, email or visit CISS Solutions for printers, spare parts, ink and toner in Kenya.',
-  alternates: { canonical: '/contact' },
-}
+  path: '/contact',
+})
 
 export default async function ContactPage() {
   const { business } = await getSettings()

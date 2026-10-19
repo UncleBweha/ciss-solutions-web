@@ -95,6 +95,18 @@ export async function savePaymentsAction(_prev: ActionResult | null, formData: F
   )
 }
 
+/**
+ * A site-verification code, as the code itself or the whole <meta ... content="CODE"> tag
+ * Google / Bing show (people paste either). Only the code is kept.
+ */
+const verificationCode = z
+  .string()
+  .trim()
+  .max(300)
+  .optional()
+  .transform((v) => (v ? (v.match(/content\s*=\s*["']([^"']+)["']/i)?.[1] ?? v).trim() : ''))
+  .refine((v) => /^[A-Za-z0-9_\-]{0,100}$/.test(v), 'Paste the verification code (or the whole meta tag) from Google or Bing')
+
 export async function saveCheckoutAction(_prev: ActionResult | null, formData: FormData) {
   const d = z
     .object({
@@ -103,13 +115,15 @@ export async function saveCheckoutAction(_prev: ActionResult | null, formData: F
       max_quantity_per_item: z.coerce.number().int().min(1).max(99),
       default_title: text(70),
       default_description: text(170),
+      google_verification: verificationCode,
+      bing_verification: verificationCode,
     })
     .safeParse(formObject(formData))
   if (!d.success) return { ok: false as const, message: d.error.issues[0].message }
-  const { default_title, default_description, ...checkout } = d.data
+  const { default_title, default_description, google_verification, bing_verification, ...checkout } = d.data
   const r = await saveSetting('checkout', checkout, 'settings.manage')
   if (!r.ok) return r
-  return saveSetting('seo', { default_title, default_description }, 'settings.manage')
+  return saveSetting('seo', { default_title, default_description, google_verification, bing_verification }, 'settings.manage')
 }
 
 export async function saveNotificationSettingsAction(_prev: ActionResult | null, formData: FormData) {
