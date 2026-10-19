@@ -183,3 +183,22 @@ test('staff add categories and subcategories by name, and from the product page'
   await page.getByRole('dialog').getByRole('button', { name: 'Confirm' }).click()
   await expect(page.getByRole('heading', { name: main })).toHaveCount(0)
 })
+
+test('staff show an occasion on the store and switch back to the calendar', async ({ page }) => {
+  await signIn(page, 'admin@ciss.local', 'Admin12345!')
+  await page.goto('/admin/settings/occasions')
+  await page.getByRole('radio', { name: 'Show one now' }).click()
+  await page.getByLabel('Occasion to show every visitor').selectOption({ label: 'Jamhuri Day' })
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByText('Showing that occasion to every visitor.')).toBeVisible()
+
+  await page.goto('/')
+  const poster = page.getByRole('region', { name: 'Jamhuri Day' })
+  await expect(poster.getByRole('heading', { name: 'Jamhuri Day' })).toBeVisible()
+  await expect(poster.getByText('12 December', { exact: false })).toBeVisible()
+
+  await page.goto('/admin/settings/occasions')
+  await page.getByRole('radio', { name: 'Follow the calendar' }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByText('The store follows the calendar.')).toBeVisible()
+})

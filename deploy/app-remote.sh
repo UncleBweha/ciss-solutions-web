@@ -8,7 +8,8 @@
 #      project must be reachable: catalogue pages are prerendered at build time.
 #   3. replaces the container (bound to 127.0.0.1:3100, joined to Caddy's 'web'
 #      network), waits for the health check and rolls back if it fails
-#   4. installs /etc/cron.d/ciss-store, which releases expired stock reservations
+#   4. installs /etc/cron.d/ciss-store: releases expired stock reservations every
+#      5 minutes and re-dates movable occasions (Easter, Eid...) daily
 set -euo pipefail
 
 SRC_TGZ="${1:?source tarball}"
@@ -80,6 +81,7 @@ chmod 600 "$CRON_CURL"
 cat > /etc/cron.d/ciss-store <<CRON
 # Installed by deploy/app-deploy.sh (CISS Solutions repo). Remove with deploy/app-remove.sh.
 */5 * * * * root curl -fsS -m 30 -K $CRON_CURL http://127.0.0.1:3100/api/cron/release-reservations >/dev/null 2>&1
+17 3 * * * root curl -fsS -m 60 -K $CRON_CURL http://127.0.0.1:3100/api/cron/sync-occasion-dates >/dev/null 2>&1
 CRON
 chmod 644 /etc/cron.d/ciss-store
 

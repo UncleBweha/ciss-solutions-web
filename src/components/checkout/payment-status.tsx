@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { createContext, useCallback, useContext, useEffect, useState, useTransition } from 'react'
 import { CheckCircle2, Clock, Loader2, Smartphone, XCircle } from 'lucide-react'
 import { retryMpesaPaymentAction } from '@/actions/checkout'
+import { SantaCelebrationAnnouncement, SantaSleighCelebration } from '@/components/occasions/santa-sleigh'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/form'
 import { track } from '@/lib/analytics'
@@ -128,6 +129,7 @@ export function OrderHeading({
   awaitingConfirmation,
   failedLabel,
   celebrate,
+  christmas = false,
 }: {
   orderNumber: string
   paid: boolean
@@ -139,6 +141,8 @@ export function OrderHeading({
   failedLabel: string | null
   /** Just placed (arrived from checkout): confetti once the payment is confirmed. */
   celebrate: boolean
+  /** The store is dressed for Christmas: Santa's sleigh flies past with the confetti. */
+  christmas?: boolean
 }) {
   const live = useContext(PaymentContext)
   const paid = paidOnServer || live?.view.state === 'paid'
@@ -164,6 +168,12 @@ export function OrderHeading({
   return (
     <header className="relative mb-8 text-center">
       {celebrate && paid && !failedLabel ? <Confetti /> : null}
+      {celebrate && paid && !failedLabel && christmas ? (
+        <>
+          <SantaSleighCelebration />
+          <SantaCelebrationAnnouncement />
+        </>
+      ) : null}
       {failedLabel || (waiting && !unconfirmed) ? (
         <span className={`mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full ${failedLabel ? 'bg-danger/15 text-danger' : 'bg-primary/15 text-primary-light'}`}>
           <Clock className="h-8 w-8" aria-hidden="true" />
