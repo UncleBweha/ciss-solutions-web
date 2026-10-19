@@ -191,6 +191,7 @@ accounting and reconciliation (see [PAYMENTS.md](PAYMENTS.md#reconciliation)).
 | Payments | Turn methods on/off; bank account details and instructions; cash-on-delivery counties |
 | Checkout, SEO & alerts | M-Pesa and bank-transfer reservation windows, maximum quantity per item, default SEO title/description, Google Search Console and Bing verification codes (paste the meta tag or its code), staff alert emails |
 | Content pages | Page text and the Reviewed flag |
+| Occasions | National days, holidays and seasons the store dresses up for: a poster at the top of the homepage with matching products, decorations around the site and a ribbon on product photos. "Follow the calendar" (default) shows whichever occasion covers today; "Show one now" shows one to everyone (also how you preview one); "Off" turns it off. Add, edit or delete occasions; movable dates (Easter, Eid, Diwali...) update themselves daily |
 | Staff & roles | Add staff, change roles |
 | My password | Change your own password (every staff member; the current password is required) |
 

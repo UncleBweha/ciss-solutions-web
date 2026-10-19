@@ -10,6 +10,8 @@ import { ProductImage } from '@/components/product/product-image'
 import { LinkButton } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getSettings } from '@/lib/catalog'
+import { getActiveOccasion } from '@/lib/occasions/data'
+import { themeKeyFor } from '@/lib/occasions/themes'
 import { DELIVERY_TBC_NOTE, deliveryFeeLabel, isStorePickup } from '@/lib/ecommerce/delivery'
 import { formatKenyanPhone } from '@/lib/ecommerce/kenya'
 import { formatKES } from '@/lib/ecommerce/money'
@@ -27,7 +29,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
   const token = param(sp.t) ?? jar.get(orderTokenCookie(number))?.value ?? null
   // Straight from checkout: a payment confirmation. Order progress is for people tracking an order.
   const justPlaced = param(sp.placed) === '1'
-  const [order, settings] = await Promise.all([getOrderForViewer(number, token), getSettings()])
+  const [order, settings, occasion] = await Promise.all([getOrderForViewer(number, token), getSettings(), getActiveOccasion()])
   if (!order) notFound()
 
   const isMpesa = order.payment_method === 'mpesa'
@@ -52,6 +54,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<'/or
         awaitingConfirmation={awaitingConfirmation}
         failedLabel={failed ? orderStatusLabels[order.order_status] : null}
         celebrate={justPlaced}
+        christmas={occasion ? themeKeyFor(occasion) === 'christmas' : false}
       />
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">

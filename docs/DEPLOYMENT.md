@@ -169,6 +169,12 @@ locally and run `app-deploy.sh` again.
 Run it every 5–10 minutes. Without it, abandoned M-Pesa orders hold stock until someone opens them.
 It answers 500 when one of its steps failed.
 
+`GET /api/cron/sync-occasion-dates` (same header), once a day: re-dates the movable occasions
+(Easter, Ramadan, both Eids, Diwali and Mazingira Day from Google's public holiday calendars;
+Mother's Day, Father's Day and Customer Service Week by rule). The VPS deploy installs both jobs
+in `/etc/cron.d/ciss-store` (this one at 03:17 UTC). Without it, staff can press
+"Sync movable dates now" under Admin, Settings, Occasions.
+
 **Watching it.** `GET /api/health` answers 200 while the database is reachable, the job above ran
 in the last 15 minutes, no background task is overdue or has given up in the last day, and no
 M-Pesa prompt has waited more than 15 minutes for a result; otherwise 503, naming the check that
