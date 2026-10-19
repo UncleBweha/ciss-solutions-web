@@ -301,3 +301,584 @@
   header, footer, .no-print { display: none !important; }
   body { background: #fff; color: #000; }
 }
+
+/* =============================================================================
+   Occasions (ported from the Toolsman store): decorations, posters and the
+   product-photo ribbon. src/components/occasions/. Transform and opacity only;
+   the prefers-reduced-motion rule above stills all of it.
+   ========================================================================== */
+
+/* ============================================================================
+   OCCASION DECORATIONS — src/components/occasion-decorations.tsx.
+
+   Deliberately louder than everything above: these are rare, once-a-year
+   moments (the "delight budget" every other animation in this file spends
+   carefully), not something a daily visitor sees dozens of times. Every
+   element here is transform/opacity only, position: fixed + pointer-events:
+   none so nothing ever sits between a shopper and what they're trying to
+   click, and the prefers-reduced-motion block in this file already collapses all of it to near-zero duration — no per-effect
+   override needed.
+   ========================================================================= */
+
+@keyframes occasion-fall {
+  0% {
+    transform: translateY(-10vh) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--fall-opacity, 0.85);
+  }
+  90% {
+    opacity: var(--fall-opacity, 0.85);
+  }
+  100% {
+    transform: translateY(110vh) translateX(var(--fall-drift, 20px)) rotate(var(--fall-spin, 180deg));
+    opacity: 0;
+  }
+}
+
+@utility animate-occasion-fall {
+  animation: occasion-fall var(--fall-duration, 9s) linear infinite;
+  animation-delay: var(--fall-delay, 0s);
+}
+
+@keyframes occasion-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@utility animate-occasion-twinkle {
+  animation: occasion-twinkle 1.6s ease-in-out infinite;
+  animation-delay: var(--twinkle-delay, 0s);
+}
+
+@keyframes occasion-float-up {
+  0% {
+    transform: translateY(10vh) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: var(--float-opacity, 0.8);
+  }
+  85% {
+    opacity: var(--float-opacity, 0.8);
+  }
+  100% {
+    transform: translateY(-105vh) scale(1.05);
+    opacity: 0;
+  }
+}
+
+@utility animate-occasion-float-up {
+  animation: occasion-float-up var(--float-duration, 10s) ease-in infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+
+/* Kenyan flags (flag_bunting): pennants on the string sway from where they
+   hang, out of step with each other. The flag on the pole uses flag-ripple
+   in the OCCASION POSTERS section. */
+@keyframes occasion-flag-sway {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+@utility animate-occasion-flag-sway {
+  animation: occasion-flag-sway 2.6s ease-in-out infinite;
+  animation-delay: var(--sway-delay, 0s);
+  transform-origin: top center;
+}
+
+
+/* One flying sleigh, one trip across the screen — the order-success
+   celebration (src/components/santa-sleigh-celebration.tsx). Not `infinite`:
+   this plays once and the component removes itself after. */
+@keyframes occasion-sleigh-flight {
+  0% {
+    transform: translate(-20vw, 10vh) rotate(-4deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(50vw, -8vh) rotate(2deg);
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(120vw, -30vh) rotate(-4deg);
+    opacity: 0;
+  }
+}
+
+@utility animate-occasion-sleigh-flight {
+  animation: occasion-sleigh-flight 4.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ============================================================================
+   OCCASION POSTERS — src/components/occasion-banner.tsx and
+   src/components/occasions/. Transform and opacity only; the reduced-motion
+   block near the top of this file stills all of it.
+   ========================================================================= */
+
+/* Waving flag: each vertical strip of the cloth rises and falls a little
+   after its neighbour, so a wave travels from the pole to the free end, and
+   shadow then highlight pass over it as the cloth turns. */
+@keyframes flag-ripple {
+  0%,
+  100% {
+    transform: translateY(calc(var(--wave-amp, 4px) * -1));
+  }
+  50% {
+    transform: translateY(var(--wave-amp, 4px));
+  }
+}
+
+@utility animate-flag-ripple {
+  animation: flag-ripple var(--wave-duration, 2.6s) ease-in-out infinite;
+}
+
+@keyframes flag-shade {
+  0%,
+  50%,
+  100% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.3;
+  }
+}
+
+@utility animate-flag-shade {
+  animation: flag-shade var(--wave-duration, 2.6s) ease-in-out infinite;
+}
+
+@keyframes flag-shine {
+  0%,
+  50%,
+  100% {
+    opacity: 0;
+  }
+  75% {
+    opacity: 0.22;
+  }
+}
+
+@utility animate-flag-shine {
+  animation: flag-shine var(--wave-duration, 2.6s) ease-in-out infinite;
+}
+
+@keyframes poster-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-poster-enter {
+  animation: poster-enter 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes poster-art {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@utility animate-poster-art {
+  animation: poster-art 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.15s both;
+}
+
+@keyframes poster-rays {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility animate-poster-rays {
+  animation: poster-rays 60s linear infinite;
+}
+
+@keyframes poster-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 20px), var(--travel, 460px), 0) rotate(var(--spin, 360deg));
+    opacity: 0;
+  }
+}
+
+@utility animate-poster-fall {
+  animation: poster-fall var(--poster-duration, 8s) linear infinite;
+}
+
+@keyframes poster-leaf {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  25% {
+    transform: translate3d(calc(var(--drift, 20px) * 0.8), calc(var(--travel, 460px) * 0.25), 0) rotate(70deg);
+  }
+  50% {
+    transform: translate3d(calc(var(--drift, 20px) * -0.6), calc(var(--travel, 460px) * 0.5), 0) rotate(-30deg);
+  }
+  75% {
+    transform: translate3d(var(--drift, 20px), calc(var(--travel, 460px) * 0.75), 0) rotate(110deg);
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, var(--travel, 460px), 0) rotate(40deg);
+    opacity: 0;
+  }
+}
+
+@utility animate-poster-leaf {
+  animation: poster-leaf var(--poster-duration, 10s) ease-in-out infinite;
+}
+
+@keyframes poster-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.8);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(var(--drift, 20px), calc(var(--travel, -420px) * 0.5), 0) scale(1);
+  }
+  88% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate3d(0, var(--travel, -420px), 0) scale(1.05);
+    opacity: 0;
+  }
+}
+
+@utility animate-poster-rise {
+  animation: poster-rise var(--poster-duration, 9s) ease-in-out infinite;
+}
+
+@keyframes poster-fly {
+  0% {
+    transform: translate3d(-140px, 0, 0);
+  }
+  25% {
+    transform: translate3d(25vw, -18px, 0);
+  }
+  50% {
+    transform: translate3d(50vw, 6px, 0);
+  }
+  75% {
+    transform: translate3d(75vw, -14px, 0);
+  }
+  100% {
+    transform: translate3d(105vw, 0, 0);
+  }
+}
+
+@utility animate-poster-fly {
+  left: 0 !important;
+  animation: poster-fly calc(var(--poster-duration, 9s) * 1.6) linear infinite;
+}
+
+@keyframes art-sway {
+  0%,
+  100% {
+    transform: rotate(-1.6deg);
+  }
+  50% {
+    transform: rotate(1.6deg);
+  }
+}
+
+@utility animate-art-sway {
+  animation: art-sway 5s ease-in-out infinite;
+}
+
+@keyframes art-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@utility animate-art-pulse {
+  animation: art-pulse 2.2s ease-in-out infinite;
+}
+
+@utility animate-art-twinkle {
+  animation: occasion-twinkle 1.8s ease-in-out infinite;
+  animation-delay: var(--twinkle-delay, 0s);
+}
+
+@keyframes art-swing {
+  0%,
+  100% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+}
+
+@utility animate-art-swing {
+  animation: art-swing 3.4s ease-in-out infinite;
+}
+
+@keyframes art-flicker {
+  0%,
+  100% {
+    transform: scale(1, 1);
+    opacity: 1;
+  }
+  30% {
+    transform: scale(0.94, 1.08);
+    opacity: 0.85;
+  }
+  60% {
+    transform: scale(1.04, 0.95);
+    opacity: 1;
+  }
+  80% {
+    transform: scale(0.97, 1.04);
+    opacity: 0.9;
+  }
+}
+
+@utility animate-art-flicker {
+  animation: art-flicker 1.1s ease-in-out infinite;
+}
+
+@keyframes art-burst {
+  0% {
+    transform: scale(0.15);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+}
+
+@utility animate-art-burst {
+  animation: art-burst 2.6s ease-out infinite;
+}
+
+@keyframes art-spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility animate-art-spin-slow {
+  animation: art-spin-slow 40s linear infinite;
+}
+
+@keyframes art-float {
+  0%,
+  100% {
+    transform: translateY(-5px);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+@utility animate-art-float {
+  animation: art-float 4s ease-in-out infinite;
+}
+
+@keyframes art-flap {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.45);
+  }
+}
+
+@utility animate-art-flap {
+  animation: art-flap 0.35s ease-in-out infinite;
+}
+
+/* A one-off shower of confetti across the whole page when a national day's
+   page opens: falls once and is gone. */
+@keyframes occasion-shower {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 20px), 105vh, 0) rotate(var(--spin, 540deg));
+    opacity: 0;
+  }
+}
+
+@utility animate-occasion-shower {
+  animation: occasion-shower var(--shower-duration, 4s) cubic-bezier(0.3, 0.1, 0.6, 1) var(--shower-delay, 0s) 1 both;
+}
+
+/* ============================================================================
+   OCCASION SITE DRESSING — occasion-decorations.tsx and card-decor.ts.
+   ========================================================================= */
+
+/* Light-string bulbs: brighten and dim out of step. */
+@keyframes oc-bulb {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  45% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+}
+
+@utility animate-oc-bulb {
+  animation: oc-bulb 1.8s ease-in-out infinite;
+}
+
+/* The ribbon under the header slides slowly along. */
+@keyframes oc-ribbon {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@utility animate-oc-ribbon {
+  animation: oc-ribbon 24s linear infinite;
+}
+
+/* Product photos during an occasion: a ribbon across the bottom-right corner
+   (the top corners hold the discount badge and the wishlist heart)
+   (::before) and the occasion's ornament on it (::after), which bobs or
+   swings, and pops when the product is hovered. Custom properties come from
+   card-decor.ts via the site layout's <main>. */
+[data-occasion-theme] .occasion-media::before {
+  content: "";
+  display: var(--oc-band-display, none);
+  position: absolute;
+  bottom: 12px;
+  right: -30px;
+  z-index: 2;
+  width: 110px;
+  height: 14px;
+  background: var(--oc-band);
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+[data-occasion-theme] .occasion-media::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  z-index: 3;
+  width: 30px;
+  height: 30px;
+  background: var(--oc-ornament) center / contain no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+  transform-origin: var(--oc-ornament-origin, 50% 60%);
+  animation: var(--oc-ornament-animation, oc-ornament-bob) 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  [data-occasion-theme] .occasion-media::after {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+.group:hover .occasion-media::after {
+  animation: oc-ornament-pop 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes oc-ornament-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-2px) rotate(4deg);
+  }
+}
+
+@keyframes oc-ornament-swing {
+  0%,
+  100% {
+    transform: rotate(-9deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+
+@keyframes oc-ornament-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  35% {
+    transform: scale(1.3) rotate(-12deg);
+  }
+  65% {
+    transform: scale(0.95) rotate(8deg);
+  }
+  100% {
+    transform: scale(1.08) rotate(0deg);
+  }
+}

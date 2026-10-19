@@ -70,6 +70,12 @@ Change the schema by adding a new migration (`npx supabase migration new <name>`
 - `outbox`: follow-up tasks (emails, STK push, POS sale and void) written in the same transaction as the order or
   payment change; status `pending` / `processing` / `failed` / `done` / `dead`, attempts, next
   attempt time and last error. Server-only (staff can read).
+- `occasions`: national days, holidays and seasons the store dresses up for (recurring month/day
+  range, decoration, accent colour, banner text, a keyword for the picks). Movable ones carry a
+  Google holiday-calendar event name (`calendar_source`, `calendar_*_event_name`) or a rule
+  (`date_formula`) and are re-dated daily. `site_theme_override` (one row): `auto` follows the
+  calendar, `forced` shows one occasion to everyone, `off`. Public read (enabled rows only);
+  writes need `content.manage`.
 
 ## Order and payment states
 
@@ -139,5 +145,7 @@ staff permission (customers may upload review images into their own folder).
 - `tests/db/outbox.sql`: tasks are committed (and rolled back) with the order, claimed once,
   retried with back-off, marked dead with a staff notification; receipt, status and POS tasks
   fire only when they should; customers can't see or run them.
+- `tests/db/occasions.sql`: the public and customers see enabled occasions only and cannot change
+  them or the theme mode; staff can, and deleting a forced occasion clears it.
 
 Run them with `npm run test:db` (it resets the local database first).
