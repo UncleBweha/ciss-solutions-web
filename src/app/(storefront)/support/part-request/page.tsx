@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo/metadata'
 import { Wrench } from 'lucide-react'
 import { PartRequestForm } from '@/components/storefront/support-forms'
 import { Breadcrumbs } from '@/components/ui/misc'
 import { param } from '@/lib/utils'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Need help finding a printer part?',
   description: 'Tell us your printer model and the problem. Our technicians will identify the right spare part.',
-  alternates: { canonical: '/support/part-request' },
-}
+  path: '/support/part-request',
+})
 
 export default async function PartRequestPage({ searchParams }: PageProps<'/support/part-request'>) {
   const sp = await searchParams
