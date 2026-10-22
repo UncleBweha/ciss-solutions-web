@@ -5,6 +5,7 @@ import { dbError, staffAction, type ActionResult } from '@/lib/admin/action'
 import { audit } from '@/lib/admin/audit'
 import { formObject } from '@/lib/admin/form-data'
 import { revalidateHomepage, revalidateProducts } from '@/lib/admin/revalidate'
+import { uploadedImageUrl } from '@/lib/admin/uploaded-image'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -92,15 +93,7 @@ export async function saveBannerAction(_prev: ActionResult | null, formData: For
   return staffAction('content.manage', async (user) => {
     const d = bannerSchema.parse(formObject(formData, ['isActive']))
     const supabase = await createClient()
-    let imageUrl = d.imageUrl
-    const file = formData.get('image')
-    if (file instanceof File && file.size > 0) {
-      if (file.size > 8 * 1024 * 1024) return { ok: false, message: 'Image must be 8 MB or smaller.' }
-      const path = `hero/${crypto.randomUUID()}.${file.name.split('.').pop()?.toLowerCase() || 'png'}`
-      const { error } = await supabase.storage.from('banners').upload(path, file, { contentType: file.type, cacheControl: '31536000' })
-      if (error) return { ok: false, message: `Upload failed: ${error.message}` }
-      imageUrl = supabase.storage.from('banners').getPublicUrl(path).data.publicUrl
-    }
+    const imageUrl = uploadedImageUrl(formData, 'image', 'banners', 'hero') ?? d.imageUrl
     const row = {
       eyebrow: d.eyebrow,
       title: d.title,

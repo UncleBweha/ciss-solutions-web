@@ -6,7 +6,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { contactSchema, fieldErrors, partRequestSchema, type FormState } from '@/lib/validation/forms'
 
 const MAX_UPLOAD = 5 * 1024 * 1024
-const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+const ALLOWED: Record<string, string> = { 'image/jpeg': 'jpeg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' }
+const ATTACHMENT_PATH = /^\d{4}-\d{2}-\d{2}\/[0-9a-f-]{36}\.(jpeg|png|webp|pdf)$/
 
 async function guard(kind: string): Promise<string | null> {
   const ip = await clientIp()
@@ -45,6 +46,26 @@ export async function submitContactAction(_prev: FormState, formData: FormData):
   return { ok: true, message: 'Thank you. We will get back to you shortly.' }
 }
 
+/**
+ * A one-time signed URL the browser uploads a part-request photo to (the private bucket
+ * caps its size and type too). Files go straight to storage because hosting caps a server
+ * action's request body (4.5 MB on Vercel). The form then sends only the returned path.
+ */
+export async function startAttachmentUploadAction(type: string, size: number): Promise<{ path: string; token: string } | { error: string }> {
+  const ext = ALLOWED[type]
+  if (!ext) return { error: 'Upload a JPG, PNG, WebP or PDF.' }
+  if (!(size > 0 && size <= MAX_UPLOAD)) return { error: 'The file must be 5 MB or smaller.' }
+  const ip = await clientIp()
+  if (!(await rateLimit(`attachment:${ip}`, 40, 3600))) return { error: 'Too many uploads. Please try again later or send the photo on WhatsApp.' }
+  const path = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${ext}`
+  const { data, error } = await createAdminClient().storage.from('support-attachments').createSignedUploadUrl(path)
+  if (error || !data) {
+    logger.error('support.upload_url_failed', { error: error?.message })
+    return { error: 'We could not upload the file. You can still send the request without it.' }
+  }
+  return { path: data.path, token: data.token }
+}
+
 export async function submitPartRequestAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const limited = await guard('part-request')
   if (limited) return { message: limited }
@@ -53,18 +74,13 @@ export async function submitPartRequestAction(_prev: FormState, formData: FormDa
   if (parsed.data.website) return { ok: true, message: 'Request received.' }
 
   const db = createAdminClient()
+  // The browser uploaded the file already (startAttachmentUploadAction); keep the path only if it is there.
   let attachmentPath: string | null = null
-  const file = formData.get('attachment')
-  if (file instanceof File && file.size > 0) {
-    if (file.size > MAX_UPLOAD) return { errors: { attachment: 'The file must be 5 MB or smaller.' } }
-    if (!ALLOWED.has(file.type)) return { errors: { attachment: 'Upload a JPG, PNG, WebP or PDF.' } }
-    const ext = file.type === 'application/pdf' ? 'pdf' : file.type.split('/')[1]
-    attachmentPath = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${ext}`
-    const { error } = await db.storage.from('support-attachments').upload(attachmentPath, file, { contentType: file.type })
-    if (error) {
-      logger.error('support.upload_failed', { error: error.message })
-      attachmentPath = null
-    }
+  const sent = formData.get('attachment')
+  if (typeof sent === 'string' && ATTACHMENT_PATH.test(sent)) {
+    const { data: found, error } = await db.storage.from('support-attachments').exists(sent)
+    if (found) attachmentPath = sent
+    else logger.error('support.attachment_missing', { path: sent, error: error?.message })
   }
 
   const user = await getSessionUser()

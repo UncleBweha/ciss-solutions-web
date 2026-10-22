@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { deleteBrandAction, saveBrandAction } from '@/actions/admin/catalog'
 import { AdminForm, ConfirmAction } from '@/components/admin/admin-form'
+import { DirectImageUpload } from '@/components/admin/direct-image-upload'
 import { AdminPageHeader, Panel, Table, Td, Th } from '@/components/admin/admin-ui'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox, Field, Input, Textarea } from '@/components/ui/form'
@@ -50,7 +51,7 @@ export default async function BrandsAdminPage({ searchParams }: PageProps<'/admi
             <Field label="Description" htmlFor="description"><Textarea id="description" name="description" rows={3} defaultValue={editing?.description ?? ''} /></Field>
             <Field label="Website" htmlFor="website"><Input id="website" name="website" type="url" defaultValue={editing?.website ?? ''} /></Field>
             <Field label="Logo URL" htmlFor="logoUrl"><Input id="logoUrl" name="logoUrl" defaultValue={editing?.logo_url ?? ''} /></Field>
-            <Field label="…or upload logo" htmlFor="logo"><Input id="logo" name="logo" type="file" accept="image/*" className="h-auto py-2" /></Field>
+            <Field label="…or upload logo" htmlFor="logo"><DirectImageUpload id="logo" name="logo" bucket="brand-logos" prefix="brands" accept="image/*" /></Field>
             <Field label="SEO title" htmlFor="seoTitle"><Input id="seoTitle" name="seoTitle" defaultValue={editing?.seo_title ?? ''} maxLength={70} /></Field>
             <Field label="SEO description" htmlFor="seoDescription"><Textarea id="seoDescription" name="seoDescription" rows={2} className="min-h-0" defaultValue={editing?.seo_description ?? ''} maxLength={170} /></Field>
             <div className="flex items-center gap-4">
