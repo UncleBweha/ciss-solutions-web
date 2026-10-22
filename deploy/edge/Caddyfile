@@ -4,7 +4,7 @@
 # This file holds only what must be global. Each business has one file under
 # sites/, holding its website and its POS and written only by its own deploy:
 #   sites/toolsman.caddy        toolsman.co.ke, www, pos.toolsman.co.ke
-#   sites/ciss-solutions.caddy  cisssolutions.co.ke, www, pos.cisssolutions.co.ke
+#   (CISS Solutions moved to Vercel on 2026-10-22 and has no site file here.)
 # After changing a site file:
 #   docker exec edge-caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 #   docker exec edge-caddy caddy reload   --config /etc/caddy/Caddyfile --adapter caddyfile

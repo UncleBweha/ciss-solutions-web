@@ -7,9 +7,9 @@ paper and accessories, with M-Pesa checkout, a spare-part compatibility finder a
   (Postgres + Auth + Storage, Row Level Security), M-Pesa STK Push through KCB Buni.
 - **Currency:** KES. **Locale:** en-KE.
 
-The repository also still contains the static coming-soon page (`index.html`, `assets/`) and the
-scripts that deploy it (`deploy/deploy.sh`, `.github/workflows/deploy.yml`). Those are untouched;
-the store deploys separately (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)).
+The store is hosted on Vercel and deploys on every push to `main` (see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). The repository still contains the old static
+coming-soon page (`index.html`, `assets/`), which is no longer deployed.
 
 ## Documentation
 
@@ -18,7 +18,7 @@ the store deploys separately (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)).
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Code layout, rendering and caching, security model |
 | [docs/DATABASE.md](docs/DATABASE.md) | Tables, database functions, RLS, migrations and seed data |
 | [docs/PAYMENTS.md](docs/PAYMENTS.md) | M-Pesa flow, callback security, mock provider, going live |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Supabase project, VPS (Docker + Caddy), Vercel, cron, CI |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Supabase project, Vercel, DNS, scheduled jobs, CI |
 | [docs/ADMIN.md](docs/ADMIN.md) | Staff guide: roles, products, stock, orders, content, settings |
 
 ## Run it locally

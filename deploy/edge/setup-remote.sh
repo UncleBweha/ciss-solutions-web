@@ -46,23 +46,7 @@ if [ "$STEP" = prepare ]; then
     } > "$SITES/toolsman.caddy"
     echo "Wrote $SITES/toolsman.caddy"
   fi
-  # CISS Solutions (website and POS) as served now. deploy/edge-site.sh maintains it afterwards.
-  if [ ! -f "$SITES/ciss-solutions.caddy" ]; then
-    if docker ps --format '{{.Names}}' | grep -qx ciss-store; then UP=ciss-store:3000; else UP=ciss-solutions:80; fi
-    printf '%s\n' \
-      "# CISS Solutions: the website and the POS. Written by deploy/edge-site.sh in the" \
-      "# CISS Solutions web repo: switch the website with deploy/app-switch.sh, remove" \
-      "# both with deploy/remove.sh. Do not edit here." \
-      "www.cisssolutions.co.ke {" "	redir https://cisssolutions.co.ke{uri} permanent" "}" "" \
-      "cisssolutions.co.ke {" "	reverse_proxy $UP" "	encode gzip" "}" "" \
-      "# The POS (repo CISS Solutions POS) runs as container ciss-pos on the shared" \
-      "# web network. While that container does not exist this answers 502." \
-      "pos.cisssolutions.co.ke {" \
-      "	reverse_proxy ciss-pos:80" \
-      "	encode gzip" \
-      "}" > "$SITES/ciss-solutions.caddy"
-    echo "Wrote $SITES/ciss-solutions.caddy (website: $UP)"
-  fi
+  # CISS Solutions moved to Vercel on 2026-10-22 and has no site file here any more.
 
   # Create the container (not started) so its volumes exist, then bring the
   # certificates over: no new certificates are requested at the switch.
