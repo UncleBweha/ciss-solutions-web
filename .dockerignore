@@ -12,6 +12,6 @@ supabase/.temp
 supabase/.branches
 tests
 *.log
-# legacy static landing page (deployed separately by deploy/deploy.sh)
+# legacy static landing page (no longer deployed)
 index.html
 assets
