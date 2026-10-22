@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { deleteBannerAction, moveBannerAction, moveSectionAction, saveBannerAction, saveSectionAction } from '@/actions/admin/content'
 import { AdminForm, ConfirmAction } from '@/components/admin/admin-form'
+import { DirectImageUpload } from '@/components/admin/direct-image-upload'
 import { Panel } from '@/components/admin/admin-ui'
 import { MoveButtons } from '@/components/admin/small-actions'
 import { ProductImage } from '@/components/product/product-image'
@@ -112,7 +113,7 @@ export default async function HomepageAdmin({ searchParams }: PageProps<'/admin/
             </Field>
             <Field label="Subtitle" htmlFor="b-sub" className="sm:col-span-2"><Textarea id="b-sub" name="subtitle" rows={2} className="min-h-0" defaultValue={editingSlide?.subtitle ?? ''} /></Field>
             <Field label="Image URL" htmlFor="b-img"><Input id="b-img" name="imageUrl" defaultValue={editingSlide?.image_url ?? ''} /></Field>
-            <Field label="…or upload image" htmlFor="b-file"><Input id="b-file" name="image" type="file" accept="image/*" className="h-auto py-2" /></Field>
+            <Field label="…or upload image" htmlFor="b-file"><DirectImageUpload id="b-file" name="image" bucket="banners" prefix="hero" accept="image/*" /></Field>
             <Field label="Image alt text" htmlFor="b-alt"><Input id="b-alt" name="imageAlt" defaultValue={editingSlide?.image_alt ?? ''} /></Field>
             <Field label="Background (CSS, optional)" htmlFor="b-bg"><Input id="b-bg" name="background" defaultValue={editingSlide?.background ?? ''} /></Field>
             <Field label="Button text" htmlFor="b-cta"><Input id="b-cta" name="ctaText" defaultValue={editingSlide?.cta_text ?? 'Shop Now'} /></Field>

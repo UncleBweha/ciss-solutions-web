@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { deleteCategoryAction, saveCategoryAction } from '@/actions/admin/catalog'
 import { AdminForm, ConfirmAction } from '@/components/admin/admin-form'
+import { DirectImageUpload } from '@/components/admin/direct-image-upload'
 import { AdminPageHeader, Panel } from '@/components/admin/admin-ui'
 import { MoveCategory, QuickAddCategory } from '@/components/admin/category-tools'
 import { Badge } from '@/components/ui/badge'
@@ -107,7 +108,7 @@ export default async function CategoriesPage({ searchParams }: PageProps<'/admin
               </Select>
             </Field>
             <Field label="Description" htmlFor="description"><Textarea id="description" name="description" rows={3} defaultValue={editing?.description ?? ''} /></Field>
-            <Field label="Image" htmlFor="image"><Input id="image" name="image" type="file" accept="image/*" className="h-auto py-2" /></Field>
+            <Field label="Image" htmlFor="image"><DirectImageUpload id="image" name="image" bucket="category-images" prefix="categories" accept="image/*" /></Field>
             <label className="flex items-center gap-2 text-sm"><Checkbox name="isActive" defaultChecked={editing?.is_active ?? true} /> Show in the shop</label>
             <details className="rounded-md border border-border px-3 py-2 text-sm">
               <summary className="cursor-pointer font-medium text-fg-secondary">More options (web address, SEO, order)</summary>
