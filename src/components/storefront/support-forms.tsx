@@ -1,8 +1,76 @@
 'use client'
-import { useActionState } from 'react'
-import { submitContactAction, submitPartRequestAction } from '@/actions/support'
+import { useActionState, useEffect, useRef, useState, type ChangeEvent, type ComponentProps } from 'react'
+import { startAttachmentUploadAction, submitContactAction, submitPartRequestAction } from '@/actions/support'
 import { Button } from '@/components/ui/button'
 import { Field, FormMessage, Input, Textarea } from '@/components/ui/form'
+import { createClient } from '@/lib/supabase/client'
+
+/**
+ * Uploads the chosen file straight to storage through a signed URL and submits only its
+ * path, as "attachment": the file never passes through a server action (4.5 MB cap on Vercel).
+ * The form waits while it uploads; a failed upload asks for another file or none.
+ */
+function AttachmentInput(props: Omit<ComponentProps<'input'>, 'name' | 'type' | 'onChange'>) {
+  const [path, setPath] = useState('')
+  const [status, setStatus] = useState<string | null>(null)
+  const latest = useRef(0)
+  const ref = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const form = ref.current?.form
+    if (!form) return
+    const clear = () => {
+      latest.current++
+      ref.current?.setCustomValidity('')
+      setPath('')
+      setStatus(null)
+    }
+    form.addEventListener('reset', clear)
+    return () => form.removeEventListener('reset', clear)
+  }, [])
+
+  async function onChange(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+    const attempt = ++latest.current
+    setPath('')
+    if (!file) {
+      input.setCustomValidity('')
+      setStatus(null)
+      return
+    }
+    const fail = (message: string) => {
+      if (attempt !== latest.current) return
+      input.setCustomValidity(message)
+      setStatus(message)
+    }
+    input.setCustomValidity('Wait for the file to finish uploading.')
+    setStatus('Uploading…')
+    const signed = await startAttachmentUploadAction(file.type, file.size).catch(() => ({ error: 'We could not upload the file. Choose another, or remove it.' }))
+    if ('error' in signed) return fail(signed.error)
+    const { error } = await createClient().storage.from('support-attachments').uploadToSignedUrl(signed.path, signed.token, file, { contentType: file.type })
+    if (error) return fail('We could not upload the file. Choose another, or remove it.')
+    if (attempt !== latest.current) return
+    input.setCustomValidity('')
+    setPath(signed.path)
+    setStatus('Attached.')
+  }
+
+  return (
+    <>
+      <Input
+        ref={ref}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        onChange={onChange}
+        className="h-auto py-2 file:mr-3 file:rounded-lg file:border-0 file:bg-surface-strong file:px-3 file:py-1.5 file:text-fg"
+        {...props}
+      />
+      <input type="hidden" name="attachment" value={path} />
+      {status ? <p className="mt-1 text-xs text-fg-muted" aria-live="polite">{status}</p> : null}
+    </>
+  )
+}
 
 // Hidden from people; bots tend to fill it in.
 const Honeypot = () => (
@@ -60,7 +128,7 @@ export function PartRequestForm({ brand, model }: { brand?: string; model?: stri
         <Textarea id="p-message" name="message" rows={4} placeholder="e.g. Printer is showing paper jam even with no paper inside" required />
       </Field>
       <Field label="Photo (optional)" htmlFor="p-file" error={state.errors?.attachment} hint="A photo of the part, label or error screen helps. JPG, PNG, WebP or PDF up to 5 MB." className="sm:col-span-2">
-        <Input id="p-file" name="attachment" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="h-auto py-2 file:mr-3 file:rounded-lg file:border-0 file:bg-surface-strong file:px-3 file:py-1.5 file:text-fg" />
+        <AttachmentInput id="p-file" />
       </Field>
       <Field label="Your name" htmlFor="p-name" error={state.errors?.name} required>
         <Input id="p-name" name="name" autoComplete="name" required />
