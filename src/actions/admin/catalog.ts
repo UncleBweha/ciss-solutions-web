@@ -5,25 +5,12 @@ import { dbError, staffAction, type ActionResult } from '@/lib/admin/action'
 import { audit } from '@/lib/admin/audit'
 import { formObject } from '@/lib/admin/form-data'
 import { revalidateBrands, revalidateCategories, revalidatePrinterModels } from '@/lib/admin/revalidate'
+import { uploadedImageUrl } from '@/lib/admin/uploaded-image'
 import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils'
 
 const slug = z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and dashes').max(100)
 const optional = (max: number) => z.string().trim().max(max).optional().transform((v) => v || null)
-
-/** Uploads an image from a form to a public bucket with the staff session; returns its public URL. */
-async function uploadImage(formData: FormData, field: string, bucket: 'brand-logos' | 'category-images' | 'banners', prefix: string) {
-  const file = formData.get(field)
-  if (!(file instanceof File) || file.size === 0) return null
-  if (file.size > 5 * 1024 * 1024) throw new Error('Image must be 5 MB or smaller')
-  if (!['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/svg+xml'].includes(file.type)) throw new Error('Use JPG, PNG, WebP, AVIF or SVG')
-  const supabase = await createClient()
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
-  const path = `${prefix}/${crypto.randomUUID()}.${ext}`
-  const { error } = await supabase.storage.from(bucket).upload(path, file, { contentType: file.type, cacheControl: '31536000' })
-  if (error) throw new Error(`Upload failed: ${error.message}`)
-  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
-}
 
 // ---- Categories ------------------------------------------------------------------
 
@@ -44,7 +31,7 @@ export async function saveCategoryAction(_prev: ActionResult | null, formData: F
   return staffAction('catalog.manage', async (user) => {
     const d = categorySchema.parse(formObject(formData, ['isActive']))
     if (d.id && d.parentId === d.id) return { ok: false, message: 'A category cannot be its own parent.' }
-    const uploaded = await uploadImage(formData, 'image', 'category-images', 'categories')
+    const uploaded = uploadedImageUrl(formData, 'image', 'category-images', 'categories')
     const supabase = await createClient()
     const parentId = d.parentId || null
     if (d.id && parentId) {
@@ -183,7 +170,7 @@ const brandSchema = z.object({
 export async function saveBrandAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
   return staffAction('catalog.manage', async (user) => {
     const d = brandSchema.parse(formObject(formData, ['isActive']))
-    const uploaded = await uploadImage(formData, 'logo', 'brand-logos', 'brands')
+    const uploaded = uploadedImageUrl(formData, 'logo', 'brand-logos', 'brands')
     const supabase = await createClient()
     const row = {
       name: d.name,
