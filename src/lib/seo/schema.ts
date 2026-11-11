@@ -74,7 +74,7 @@ export function productSchema(product: ProductDetail) {
         priceCurrency: 'KES',
         price: product.price,
         availability: available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        itemCondition: 'https://schema.org/NewCondition',
+        itemCondition: `https://schema.org/${conditionOf(product.condition)}`,
         seller: { '@id': `${siteUrl}/#organization` },
       }
   return {
@@ -95,15 +95,26 @@ export function productSchema(product: ProductDetail) {
       product.rating_count > 0
         ? { '@type': 'AggregateRating', ratingValue: product.rating_avg, reviewCount: product.rating_count, bestRating: 5, worstRating: 1 }
         : undefined,
-    review: product.reviews.slice(0, 5).map((r) => ({
+    review: product.reviews.length ? product.reviews.slice(0, 5).map((r) => ({
       '@type': 'Review',
       reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
       author: { '@type': 'Person', name: r.author_name || 'Customer' },
       name: r.title || undefined,
       reviewBody: r.comment || undefined,
       datePublished: r.created_at.slice(0, 10),
-    })),
+    })) : undefined,
   }
+}
+
+/**
+ * The product's condition as schema.org names it. Staff type it freely ("New", "Compatible",
+ * "Refurbished"); compatible and genuine parts are both new, so only refurbished and used differ.
+ */
+export function conditionOf(condition: string | null | undefined): 'NewCondition' | 'RefurbishedCondition' | 'UsedCondition' {
+  const c = (condition ?? '').toLowerCase()
+  if (/refurb|renew/.test(c)) return 'RefurbishedCondition'
+  if (/used|second.?hand|pre.?owned|ex.?uk/.test(c)) return 'UsedCondition'
+  return 'NewCondition'
 }
 
 export function collectionSchema(name: string, path: string, description?: string | null) {
