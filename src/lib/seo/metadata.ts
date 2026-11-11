@@ -1,17 +1,12 @@
 import type { Metadata } from 'next'
+import { formatKES } from '@/lib/ecommerce/money'
 import { truncate } from '@/lib/utils'
 import type { ProductDetail } from '@/types/catalog'
 
 /** Product metadata with sensible defaults when SEO fields are empty. */
 export function productMetadata(product: ProductDetail): Metadata {
   const title = product.seo_title || `${product.name} Price in Kenya`
-  const description = truncate(
-    product.seo_description ||
-      product.short_description ||
-      product.description ||
-      `Buy ${product.name} in Kenya with nationwide delivery and M-Pesa payment.`,
-    160,
-  )
+  const description = truncate(product.seo_description || productSnippet(product), 160)
   const image = shareableImage(product.og_image_url) ?? product.images.map((i) => shareableImage(i.url)).find(Boolean) ?? DEFAULT_IMAGE
   const canonical = product.canonical_url || `/p/${product.slug}`
   return {
@@ -29,6 +24,26 @@ export function productMetadata(product: ProductDetail): Metadata {
     },
     twitter: { card: 'summary_large_image', title: product.og_title || title, description: product.og_description || description, images: [image] },
   }
+}
+
+/**
+ * The search-result snippet when staff have not written one. Most catalogue descriptions just
+ * repeat the product name, which gives a searcher no reason to click; a short one is rounded off
+ * with the price, stock and how to buy, the things people compare in the results.
+ */
+export function productSnippet(
+  product: Pick<ProductDetail, 'name' | 'short_description' | 'description' | 'price' | 'available_quantity'> & {
+    variants: { price: number; available_quantity: number }[]
+  },
+): string {
+  const base = (product.short_description || product.description || '').replace(/\s+/g, ' ').trim()
+  if (base.length >= 110) return base
+  const prices = product.variants.length ? product.variants.map((v) => v.price) : [product.price]
+  const low = Math.min(...prices)
+  const price = `${prices.length > 1 && Math.max(...prices) > low ? 'From ' : ''}${formatKES(low)}`
+  const inStock = product.variants.length ? product.variants.some((v) => v.available_quantity > 0) : (product.available_quantity ?? 0) > 0
+  const lead = base && base.toLowerCase() !== product.name.toLowerCase() ? base.replace(/\.?$/, '.') : `Buy ${product.name} in Kenya.`
+  return `${lead} ${price}${inStock ? ', in stock' : ''}. Delivery across Kenya, pay with M-Pesa.`
 }
 
 const SITE = 'CISS Solutions'
